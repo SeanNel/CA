@@ -3,9 +3,15 @@ package vectors;
 import java.util.Vector;
 
 public class ColourVector extends Vector<Float> {
-	// I chose to use floats because the integer component is never greater than
-	// 255, and floats give greater precision when computing the square root to
-	// get distance.
+	// This uses the Vector class instead of an array, because I
+	// started by working with general vectors before reducing the code to this.
+	// In principle, working with a simple array should reduce memory overhead.
+	// On the other hand, using any collection of Floats instead of the simple
+	// type float is desirable, for the same reason.
+	// I chose to use floats because the Color.getColorComponents() method
+	// returns a float array, so it makes sense to work in the same format. In
+	// addition the integer component is never greater than 255, and floats give
+	// greater precision when computing the square root to get distance.
 
 	private static final long serialVersionUID = 1L;
 

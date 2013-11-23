@@ -12,9 +12,10 @@ public class ColourCompare {
 	public static float getMatch(Color pixel1, Color pixel2) {
 		// The match is defined as a similarity percentage: 0f means no
 		// similarity, i.e. black and white. 1f means exactly similar, i.e. the
-		// same colour. The difference between bright red and blue for example
-		// is the norm of vector (255,0,-255) = 360, divided by the maximum
-		// distance possible (441), which gives 81.6%.
+		// same colour. For example, the difference between bright red and blue
+		// is the vector (255, 0, 0-255, 255-255). The similarity is the ratio
+		// of the norm of this vector over the maximum distance possible:
+		// 360/510 = 0.71.
 
 		// ColorSpace colourSpace = new YCbCrColorSpace();
 		float[] p1Components = pixel1.getColorComponents(null);

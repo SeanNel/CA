@@ -1,9 +1,4 @@
-/*
- * modified for Flapjack, CS 144 semester project
- * S.E.A. (Sean) Nel
- * University of Stellenbosch
- * student #17903262
- */
+// I made a few modifications to the original StdDraw, to be able to work directly with the window frame. 
 
 package std;
 
