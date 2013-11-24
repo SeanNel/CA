@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import ca.CAModel;
 
 public class CACornerFinder extends CAModel {
+	// On 2nd thought, using corners to find shapes probably won't work.
+	// We can delete it, but some of this may be useful for other things.
+	
 	ArrayList<CornerFinderCell> corners;
 
 	public CACornerFinder(float epsilon, int r) {

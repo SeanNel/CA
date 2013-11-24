@@ -5,6 +5,9 @@ import ca.CACell;
 import ca.CAModel;
 
 public class CornerFinderCell extends CACell {
+	// On 2nd thought, using corners to find shapes probably won't work.
+	// We can delete it, but some of this may be useful for other things.
+	
 	// Rays are lines radiating from the cell to search along.
 	protected static final double rays[] = { 0f, Math.PI / 2, Math.PI,
 			3 * Math.PI / 2 };
