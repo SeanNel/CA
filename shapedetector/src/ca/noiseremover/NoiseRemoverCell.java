@@ -1,5 +1,7 @@
 package ca.noiseremover;
 
+import java.awt.Color;
+
 import graphics.ColourCompare;
 import ca.CACell;
 import ca.CAModel;
@@ -14,6 +16,7 @@ public class NoiseRemoverCell extends CACell {
 		if (state == INACTIVE)
 			return;
 
+		Color neighbourhood = getNeighbourhood();
 		if (1f - ColourCompare.getMatch(getColour(), neighbourhood) > caModel
 				.getEpsilon()) {
 			// Set pixel to the average colour of the surrounding pixels. Has a

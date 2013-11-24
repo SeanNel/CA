@@ -24,13 +24,6 @@ public class CACell {
 	// ArrayList starts with space for 10 items.
 	protected ArrayList<CACell> neighbours;
 
-	// The resultant from all the neighbour vectors. This is simply the average
-	// colour of all the neighbouring cells.
-	// This method of storing the resultant state for each CACell is analogous
-	// to having a duplicate image from before/after. This just seemed more
-	// natural at the time.
-	protected Color neighbourhood;
-
 	protected int x;
 	protected int y;
 
@@ -83,12 +76,16 @@ public class CACell {
 			disactivate();
 			return;
 		}
+	}
 
+	protected Color getNeighbourhood() {
+		// Returns the resultant from all the neighbour vectors. This is simply
+		// the average colour of all the neighbouring cells.
 		Color[] colours = new Color[neighbours.size()];
 		for (int i = 0; i < neighbours.size(); i++) {
 			colours[i] = neighbours.get(i).getColour();
 		}
-		neighbourhood = ColourCompare.averageColour(colours);
+		return ColourCompare.averageColour(colours);
 	}
 
 	public void process() {

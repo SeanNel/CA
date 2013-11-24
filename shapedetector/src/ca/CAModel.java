@@ -9,21 +9,22 @@ import std.StdDraw;
 
 public class CAModel {
 	protected CACell[][] cells;
-	protected Picture picture;
+	protected Picture pictureBefore;
+	protected Picture pictureAfter;
 	// Epsilon is the difference threshold. See graphics.ColourCompare
 	protected float epsilon;
 	protected int r; // Search radius around each cell.
 
 	public CAModel(float epsilon, int r) {
 		// Might want to set epsilon dynamically according to the colour range
-		// in
-		// the image.
+		// in the image.
 		this.epsilon = epsilon;
 		this.r = r;
 	}
 
 	public void setPicture(Picture picture) {
-		this.picture = picture;
+		this.pictureBefore = picture;
+		this.pictureAfter = new Picture(picture); // Create copy of picture.
 		loadCells();
 		activateCells();
 	}
@@ -35,11 +36,12 @@ public class CAModel {
 		// negligible since they are not initialized. Use getCell (not
 		// cells[x][y]) to get cell corresponding to the pixel (x,y).
 
-		cells = new CACell[picture.width() + 2 * r][picture.height() + 2 * r];
+		cells = new CACell[pictureBefore.width() + 2 * r][pictureBefore.height() + 2
+				* r];
 
 		// First instantiate all the cells (excluding dead border cells).
-		for (int x = 0; x < picture.width(); x++) {
-			for (int y = 0; y < picture.height(); y++) {
+		for (int x = 0; x < pictureBefore.width(); x++) {
+			for (int y = 0; y < pictureBefore.height(); y++) {
 				cells[x + r][y + r] = new CACell(x, y, this);
 			}
 		}
@@ -48,8 +50,8 @@ public class CAModel {
 	protected void activateCells() {
 		// ... Now we can cross-reference the instantiated cells and activate
 		// them.
-		for (int x = 0; x < picture.width(); x++) {
-			for (int y = 0; y < picture.height(); y++) {
+		for (int x = 0; x < pictureBefore.width(); x++) {
+			for (int y = 0; y < pictureBefore.height(); y++) {
 				CACell cell = cells[x + r][y + r];
 				cell.activate();
 				cell.meetNeighbours();
@@ -62,31 +64,23 @@ public class CAModel {
 		// always some cells that remain active forever.
 
 		boolean busy = false;
-		for (int x = 0; x < picture.width(); x++) {
-			for (int y = 0; y < picture.height(); y++) {
+		for (int x = 0; x < pictureBefore.width(); x++) {
+			for (int y = 0; y < pictureBefore.height(); y++) {
 				CACell cell = cells[x + r][y + r];
 				if (cell.isActive()) {
 					busy = true;
 					cell.update();
+					cell.process();
 				}
 			}
 		}
-		if (!busy) {
-			// Algorithm has finished.
-			return busy;
-		}
-
-		for (int x = 0; x < picture.width(); x++) {
-			for (int y = 0; y < picture.height(); y++) {
-				cells[x + r][y + r].process();
-			}
-		}
-
+		
+		pictureBefore = new Picture(pictureAfter);
 		return busy;
 	}
 
 	public void draw() {
-		StdDraw.picture(0.5, 0.5, picture.getImage());
+		StdDraw.picture(0.5, 0.5, pictureAfter.getImage());
 	}
 
 	public CACell getCell(int x, int y) {
@@ -94,11 +88,11 @@ public class CAModel {
 	}
 
 	public Color getPixel(int x, int y) {
-		return picture.get(x, y);
+		return pictureBefore.get(x, y);
 	}
 
 	public void setPixel(int x, int y, Color colour) {
-		picture.set(x, y, colour);
+		pictureAfter.set(x, y, colour);
 	}
 
 	public int getRadius() {
@@ -109,7 +103,7 @@ public class CAModel {
 		// Public because as yet, the CA never truly finishes so we choose an
 		// arbitrary time and force it to finish.
 		// Monochrome result because the border colours don't have much meaning.
-		picture = Filter.monochrome(picture);
+		pictureAfter = Filter.monochrome(pictureAfter);
 		draw();
 	}
 

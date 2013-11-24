@@ -14,7 +14,7 @@ public class EdgeFinderCell extends CACell {
 		if (state == INACTIVE)
 			return;
 
-		if (1f - ColourCompare.getMatch(getColour(), neighbourhood) < caModel
+		if (1f - ColourCompare.getMatch(getColour(), getNeighbourhood()) < caModel
 				.getEpsilon()) {
 			disactivate();
 		}
