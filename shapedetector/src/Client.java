@@ -1,5 +1,9 @@
+import java.util.ArrayList;
+
 import std.Picture;
 import std.StdDraw;
+import ca.cornerfinder.CACornerFinder;
+import ca.cornerfinder.CornerFinderCell;
 import ca.edgefinder.CAEdgeFinder;
 
 public class Client {
@@ -57,9 +61,10 @@ public class Client {
 		caEdgeFinder.finish(); // Displays the monochrome result on screen.
 		
 
-//		CACornerFinder caCornerFinder = new CACornerFinder(epsilon, r);
-//		caCornerFinder.setPicture(pic);
-//		ArrayList<CACell> corners = caCornerFinder.getCorners();
+		CACornerFinder caCornerFinder = new CACornerFinder(epsilon, r);
+		caCornerFinder.setPicture(pic);
+		ArrayList<CornerFinderCell> corners = caCornerFinder.getCorners();
+		System.out.println(corners);
 		
 //		caCornerFinder.finish(); // Displays the monochrome result on screen.
 

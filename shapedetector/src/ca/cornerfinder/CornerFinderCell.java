@@ -1,16 +1,19 @@
 package ca.cornerfinder;
 
+import java.awt.Color;
 import ca.CACell;
 import ca.CAModel;
 
 public class CornerFinderCell extends CACell {
-	public static final int NO_CORNER = 0;
-	public static final int TOP_LEFT = 1;
-	public static final int TOP_RIGHT = 2;
-	public static final int BOTTOM_RIGHT = 3;
-	public static final int BOTTOM_LEFT = 4;
+	// Rays are lines radiating from the cell to search along.
+	protected static final double rays[] = { 0f, Math.PI / 2, Math.PI,
+			3 * Math.PI / 2 };
+	// minN defines the minimum number of filled rays for the cell to
+	// be an edge, maxN is the maximum.
+	protected static final int minN = 2;
+	protected static final int maxN = 2;
 
-	protected int cornerState;
+	protected double cornerAngle;
 
 	public CornerFinderCell(int x, int y, CAModel caModel) {
 		super(x, y, caModel);
@@ -29,59 +32,66 @@ public class CornerFinderCell extends CACell {
 		if (state == INACTIVE)
 			return;
 
-		// Look to the left:
-		boolean leftEmpty = true;
-		for (int i = 0; i < caModel.getRadius(); i++) {
-			if (caModel.getPixel(x - i, y) != CACell.QUIESCENT_COLOUR) {
-				leftEmpty = false;
-				break;
-			}
+		boolean qRays[] = new boolean[rays.length];
+
+		for (int i = 0; i < rays.length; i++) {
+			qRays[i] = testRay(rays[i]);
 		}
 
-		// Look to the right:
-		boolean rightEmpty = true;
-		for (int i = 0; i < caModel.getRadius(); i++) {
-			if (caModel.getPixel(x + i, y) != CACell.QUIESCENT_COLOUR) {
-				rightEmpty = false;
-				break;
-			}
-		}
-
-		// Now, if both the left and right sides were not empty, this cannot be
-		// an edge.
-		if (leftEmpty || rightEmpty) {
-
-			// Look above:
-			boolean aboveEmpty = true;
-			for (int i = 0; i < caModel.getRadius(); i++) {
-				if (caModel.getPixel(x, y + i) != CACell.QUIESCENT_COLOUR) {
-					aboveEmpty = false;
-					break;
-				}
-			}
-
-			// Look below:
-			boolean belowEmpty = true;
-			for (int i = 0; i < caModel.getRadius(); i++) {
-				if (caModel.getPixel(x, y - i) != CACell.QUIESCENT_COLOUR) {
-					belowEmpty = false;
-					break;
-				}
-			}
-
-			if (aboveEmpty && leftEmpty) {
-				cornerState = TOP_LEFT;
-			} else if (aboveEmpty && rightEmpty) {
-				cornerState = TOP_RIGHT;
-			} else if (belowEmpty && rightEmpty) {
-				cornerState = BOTTOM_RIGHT;
-			} else if (belowEmpty && leftEmpty) {
-				cornerState = BOTTOM_LEFT;
-			}
-
+		int n = countQuiescentRays(qRays);
+		if (n >= minN && n <= maxN) {
+			// TODO: determine if this is a corner and find its angle
+			// for (int i = 0; i < rays.length - 1; i++) {
+			// if (qRays[i] && qRays[i + 1]) {
+			//
+			// }
+			// }
 		}
 
 		state = INACTIVE; // Nothing more for the cell to do.
+	}
+
+	protected int countQuiescentRays(boolean[] array) {
+		int n = 0;
+		for (int i = 0; i < array.length; i++) {
+			if (array[i])
+				n++;
+		}
+		return n;
+	}
+
+	protected boolean testRay(double theta) {
+		/*
+		 * Returns true when a ray contains only quiescent cells. An alternative
+		 * to using trig functions (which is expensive) is testing for specific
+		 * theta values and hardcoding directions. This limits the number of
+		 * available directions, however.
+		 */
+		for (int i = 0; i < caModel.getRadius(); i++) {
+			int x = this.x + (int) Math.round(i * Math.cos(theta));
+			int y = this.x + (int) Math.round(i * Math.sin(theta));
+			Color colour = caModel.getPixel(x, y);
+			if (!isQuiescent(colour)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected boolean isQuiescent(Color colour) {
+		/*
+		 * Returns true when the colour is quiescent (same colour as an empty
+		 * cell). Ideally we want to be able to do an object comparison, but
+		 * that doesn't work because Picture doesn't save the colour reference
+		 * to the pixel. It might be possible to rewrite it to do so, then we'll
+		 * see a great improvement in performance here.
+		 */
+
+		// Object comparison:
+		// return colour == CACell.QUIESCENT_COLOUR;
+
+		// Array comparison:
+		return colour.equals(QUIESCENT_COLOUR);
 	}
 
 }

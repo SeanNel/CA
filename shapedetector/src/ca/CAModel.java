@@ -36,8 +36,8 @@ public class CAModel {
 		// negligible since they are not initialized. Use getCell (not
 		// cells[x][y]) to get cell corresponding to the pixel (x,y).
 
-		cells = new CACell[pictureBefore.width() + 2 * r][pictureBefore.height() + 2
-				* r];
+		cells = new CACell[pictureBefore.width() + 2 * r][pictureBefore
+				.height() + 2 * r];
 
 		// First instantiate all the cells (excluding dead border cells).
 		for (int x = 0; x < pictureBefore.width(); x++) {
@@ -74,7 +74,7 @@ public class CAModel {
 				}
 			}
 		}
-		
+
 		pictureBefore = new Picture(pictureAfter);
 		return busy;
 	}
@@ -88,7 +88,12 @@ public class CAModel {
 	}
 
 	public Color getPixel(int x, int y) {
-		return pictureBefore.get(x, y);
+		// This way we don't have to check for out-of-bounds elsewhere.
+		if (x < 0 || y < 0 || x >= pictureBefore.width() || y >= pictureBefore.height()) {
+			return CACell.QUIESCENT_COLOUR;
+		} else {
+			return pictureBefore.get(x, y);
+		}
 	}
 
 	public void setPixel(int x, int y, Color colour) {
