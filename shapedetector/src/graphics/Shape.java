@@ -6,19 +6,13 @@ import std.Picture;
 
 public class Shape {
 	/*
-	 * Suppose we find shapes by having each cell determine whether it is at the
-	 * centroid of some shape. One way of doing this is by trying to fit
-	 * possible shapes and sizes at the hypothetical position, then comparing
-	 * the fit to the original image.
-	 */
-	/*
 	 * Defining a shape class with a reference picture should be more flexible
 	 * than defining specific methods to find each shape, then we could find
-	 * shapes of arbitrary complexity. This method should allow the program to
-	 * find overlapping shapes as well, or some shapes that are cropped at the
-	 * edge of the image. It will not be able to detect rotated shapes yet. It
-	 * would be a good idea to specify size ranges of the expected shape,
-	 * otherwise there are infinitely many possible shapes to test against.
+	 * shapes of arbitrary complexity. We can render shapes to the
+	 * referencePicture before using it or load from a file. Then we compare
+	 * boundaries from this picture to those in the target picture. We could
+	 * even store the resultant boundaries in some format to speed up future
+	 * checks.
 	 */
 
 	Picture referencePicture;
@@ -51,38 +45,6 @@ public class Shape {
 
 	public int height() {
 		return referencePicture.height();
-	}
-
-	public float compare(Picture targetPicture, int x, int y) {
-		/*
-		 * Determine whether this shape occurs in the target picture, at (x,y).
-		 * Returns probability of a match. Instead of doing direct pixel
-		 * comparisons, we may want to take average values around each point.
-		 * Currently this does not test against different sized images (or
-		 * rotated ones).
-		 */
-		int comparisons = 0;
-		int matches = 0;
-		x -= referencePicture.width() / 2;
-		y -= referencePicture.height() / 2;
-
-		for (int i = 0; i < referencePicture.width()
-				&& x + i < referencePicture.width(); i++) {
-			for (int j = 0; j < referencePicture.height()
-					&& y + j < targetPicture.height(); j++) {
-				Color referencePixel = referencePicture.get(i, j);
-				if (referencePixel.equals(shapeColour)) {
-					comparisons++;
-					if (x + i >= 0 && y + j >= 0) {
-						Color targetPixel = targetPicture.get(x + i, y + j);
-						if (targetPixel.equals(shapeColour)) {
-							matches++;
-						}
-					}
-				}
-			}
-		}
-		return (float) matches / (float) comparisons;
 	}
 
 	protected void clearImage() {

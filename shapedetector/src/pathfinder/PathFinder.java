@@ -4,6 +4,14 @@ import java.util.Stack;
 import java.util.TreeMap;
 
 public class PathFinder {
+	/*
+	 * TODO: use PathFinder to find *any* path from a cell around a loop back to
+	 * the cell. We should probably define a direction (e.g. clockwise) and
+	 * limit vertices to join cells that continue in that direction. If we find
+	 * some closed loop we can guarantee that we have found a shape, not
+	 * necessarily one we are looking for.
+	 */
+
 	private TreeMap<String, String> prev;
 	private TreeMap<String, Integer> dist;
 
