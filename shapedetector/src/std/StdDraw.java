@@ -1,4 +1,4 @@
-// I made a few modifications to the original StdDraw, to be able to work directly with the window frame. 
+/* I made a few modifications to the original StdDraw, to be able to work directly with the window frame. */
 
 package std;
 

@@ -1,4 +1,4 @@
-package vectors;
+package graphics;
 
 import java.util.Vector;
 

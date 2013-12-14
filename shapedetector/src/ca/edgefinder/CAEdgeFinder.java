@@ -1,28 +1,20 @@
 package ca.edgefinder;
 
+import ca.CACell;
 import ca.CAModel;
 
+/**
+ * Finds the edges (points of high contrast) in an image. This class may soon become
+ * deprecated in favour of the CAShapeDetector.
+ * 
+ * @author Sean
+ */
 public class CAEdgeFinder extends CAModel {
-
 	public CAEdgeFinder(float epsilon, int r) {
 		super(epsilon, r);
 	}
 
-	protected void loadCells() {
-		// Instead of checking whether operations are within bounds all the
-		// time, add a border of dead cells around the image. Use getCell (not
-		// cells[x][y]) to get cell corresponding to the pixel (x,y).
-
-		cells = new EdgeFinderCell[pictureBefore.width() + 2 * r][pictureBefore.height()
-				+ 2 * r];
-
-		// Instantiate all the cells, excluding the dead border cells (saves a
-		// bit of memory).
-		for (int x = 0; x < pictureBefore.width(); x++) {
-			for (int y = 0; y < pictureBefore.height(); y++) {
-				cells[x + r][y + r] = new EdgeFinderCell(x, y, this);
-			}
-		}
+	public CACell newCell(int x, int y, CAModel caModel) {
+		return new EdgeFinderCell(x, y, caModel);
 	}
-
 }
