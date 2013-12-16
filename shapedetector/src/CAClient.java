@@ -75,7 +75,7 @@ public class CAClient {
 		CANoiseRemover caNoiseRemover = new CANoiseRemover(0.1f, 2);
 		picture = caNoiseRemover.apply(picture);
 
-		// picture = Filter.posterize(picture, 3);
+		// picture = Posterize.apply(picture, 3);
 		return picture;
 	}
 

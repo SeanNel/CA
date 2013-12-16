@@ -22,7 +22,6 @@ public class CA {
 	 * No changes are made to this picture.
 	 */
 	protected Picture pictureBefore;
-
 	/**
 	 * Starts off as a copy of the source image, but is subject to change as
 	 * cells update.
@@ -147,7 +146,7 @@ public class CA {
 		stopwatch.start();
 
 		pictureBefore = picture;
-		pictureAfter = new Picture(picture); /* Create copy of picture. */
+		pictureAfter = new Picture(picture); /* Creates copy of picture. */
 		loadCells();
 
 		stopwatch.print(this.getClass().getSimpleName() + " loading time: ");

@@ -44,8 +44,10 @@ public class CANoiseRemover extends CA {
 		Color averageColour = ColourCompare.averageColour(colours);
 
 		if (maxDifference < epsilon) {
-			// Set pixel to the average colour of the surrounding pixels. Has a
-			// blurring effect.
+			/*
+			 * Sets pixel to the average colour of the surrounding pixels. Has a
+			 * blurring effect.
+			 */
 			setColour(cell, averageColour);
 		}
 
