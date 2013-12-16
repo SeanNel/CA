@@ -2,10 +2,13 @@ import std.Picture;
 import std.StdDraw;
 import ca.Stopwatch;
 import ca.edgefinder.CAEdgeFinder;
+import ca.noiseremover.CANoiseRemover;
 import ca.shapedetector.CAShapeDetector;
 
 /**
  * Finds shapes in an image.
+ * <p>
+ * Usage: CAClient <image_path>
  * 
  * @author Sean
  */
@@ -50,11 +53,11 @@ public class CAClient {
 		picture.setOriginUpperLeft();
 
 		picture = preparePicture(picture);
-		// picture = findEdges(picture);
-		picture = detectShapes(picture);
+		picture = findEdges(picture);
+		// picture = detectShapes(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
-
+		StdDraw.picture(0.5, 0.5, picture.getImage());
 	}
 
 	/**
@@ -69,8 +72,8 @@ public class CAClient {
 		// picture = Filter.greyscale(picture);
 		// picture = Filter.monochrome(picture);
 
-		// CANoiseRemover caNoiseRemover = new CANoiseRemover(0.15f, 2);
-		// picture = caNoiseRemover.apply(pic);
+		CANoiseRemover caNoiseRemover = new CANoiseRemover(0.1f, 2);
+		picture = caNoiseRemover.apply(picture);
 
 		// picture = Filter.posterize(picture, 3);
 		return picture;
@@ -88,7 +91,7 @@ public class CAClient {
 	 * @return Monochrome picture of the edges found.
 	 */
 	protected Picture findEdges(Picture picture) {
-		CAEdgeFinder caEdgeFinder = new CAEdgeFinder(0.1f, 2);
+		CAEdgeFinder caEdgeFinder = new CAEdgeFinder(0.05f, 2);
 		picture = caEdgeFinder.apply(picture);
 
 		/* May need to take join fractured edges and shrink thick outlines. */

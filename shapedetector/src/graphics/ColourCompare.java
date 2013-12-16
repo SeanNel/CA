@@ -51,21 +51,21 @@ public class ColourCompare {
 
 	public static Color averageColour(Color[] pixels) {
 		int r = 0, g = 0, b = 0, a = 0;
+		int n = 0;
 		for (int i = 0; i < pixels.length; i++) {
-			r += pixels[i].getRed();
-			g += pixels[i].getGreen();
-			b += pixels[i].getBlue();
-			a += pixels[i].getAlpha();
+			if (pixels[i] != null) {
+				r += pixels[i].getRed();
+				g += pixels[i].getGreen();
+				b += pixels[i].getBlue();
+				a += pixels[i].getAlpha();
+				n++;
+			}
 		}
 
-		// r /= pixels.length;
-		// g /= pixels.length;
-		// b /= pixels.length;
-		// a /= pixels.length;
-		r = (int) Math.round((double) r / (double) pixels.length);
-		g = (int) Math.round((double) g / (double) pixels.length);
-		b = (int) Math.round((double) b / (double) pixels.length);
-		a = (int) Math.round((double) a / (double) pixels.length);
+		r = (int) Math.round((double) r / (double) n);
+		g = (int) Math.round((double) g / (double) n);
+		b = (int) Math.round((double) b / (double) n);
+		a = (int) Math.round((double) a / (double) n);
 		return new Color(r, g, b, a);
 	}
 

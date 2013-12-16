@@ -12,7 +12,7 @@ import ca.CACell;
 public class CACellThread extends Thread {
 	/** The CAThreadServer that coordinates this thread. */
 	protected CAThreadServer server;
-	/** When this cells is encountered, signals this thread to stop. */
+	/** When this 'cell' is encountered, signals this thread to stop. */
 	protected static final CACell end = new CACell();
 	/** A queue that accepts a CACell to process or the 'end' singleton. */
 	protected ArrayBlockingQueue<CACell> pending;
@@ -60,8 +60,8 @@ public class CACellThread extends Thread {
 		try {
 			CACell cell;
 			while ((cell = pending.take()) != end) {
-				if (cell.isActive()) {
-					cell.update();
+				if (cell.getState() == CACell.ACTIVE) {
+					server.updateCell(cell);
 				}
 				server.returnThread(this);
 			}

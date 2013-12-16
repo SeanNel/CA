@@ -46,7 +46,6 @@ public class Filter {
 			for (int j = 0; j < n; j++) {
 				intervals[i][j] = range[1][i] - range[0][i];
 				intervals[i][j] = (intervals[i][j] / (float) (n - 1)) * j;
-				System.out.println(intervals[i][j]);
 				intervals[i][j] += range[0][i];
 			}
 		}

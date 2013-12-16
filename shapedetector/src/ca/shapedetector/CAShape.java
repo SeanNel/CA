@@ -1,24 +1,30 @@
 package ca.shapedetector;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import ca.CACell;
 
 /**
  * A shape made up of CACells.
  * 
  * @author Sean
  */
-public class CAShape {
+public class CAShape implements Comparable<CAShape> {
 	/**
 	 * Collection of cells that make up this shape.
 	 * <p>
-	 * HashSet not needed, cells are guaranteed to be unique when merging.
+	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	ArrayList<CACellShaped> areaCells;
+	List<CACell> areaCells;
 	/**
 	 * Collection of cells on the perimeter of this shape. This is a subset of
 	 * areaCells.
+	 * <p>
+	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	ArrayList<CACellShaped> outlineCells;
+	List<CACell> outlineCells;
 
 	/** The top y-coordinate of this shape. */
 	int top;
@@ -29,19 +35,28 @@ public class CAShape {
 	/** The top x-coordinate of this shape. */
 	int right;
 
+	public final Object lock = new Object();
+
+	/**
+	 * Singleton constructor.
+	 */
+	public CAShape() {
+	}
+
 	/**
 	 * Creates a new shape associated with the specified cell. Assumes that the
-	 * cell's shape reference points to this shape.
+	 * cell is mapped to this shape.
 	 * 
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
-	public CAShape(CACellShaped cell) {
-		areaCells = new ArrayList<CACellShaped>();
-		outlineCells = new ArrayList<CACellShaped>();
-		top = bottom = cell.getX();
-		left = right = cell.getY();
-		addAreaCell(cell);
+	public CAShape(CACell cell) {
+		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
+		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
+		int[] coordinates = cell.getCoordinates();
+		left = right = coordinates[0];
+		top = bottom = coordinates[1];
+		areaCells.add(cell);
 	}
 
 	/**
@@ -51,53 +66,23 @@ public class CAShape {
 	 *            Shape to merge with.
 	 */
 	public void merge(CAShape shape) {
-		synchronized (shape) {
-			for (CACellShaped cell : shape.getAreaCells()) {
-				// synchronized (cell) {
-				cell.setShape(this);
-				// }
+		synchronized (lock) {
+			synchronized (shape.lock) {
+				if (shape.left < left) {
+					left = shape.left;
+				}
+				if (shape.right > right) {
+					right = shape.right;
+				}
+
+				if (shape.top < top) {
+					top = shape.top;
+				}
+				if (shape.bottom > bottom) {
+					bottom = shape.bottom;
+				}
+				areaCells.addAll(shape.getAreaCells());
 			}
-
-			if (shape.left < left) {
-				left = shape.left;
-			}
-			if (shape.right > right) {
-				right = shape.right;
-			}
-
-			if (shape.top < top) {
-				top = shape.top;
-			}
-			if (shape.bottom > bottom) {
-				bottom = shape.bottom;
-			}
-		}
-	}
-
-	/**
-	 * Add a cell to this shape.
-	 * 
-	 * @param cell
-	 *            Cell to add.
-	 */
-	public synchronized void addAreaCell(CACellShaped cell) {
-		areaCells.add(cell);
-
-		int cellX = cell.getX();
-		int cellY = cell.getY();
-
-		if (cellX < left) {
-			left = cellX;
-		}
-		if (cellX > right) {
-			right = cellX;
-		}
-
-		if (cellY < top) {
-			top = cellY;
-		}
-		if (cellY > bottom) {
-			bottom = cellY;
 		}
 	}
 
@@ -108,7 +93,7 @@ public class CAShape {
 	 * @param cell
 	 *            Cell to add.
 	 */
-	public synchronized void addOutlineCell(CACellShaped cell) {
+	public synchronized void addOutlineCell(CACell cell) {
 		outlineCells.add(cell);
 	}
 
@@ -193,7 +178,7 @@ public class CAShape {
 	 * 
 	 * @return Collection of area cells.
 	 */
-	public ArrayList<CACellShaped> getAreaCells() {
+	public List<CACell> getAreaCells() {
 		return areaCells;
 	}
 
@@ -203,7 +188,7 @@ public class CAShape {
 	 * 
 	 * @return Collection of outline cells.
 	 */
-	public ArrayList<CACellShaped> getOutlineCells() {
+	public List<CACell> getOutlineCells() {
 		return outlineCells;
 	}
 
@@ -229,7 +214,33 @@ public class CAShape {
 
 	public String toString() {
 		return "(Shape) [area: " + getArea() + "]";
-		// return "(Shape) [area: " + area + ", left: " + left + ", top: " + top
+		// return "(Shape) [area: " + getArea() + ", left: " + left + ", top: "
+		// + top
 		// + ", right: " + right + ", bottom: " + bottom + "]\n";
 	}
+
+	/**
+	 * Places shapes in order of area size. Guarantees that shapes of identical
+	 * size can coexist in a set of unique shapes.
+	 */
+	@Override
+	public int compareTo(CAShape arg0) {
+		if (this == arg0) {
+			return 0;
+		} else if (getArea() >= arg0.getArea()) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+
+	/** Attempt to free memory allocated to this shape. */
+	public void destroy() {
+		areaCells = null;
+		outlineCells = null;
+		destroyed = true;
+	}
+
+	/** Flag for debugging. */
+	public boolean destroyed;
 }

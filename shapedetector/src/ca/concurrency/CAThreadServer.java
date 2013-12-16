@@ -2,6 +2,7 @@ package ca.concurrency;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import ca.CA;
 import ca.CACell;
 
 /**
@@ -10,6 +11,8 @@ import ca.CACell;
  * @author Sean
  */
 public class CAThreadServer extends Thread {
+	/** Reference to the CA that spawned this server. */
+	CA ca;
 	/** States whether the server is waiting for input. */
 	protected volatile boolean active;
 	/** The number of threads to be used by default. */
@@ -29,7 +32,8 @@ public class CAThreadServer extends Thread {
 	/**
 	 * Creates server with default number of threads.
 	 */
-	public CAThreadServer() {
+	public CAThreadServer(CA ca) {
+		this.ca = ca;
 		init(defaultThreads);
 	}
 
@@ -39,7 +43,8 @@ public class CAThreadServer extends Thread {
 	 * @param numThreads
 	 *            Number of threads to create.
 	 */
-	public CAThreadServer(int numThreads) {
+	public CAThreadServer(CA ca, int numThreads) {
+		this.ca = ca;
 		init(numThreads);
 	}
 
@@ -87,6 +92,16 @@ public class CAThreadServer extends Thread {
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}
+	}
+
+	/**
+	 * Updates specified cell.
+	 * 
+	 * @param cell
+	 *            Cell to update.
+	 */
+	public void updateCell(CACell cell) {
+		ca.updateCell(cell);
 	}
 
 	/**
