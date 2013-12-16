@@ -183,7 +183,7 @@ public class CA {
 	}
 
 	/**
-	 * Set the picture to process and process it by updating cells until they
+	 * Sets the picture to process and processes it by updating cells until they
 	 * are all done (that is, until they all become inactive).
 	 * 
 	 * @param picture
@@ -192,21 +192,21 @@ public class CA {
 	 */
 	public Picture apply(Picture picture) {
 		setPicture(picture);
-		stopwatch.start();
 
 		active = true;
 		while (active) {
-			System.out.println("Pass #" + (passes + 1));
+			stopwatch.start();
 			updateModel();
 			endPass();
+			System.out.println(this.getClass().getSimpleName() + " pass #"
+					+ passes + ", elapsed time: " + stopwatch.time() + " ms");
 		}
 
-		stopwatch.print(this.getClass().getSimpleName() + " running time: ");
 		return pictureAfter;
 	}
 
 	/**
-	 * Give cells to the thread server for them to process as a number of
+	 * Hands cells to the thread server for them to process as a number of
 	 * separate threads.
 	 * <p>
 	 * Redraws the picture on screen after each pass and sets pictureBefore to
@@ -233,7 +233,7 @@ public class CA {
 	}
 
 	/**
-	 * This is where the cell update rule is defined.
+	 * Where the cell update rule is defined.
 	 * <p>
 	 * Subclasses should extend this. Public because it is called from
 	 * CAThreadServer. Cell neighbourhoods are loaded as each cell updates, so
@@ -295,7 +295,7 @@ public class CA {
 	}
 
 	/**
-	 * Sets the colour of the pixel corresponding to the cell.
+	 * Gets the colour of the pixel corresponding to the cell.
 	 * 
 	 * @param cell
 	 *            The cell to get the colour of.
@@ -307,7 +307,7 @@ public class CA {
 	}
 
 	/**
-	 * Gets the number of times this CAModel has processed its cells.
+	 * Gets the number of times this CA has processed its cells.
 	 * 
 	 * @return The number of passes.
 	 */

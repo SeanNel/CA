@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import bag.Bag;
+
 import ca.CACell;
 
 /**
@@ -50,13 +52,17 @@ public class CAShape implements Comparable<CAShape> {
 	/**
 	 * Creates a new shape associated with the specified cell. Assumes that the
 	 * cell is mapped to this shape.
+	 * <p>
+	 * Shape-finding performance could be improved dramatically by using a
+	 * linked list implementation that offers O(1) time for the addAll method.
 	 * 
 	 * @see CAShaped::shapeTable.
+	 * @see Bag
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
 	public CAShape(CACell cell) {
-		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
+		areaCells = Collections.synchronizedList(new ArrayList<CACell>()); // Bag
 		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
 		int[] coordinates = cell.getCoordinates();
 		left = right = coordinates[0];
@@ -67,6 +73,9 @@ public class CAShape implements Comparable<CAShape> {
 
 	/**
 	 * Transfers all cells from the specified shape to the current shape.
+	 * <p>
+	 * Updates the shape boundaries at the same time, since this takes almost no
+	 * time to do.
 	 * 
 	 * @param shape
 	 *            Shape to merge with.
@@ -88,7 +97,6 @@ public class CAShape implements Comparable<CAShape> {
 			bottom = shape.bottom;
 		}
 		areaCells.addAll(shape.getAreaCells());
-
 		/*
 		 * It is necessary to free up memory or there will soon be no space left
 		 * on the heap.
@@ -225,8 +233,7 @@ public class CAShape implements Comparable<CAShape> {
 	public String toString() {
 		return "(Shape) [hash: " + hashCode() + ", area: " + getArea() + "]";
 		// return "(Shape) [area: " + getArea() + ", left: " + left + ", top: "
-		// + top
-		// + ", right: " + right + ", bottom: " + bottom + "]\n";
+		// + top + ", right: " + right + ", bottom: " + bottom + "]\n";
 	}
 
 	/**
@@ -273,7 +280,8 @@ public class CAShape implements Comparable<CAShape> {
 	/**
 	 * Gets this shape's average colour.
 	 * 
-	 * @return Boolean value indicating whether shape should revalidate.
+	 * @return Boolean value indicating whether shape should revalidate, that is
+	 *         whether its average colour should be recalculated.
 	 */
 	public boolean getValidate() {
 		return validate;

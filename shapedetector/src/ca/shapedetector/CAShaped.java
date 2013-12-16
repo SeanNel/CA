@@ -10,7 +10,6 @@ import java.util.List;
 import std.Picture;
 import ca.CACell;
 import ca.CA;
-import ca.concurrency.CAShapeMergerThread;
 
 /**
  * A cellular automaton that maintains groups of cells attached to CAShapes.
@@ -27,8 +26,9 @@ public class CAShaped extends CA {
 	protected CAShape[][] shapeAssociations;
 	/** List of unique shapes. */
 	protected List<CAShape> shapes;
-	/** Separate thread that merges shapes while cells continue updating. */
-	CAShapeMergerThread shapeMergerThread;
+
+	// /** Performance profiling timers. */
+	// public Stopwatch[] timers = new Stopwatch[5];
 
 	/**
 	 * Constructor. Sets neighbourhoodModel to VANNEUMANN_NEIGHBOURHOOD.
@@ -41,6 +41,11 @@ public class CAShaped extends CA {
 	public CAShaped(float epsilon) {
 		super(epsilon, 1);
 		neighbourhoodModel = VANNEUMANN_NEIGHBOURHOOD; /* NB */
+
+		// for (int i = 0; i < 5; i++) {
+		// timers[i] = new Stopwatch();
+		// timers[i].pause();
+		// }
 	}
 
 	@Override
@@ -104,6 +109,11 @@ public class CAShaped extends CA {
 
 	/**
 	 * Gets the average colour of a shape. Used on the 3rd pass.
+	 * <p>
+	 * This is calculated here instead of from CAShape because for that to be
+	 * possible, a reference to the CA has to be stored in each shape. When
+	 * there are thousands of shapes, this extra memory use can become
+	 * significant.
 	 * 
 	 * @return Average colour.
 	 */
@@ -140,16 +150,6 @@ public class CAShaped extends CA {
 	 */
 	public List<CAShape> getShapes() {
 		return shapes;
-	}
-
-	@Override
-	protected void updateModel() {
-		shapeMergerThread = new CAShapeMergerThread(this);
-		shapeMergerThread.start();
-		super.updateModel();
-		shapeMergerThread.finish();
-		synchronized (shapeMergerThread) {
-		}
 	}
 
 	/**
@@ -201,18 +201,6 @@ public class CAShaped extends CA {
 				newShape.merge(oldShape);
 			}
 		}
-	}
-
-	/**
-	 * Merges 2 cell's shapes together later.
-	 * 
-	 * @param shape
-	 *            1st cell to merge with.
-	 * @param shape
-	 *            2nd cell to merge with.
-	 */
-	protected void enqueueMerger(CACell cell1, CACell cell2) {
-		shapeMergerThread.enqueue(cell1, cell2);
 	}
 
 	/**
