@@ -51,7 +51,7 @@ public class CANoiseRemover extends CA {
 			setColour(cell, averageColour);
 		}
 
-		cell.setState(CACell.INACTIVE);
+		// cell.setState(CACell.INACTIVE);
 	}
 
 }

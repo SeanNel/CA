@@ -53,8 +53,8 @@ public class CAClient {
 		picture.setOriginUpperLeft();
 
 		picture = preparePicture(picture);
-		picture = findEdges(picture);
-//		 picture = detectShapes(picture);
+		 picture = findEdges(picture);
+		picture = detectShapes(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
 		StdDraw.picture(0.5, 0.5, picture.getImage());
@@ -108,7 +108,7 @@ public class CAClient {
 	 * @return Picture displaying where shapes were found.
 	 */
 	protected Picture detectShapes(Picture picture) {
-		CAShapeDetector caShapeDetector = new CAShapeDetector(0.02f);
+		CAShapeDetector caShapeDetector = new CAShapeDetector(0.005f);
 		picture = caShapeDetector.apply(picture);
 		caShapeDetector.printSummary();
 		return picture;

@@ -1,12 +1,15 @@
 package ca.shapedetector;
 
+import graphics.ColourCompare;
+
+import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import std.Picture;
 import ca.CACell;
 import ca.CA;
-import ca.Stopwatch;
 import ca.concurrency.CAShapeMergerThread;
 
 /**
@@ -16,12 +19,14 @@ import ca.concurrency.CAShapeMergerThread;
  * @author Sean
  */
 public class CAShaped extends CA {
+	/**
+	 * Colour that displays the position of shape centroids.
+	 */
+	public final static Color CENTROID_COLOUR = new Color(0, 255, 0);
 	/** Table mapping cells to shapes. */
 	protected CAShape[][] shapeAssociations;
 	/** List of unique shapes. */
 	protected List<CAShape> shapes;
-	/** Shapes with areas smaller than this will be ignored. */
-	protected int minArea = 16;
 	/** Separate thread that merges shapes while cells continue updating. */
 	CAShapeMergerThread shapeMergerThread;
 
@@ -42,7 +47,7 @@ public class CAShaped extends CA {
 	public void setPicture(Picture picture) {
 		super.setPicture(picture);
 		shapeAssociations = new CAShape[picture.width()][picture.height()];
-		shapes = new ArrayList<CAShape>(); // Collections.synchronizedList(
+		shapes = Collections.synchronizedList(new ArrayList<CAShape>());
 		/* TODO: do this later in parallel */
 		for (int x = 0; x < cells.length; x++) {
 			for (int y = 0; y < cells[0].length; y++) {
@@ -67,7 +72,52 @@ public class CAShaped extends CA {
 	 *            Picture to draw to.
 	 */
 	public Picture pointOutShapes(Picture picture) {
+		for (CAShape shape : shapes) {
+			Color averageColour = getShapeAverageColour(shape);
+
+			drawShape(shape, Color.red, averageColour);
+		}
 		return picture;
+	}
+
+	/**
+	 * Draws shape with specified colours.
+	 * 
+	 * @param shape
+	 *            The shape to draw.
+	 * @param outlineColour
+	 *            Outline colour.
+	 * @param fillColour
+	 *            Fill colour.
+	 */
+	public void drawShape(CAShape shape, Color outlineColour, Color fillColour) {
+		for (CACell cell : shape.getAreaCells()) {
+			setColour(cell, fillColour);
+		}
+		for (CACell cell : shape.getOutlineCells()) {
+			setColour(cell, outlineColour);
+		}
+
+		// setColour(getCell(shape.centroidX(), shape.centroidY()),
+		// CENTROID_COLOUR);
+	}
+
+	/**
+	 * Gets the average colour of a shape. Used on the 3rd pass.
+	 * 
+	 * @return Average colour.
+	 */
+	public Color getShapeAverageColour(CAShape shape) {
+		synchronized (shape) {
+			if (shape.getValidate()) {
+				Color[] colours = new Color[shape.getAreaCells().size()];
+				for (int i = 0; i < colours.length; i++) {
+					colours[i] = getColour(shape.getAreaCells().get(i));
+				}
+				shape.setColour(ColourCompare.averageColour(colours));
+			}
+			return shape.getColour();
+		}
 	}
 
 	/**
@@ -110,12 +160,8 @@ public class CAShaped extends CA {
 	 * @param cell2
 	 *            2nd cell to merge with.
 	 */
-	public void mergeCells(CACell cell1, CACell cell2) {
-		synchronized (cell1) {
-			synchronized (cell2) {
-				mergeShapes(getShape(cell1), getShape(cell2));
-			}
-		}
+	public synchronized void mergeCells(CACell cell1, CACell cell2) {
+		mergeShapes(getShape(cell1), getShape(cell2));
 	}
 
 	/**
@@ -131,19 +177,30 @@ public class CAShaped extends CA {
 		if (shape1 == shape2) {
 			return; /* NB */
 		}
-		// Stopwatch s = new Stopwatch();
 		synchronized (shape1) {
 			synchronized (shape2) {
-				for (CACell cell : shape1.getAreaCells()) {
-					setShape(cell, shape2);
+				/*
+				 * Improves efficiency by merging the smaller shape into the
+				 * larger shape.
+				 */
+				CAShape newShape;
+				CAShape oldShape;
+				if (shape1.getArea() > shape2.getArea()) {
+					newShape = shape1;
+					oldShape = shape2;
+				} else {
+					newShape = shape2;
+					oldShape = shape1;
 				}
-				shapes.remove(shape1);
-				shape2.merge(shape1);
+
+				for (CACell cell : oldShape.getAreaCells()) {
+					setShape(cell, newShape);
+				}
+				/* Must be removed before merging. */
+				shapes.remove(oldShape);
+				newShape.merge(oldShape);
 			}
 		}
-
-		// if (s.time() > 10)
-		// s.print();
 	}
 
 	/**

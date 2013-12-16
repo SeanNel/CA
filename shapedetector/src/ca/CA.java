@@ -196,6 +196,7 @@ public class CA {
 
 		active = true;
 		while (active) {
+			System.out.println("Pass #" + (passes + 1));
 			updateModel();
 			endPass();
 		}

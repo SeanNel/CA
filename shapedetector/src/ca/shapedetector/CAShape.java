@@ -1,6 +1,8 @@
 package ca.shapedetector;
 
+import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import ca.CACell;
@@ -34,6 +36,11 @@ public class CAShape implements Comparable<CAShape> {
 	/** The top x-coordinate of this shape. */
 	int right;
 
+	/** Average colour of shape's area cells. */
+	protected Color colour;
+	/** Signals that shape should update its averageColour. */
+	protected boolean validate;
+
 	/**
 	 * Singleton constructor.
 	 */
@@ -49,12 +56,13 @@ public class CAShape implements Comparable<CAShape> {
 	 *            A cell that is to belong to the shape.
 	 */
 	public CAShape(CACell cell) {
-		areaCells = new ArrayList<CACell>();
-		outlineCells = new ArrayList<CACell>();
+		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
+		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
 		int[] coordinates = cell.getCoordinates();
 		left = right = coordinates[0];
 		top = bottom = coordinates[1];
 		areaCells.add(cell);
+		validate = true;
 	}
 
 	/**
@@ -63,7 +71,9 @@ public class CAShape implements Comparable<CAShape> {
 	 * @param shape
 	 *            Shape to merge with.
 	 */
-	public synchronized void merge(CAShape shape) {
+	public void merge(CAShape shape) {
+		validate = true;
+
 		if (shape.left < left) {
 			left = shape.left;
 		}
@@ -77,15 +87,13 @@ public class CAShape implements Comparable<CAShape> {
 		if (shape.bottom > bottom) {
 			bottom = shape.bottom;
 		}
-		synchronized (shape) {
-			areaCells.addAll(shape.getAreaCells());
+		areaCells.addAll(shape.getAreaCells());
 
-			/*
-			 * It is necessary to free up memory or there will soon be no space
-			 * left on the heap.
-			 */
-			shape.destroy();
-		}
+		/*
+		 * It is necessary to free up memory or there will soon be no space left
+		 * on the heap.
+		 */
+		shape.destroy();
 	}
 
 	/**
@@ -95,7 +103,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * @param cell
 	 *            Cell to add.
 	 */
-	public synchronized void addOutlineCell(CACell cell) {
+	public void addOutlineCell(CACell cell) {
 		outlineCells.add(cell);
 	}
 
@@ -180,7 +188,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Collection of area cells.
 	 */
-	public synchronized List<CACell> getAreaCells() {
+	public List<CACell> getAreaCells() {
 		return areaCells;
 	}
 
@@ -190,7 +198,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Collection of outline cells.
 	 */
-	public synchronized List<CACell> getOutlineCells() {
+	public List<CACell> getOutlineCells() {
 		return outlineCells;
 	}
 
@@ -200,7 +208,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Perimeter of the shape.
 	 */
-	public synchronized int getArea() {
+	public int getArea() {
 		return areaCells.size();
 	}
 
@@ -210,7 +218,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Perimeter of the shape.
 	 */
-	public synchronized int getPerimeter() {
+	public int getPerimeter() {
 		return outlineCells.size();
 	}
 
@@ -237,12 +245,37 @@ public class CAShape implements Comparable<CAShape> {
 	}
 
 	/** Attempt to free memory allocated to this shape. */
-	public synchronized void destroy() {
+	public void destroy() {
 		areaCells = null;
 		outlineCells = null;
-		destroyed = true;
 	}
 
-	/** Flag for debugging. */
-	public boolean destroyed;
+	/**
+	 * Gets this shape's average colour.
+	 * 
+	 * @return Shape's average colour.
+	 */
+	public Color getColour() {
+		return colour;
+	}
+
+	/**
+	 * Sets this shape's average colour.
+	 * 
+	 * @param colour
+	 *            Colour to set to.
+	 */
+	public void setColour(Color colour) {
+		validate = false;
+		this.colour = colour;
+	}
+
+	/**
+	 * Gets this shape's average colour.
+	 * 
+	 * @return Boolean value indicating whether shape should revalidate.
+	 */
+	public boolean getValidate() {
+		return validate;
+	}
 }

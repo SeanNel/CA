@@ -40,11 +40,11 @@ public class CAEdgeFinder extends CA {
 
 	public void setEdge(CACell cell) {
 		setColour(cell, EDGE_COLOUR);
-		cell.setState(CACell.INACTIVE);
+		// cell.setState(CACell.INACTIVE);
 	}
 
 	public void setArea(CACell cell) {
 		setColour(cell, QUIESCENT_COLOUR);
-		cell.setState(CACell.INACTIVE);
+		// cell.setState(CACell.INACTIVE);
 	}
 }
