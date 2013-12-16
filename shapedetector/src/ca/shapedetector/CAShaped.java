@@ -1,12 +1,12 @@
 package ca.shapedetector;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import std.Picture;
 import ca.CACell;
 import ca.CA;
+import ca.Stopwatch;
 import ca.concurrency.CAShapeMergerThread;
 
 /**
@@ -18,8 +18,8 @@ import ca.concurrency.CAShapeMergerThread;
 public class CAShaped extends CA {
 	/** Table mapping cells to shapes. */
 	protected CAShape[][] shapeAssociations;
-	/** Set of unique shapes. */
-	protected Set<CAShape> shapes;
+	/** List of unique shapes. */
+	protected List<CAShape> shapes;
 	/** Shapes with areas smaller than this will be ignored. */
 	protected int minArea = 16;
 	/** Separate thread that merges shapes while cells continue updating. */
@@ -42,7 +42,7 @@ public class CAShaped extends CA {
 	public void setPicture(Picture picture) {
 		super.setPicture(picture);
 		shapeAssociations = new CAShape[picture.width()][picture.height()];
-		shapes = Collections.synchronizedSet(new TreeSet<CAShape>());
+		shapes = new ArrayList<CAShape>(); // Collections.synchronizedList(
 		/* TODO: do this later in parallel */
 		for (int x = 0; x < cells.length; x++) {
 			for (int y = 0; y < cells[0].length; y++) {
@@ -88,7 +88,7 @@ public class CAShaped extends CA {
 	/**
 	 * Gets the list of shapes found.
 	 */
-	public Set<CAShape> getShapes() {
+	public List<CAShape> getShapes() {
 		return shapes;
 	}
 
@@ -111,12 +111,9 @@ public class CAShaped extends CA {
 	 *            2nd cell to merge with.
 	 */
 	public void mergeCells(CACell cell1, CACell cell2) {
-		synchronized (cell1.lock) {
-			CAShape shape1 = getShape(cell1);
-			synchronized (shape1.lock) {
-				synchronized (cell2.lock) {
-					mergeShapes(shape1, getShape(cell2));
-				}
+		synchronized (cell1) {
+			synchronized (cell2) {
+				mergeShapes(getShape(cell1), getShape(cell2));
 			}
 		}
 	}
@@ -129,28 +126,23 @@ public class CAShaped extends CA {
 	 *            1st shape to merge with.
 	 * @param shape2
 	 *            2st shape to merge with.
-	 * @bug Synchronization problems.
 	 */
-	public void mergeShapes(CAShape shape1, CAShape shape2) {
+	protected void mergeShapes(CAShape shape1, CAShape shape2) {
+		if (shape1 == shape2) {
+			return; /* NB */
+		}
 		// Stopwatch s = new Stopwatch();
-		synchronized (shape1.lock) {
-			synchronized (shape2.lock) {
-				if (shape1.getAreaCells() == null) {
-					throw new RuntimeException(); /* << Synchronization problem */
-				}
-				synchronized (shapes) {
-					shapes.remove(shape1);
-				}
+		synchronized (shape1) {
+			synchronized (shape2) {
 				for (CACell cell : shape1.getAreaCells()) {
 					setShape(cell, shape2);
 				}
-				if (shape2.getAreaCells() == null) {
-					throw new RuntimeException(); /* << Synchronization problem */
-				}
+				shapes.remove(shape1);
 				shape2.merge(shape1);
-				shape1.destroy();
 			}
 		}
+
+		// if (s.time() > 10)
 		// s.print();
 	}
 
@@ -192,7 +184,7 @@ public class CAShaped extends CA {
 	}
 
 	/**
-	 * Print a summary of the detected shapes.
+	 * Prints a summary of the detected shapes.
 	 */
 	public void printSummary() {
 		System.out.println("Number of shapes: " + shapes.size());

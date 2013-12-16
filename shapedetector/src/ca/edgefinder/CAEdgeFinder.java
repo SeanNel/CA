@@ -25,8 +25,8 @@ public class CAEdgeFinder extends CA {
 		CACell[] neighbourhood = cell.getNeighbourhood();
 		for (int i = 0; i < neighbourhoodSize; i++) {
 			CACell neighbour = neighbourhood[i];
-			if (neighbour == paddingCell) {
-				break;
+			if (neighbour == cell || neighbour == paddingCell) {
+				continue;
 			}
 			float difference = ColourCompare.getDifference(getColour(cell),
 					getColour(neighbour));

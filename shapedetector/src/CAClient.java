@@ -54,7 +54,7 @@ public class CAClient {
 
 		picture = preparePicture(picture);
 		picture = findEdges(picture);
-		// picture = detectShapes(picture);
+//		 picture = detectShapes(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
 		StdDraw.picture(0.5, 0.5, picture.getImage());

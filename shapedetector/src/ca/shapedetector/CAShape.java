@@ -1,7 +1,6 @@
 package ca.shapedetector;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import ca.CACell;
@@ -35,8 +34,6 @@ public class CAShape implements Comparable<CAShape> {
 	/** The top x-coordinate of this shape. */
 	int right;
 
-	public final Object lock = new Object();
-
 	/**
 	 * Singleton constructor.
 	 */
@@ -47,12 +44,13 @@ public class CAShape implements Comparable<CAShape> {
 	 * Creates a new shape associated with the specified cell. Assumes that the
 	 * cell is mapped to this shape.
 	 * 
+	 * @see CAShaped::shapeTable.
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
 	public CAShape(CACell cell) {
-		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
-		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
+		areaCells = new ArrayList<CACell>();
+		outlineCells = new ArrayList<CACell>();
 		int[] coordinates = cell.getCoordinates();
 		left = right = coordinates[0];
 		top = bottom = coordinates[1];
@@ -65,24 +63,28 @@ public class CAShape implements Comparable<CAShape> {
 	 * @param shape
 	 *            Shape to merge with.
 	 */
-	public void merge(CAShape shape) {
-		synchronized (lock) {
-			synchronized (shape.lock) {
-				if (shape.left < left) {
-					left = shape.left;
-				}
-				if (shape.right > right) {
-					right = shape.right;
-				}
+	public synchronized void merge(CAShape shape) {
+		if (shape.left < left) {
+			left = shape.left;
+		}
+		if (shape.right > right) {
+			right = shape.right;
+		}
 
-				if (shape.top < top) {
-					top = shape.top;
-				}
-				if (shape.bottom > bottom) {
-					bottom = shape.bottom;
-				}
-				areaCells.addAll(shape.getAreaCells());
-			}
+		if (shape.top < top) {
+			top = shape.top;
+		}
+		if (shape.bottom > bottom) {
+			bottom = shape.bottom;
+		}
+		synchronized (shape) {
+			areaCells.addAll(shape.getAreaCells());
+
+			/*
+			 * It is necessary to free up memory or there will soon be no space
+			 * left on the heap.
+			 */
+			shape.destroy();
 		}
 	}
 
@@ -178,7 +180,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Collection of area cells.
 	 */
-	public List<CACell> getAreaCells() {
+	public synchronized List<CACell> getAreaCells() {
 		return areaCells;
 	}
 
@@ -188,7 +190,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Collection of outline cells.
 	 */
-	public List<CACell> getOutlineCells() {
+	public synchronized List<CACell> getOutlineCells() {
 		return outlineCells;
 	}
 
@@ -198,7 +200,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Perimeter of the shape.
 	 */
-	public int getArea() {
+	public synchronized int getArea() {
 		return areaCells.size();
 	}
 
@@ -208,12 +210,12 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Perimeter of the shape.
 	 */
-	public int getPerimeter() {
+	public synchronized int getPerimeter() {
 		return outlineCells.size();
 	}
 
 	public String toString() {
-		return "(Shape) [area: " + getArea() + "]";
+		return "(Shape) [hash: " + hashCode() + ", area: " + getArea() + "]";
 		// return "(Shape) [area: " + getArea() + ", left: " + left + ", top: "
 		// + top
 		// + ", right: " + right + ", bottom: " + bottom + "]\n";
@@ -235,7 +237,7 @@ public class CAShape implements Comparable<CAShape> {
 	}
 
 	/** Attempt to free memory allocated to this shape. */
-	public void destroy() {
+	public synchronized void destroy() {
 		areaCells = null;
 		outlineCells = null;
 		destroyed = true;

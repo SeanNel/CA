@@ -30,7 +30,7 @@ public class CANoiseRemover extends CA {
 		for (int i = 0; i < neighbourhoodSize; i++) {
 			CACell neighbour = neighbourhood[i];
 			if (neighbour == paddingCell) {
-				break;
+				continue;
 			}
 			Color colour = getColour(neighbour);
 			colours[i] = colour;

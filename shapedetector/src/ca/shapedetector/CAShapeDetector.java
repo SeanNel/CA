@@ -5,7 +5,6 @@ import graphics.ColourCompare;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeSet;
 
 import ca.CACell;
 
@@ -24,26 +23,17 @@ public class CAShapeDetector extends CAShaped {
 	 */
 	public final static Color OUTLINE_COLOUR = new Color(0, 0, 0);
 
-	List<Object> detectedShapes;
-	static int I = 0;
-
 	public CAShapeDetector(float epsilon) {
 		super(epsilon);
 	}
 
-	public void setPicture(Picture picture) {
-		detectedShapes = new ArrayList<Object>();
-		super.setPicture(picture);
-	}
-
 	public Picture pointOutShapes(Picture picture) {
-		System.out.println("I: " + I);
 		filter();
-		return picture;
+		return super.pointOutShapes(picture);
 	}
 
 	public void filter() {
-		TreeSet<CAShape> shapes = new TreeSet<CAShape>();
+		List<CAShape> shapes = new ArrayList<CAShape>();
 		for (CAShape shape : this.shapes) {
 			if (shape.getArea() >= minArea) {
 				shapes.add(shape);
@@ -66,16 +56,15 @@ public class CAShapeDetector extends CAShaped {
 		CACell[] neighbourhood = cell.getNeighbourhood();
 		for (int i = 0; i < neighbourhoodSize; i++) {
 			CACell neighbour = neighbourhood[i];
-			if (neighbour == paddingCell) {
-				break;
+			if (neighbour == cell || neighbour == paddingCell) {
+				continue;
 			}
 			if (passes == 0) {
 				float difference = ColourCompare.getDifference(getColour(cell),
 						getColour(neighbour));
 				if (difference < epsilon) {
-					// mergeShapes(getShape(cell), getShape(neighbour));
-					enqueueMerger(cell, neighbour);
-					I++;
+					// enqueueMerger(cell, neighbour);
+					mergeCells(cell, neighbour);
 				}
 				cell.setState(CACell.ACTIVE);
 			} else if (getShape(cell) != getShape(neighbour)) {

@@ -32,8 +32,6 @@ public class CACell {
 	protected CACell[] neighbourhood;
 
 	protected int[] coordinates;
-	
-	public final Object lock = new Object();
 
 	/**
 	 * Constructor.
@@ -111,6 +109,7 @@ public class CACell {
 	}
 
 	public String toString() {
-		return "(CACell) state=" + state;
+		return "(CACell) [x=" + coordinates[0] + ", y=" + coordinates[1]
+				+ ", state=" + state + "]";
 	}
 }
