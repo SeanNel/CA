@@ -3,13 +3,13 @@ package ca.shapedetector;
 import graphics.ColourCompare;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.awt.Graphics;
+import java.util.LinkedList;
 import java.util.List;
 
 import std.Picture;
-import ca.CACell;
 import ca.CA;
+import ca.CACell;
 
 /**
  * A cellular automaton that maintains groups of cells attached to CAShapes.
@@ -18,17 +18,17 @@ import ca.CA;
  * @author Sean
  */
 public class CAShaped extends CA {
-	/**
-	 * Colour that displays the position of shape centroids.
-	 */
-	public final static Color CENTROID_COLOUR = new Color(0, 255, 0);
 	/** Table mapping cells to shapes. */
 	protected CAShape[][] shapeAssociations;
 	/** List of unique shapes. */
 	protected List<CAShape> shapes;
 
-	// /** Performance profiling timers. */
-	// public Stopwatch[] timers = new Stopwatch[5];
+	// public long time1;
+	// public long time2;
+	// public long time3;
+
+	/* Used for more advanced drawing */
+	public Graphics graphics;
 
 	/**
 	 * Constructor. Sets neighbourhoodModel to VANNEUMANN_NEIGHBOURHOOD.
@@ -41,19 +41,21 @@ public class CAShaped extends CA {
 	public CAShaped(float epsilon) {
 		super(epsilon, 1);
 		neighbourhoodModel = VANNEUMANN_NEIGHBOURHOOD; /* NB */
-
-		// for (int i = 0; i < 5; i++) {
-		// timers[i] = new Stopwatch();
-		// timers[i].pause();
-		// }
 	}
 
 	@Override
 	public void setPicture(Picture picture) {
 		super.setPicture(picture);
 		shapeAssociations = new CAShape[picture.width()][picture.height()];
-		shapes = Collections.synchronizedList(new ArrayList<CAShape>());
-		/* TODO: do this later in parallel */
+		/*
+		 * LinkedList performs much better than ArrayList with its remove
+		 * method. Might have to make this Collections.synchronizedList(...);
+		 */
+		shapes = new LinkedList<CAShape>();
+		/*
+		 * Would it be better to do this later in parallel? Doesn't seem to take
+		 * much time anyway.
+		 */
 		for (int x = 0; x < cells.length; x++) {
 			for (int y = 0; y < cells[0].length; y++) {
 				CAShape shape = new CAShape(getCell(x, y));
@@ -64,47 +66,15 @@ public class CAShaped extends CA {
 	}
 
 	@Override
-	public Picture apply(Picture picture) {
-		Picture output = super.apply(picture);
-		output = pointOutShapes(output);
-		return output;
-	}
+	protected void endPass() {
+		super.endPass();
 
-	/**
-	 * Display where shapes were found in the picture.
-	 * 
-	 * @param picture
-	 *            Picture to draw to.
-	 */
-	public Picture pointOutShapes(Picture picture) {
-		for (CAShape shape : shapes) {
-			Color averageColour = getShapeAverageColour(shape);
-
-			drawShape(shape, Color.red, averageColour);
-		}
-		return picture;
-	}
-
-	/**
-	 * Draws shape with specified colours.
-	 * 
-	 * @param shape
-	 *            The shape to draw.
-	 * @param outlineColour
-	 *            Outline colour.
-	 * @param fillColour
-	 *            Fill colour.
-	 */
-	public void drawShape(CAShape shape, Color outlineColour, Color fillColour) {
-		for (CACell cell : shape.getAreaCells()) {
-			setColour(cell, fillColour);
-		}
-		for (CACell cell : shape.getOutlineCells()) {
-			setColour(cell, outlineColour);
-		}
-
-		// setColour(getCell(shape.centroidX(), shape.centroidY()),
-		// CENTROID_COLOUR);
+		// System.out.println("MERGING TIME 1: " + time1);
+		// System.out.println("MERGING TIME 2: " + time2);
+		// System.out.println("MERGING TIME 3: " + time3);
+		// time1 = 0;
+		// time2 = 0;
+		// time3 = 0;
 	}
 
 	/**
@@ -177,6 +147,7 @@ public class CAShaped extends CA {
 		if (shape1 == shape2) {
 			return; /* NB */
 		}
+		// Stopwatch stopwatch = new Stopwatch();
 		synchronized (shape1) {
 			synchronized (shape2) {
 				/*
@@ -197,8 +168,13 @@ public class CAShaped extends CA {
 					setShape(cell, newShape);
 				}
 				/* Must be removed before merging. */
+				// time1 += stopwatch.time();
+				// stopwatch.start();
 				shapes.remove(oldShape);
+				// time2 += stopwatch.time();
+				// stopwatch.start();
 				newShape.merge(oldShape);
+				// time3 += stopwatch.time();
 			}
 		}
 	}
@@ -226,13 +202,5 @@ public class CAShaped extends CA {
 	public void setShape(CACell cell, CAShape shape) {
 		int[] coordinates = cell.getCoordinates();
 		shapeAssociations[coordinates[0]][coordinates[1]] = shape;
-	}
-
-	/**
-	 * Prints a summary of the detected shapes.
-	 */
-	public void printSummary() {
-		System.out.println("Number of shapes: " + shapes.size());
-		// System.out.println(shapes);
 	}
 }

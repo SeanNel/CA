@@ -3,11 +3,12 @@ package ca.shapedetector;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-
-import bag.Bag;
+import java.util.Set;
 
 import ca.CACell;
+import ca.shapedetector.shapes.UnknownShape;
 
 /**
  * A shape made up of CACells.
@@ -20,28 +21,35 @@ public class CAShape implements Comparable<CAShape> {
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	List<CACell> areaCells;
+	protected List<CACell> areaCells;
 	/**
 	 * Collection of cells on the perimeter of this shape. This is a subset of
 	 * areaCells.
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	List<CACell> outlineCells;
+	protected List<CACell> outlineCells;
 
 	/** The top y-coordinate of this shape. */
-	int top;
+	protected int top;
 	/** The bottom y-coordinate of this shape. */
-	int bottom;
+	protected int bottom;
 	/** The left x-coordinate of this shape. */
-	int left;
+	protected int left;
 	/** The top x-coordinate of this shape. */
-	int right;
+	protected int right;
 
 	/** Average colour of shape's area cells. */
 	protected Color colour;
 	/** Signals that shape should update its averageColour. */
 	protected boolean validate;
+
+	/** List of recognizable shapes. */
+	protected static Set<CAShape> recognizedShapes = new HashSet<CAShape>();
+	/** A shape that fails to be recognized. */
+	public static final CAShape indeterminate = new CAShape();
+	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
+	public float tolerance = 0.2f;
 
 	/**
 	 * Singleton constructor.
@@ -52,23 +60,48 @@ public class CAShape implements Comparable<CAShape> {
 	/**
 	 * Creates a new shape associated with the specified cell. Assumes that the
 	 * cell is mapped to this shape.
-	 * <p>
-	 * Shape-finding performance could be improved dramatically by using a
-	 * linked list implementation that offers O(1) time for the addAll method.
 	 * 
 	 * @see CAShaped::shapeTable.
-	 * @see Bag
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
 	public CAShape(CACell cell) {
-		areaCells = Collections.synchronizedList(new ArrayList<CACell>()); // Bag
+		colour = Color.white;
+		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
 		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
 		int[] coordinates = cell.getCoordinates();
 		left = right = coordinates[0];
 		top = bottom = coordinates[1];
 		areaCells.add(cell);
 		validate = true;
+	}
+
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param shape
+	 *            The shape to make a copy of.
+	 */
+	public CAShape(CAShape shape) {
+		areaCells = shape.areaCells;
+		outlineCells = shape.outlineCells;
+		left = shape.left;
+		right = shape.right;
+		top = shape.top;
+		bottom = shape.bottom;
+		colour = shape.colour;
+		validate = shape.validate;
+		tolerance = shape.tolerance;
+	}
+
+	/**
+	 * Add a shape to the list of recognizable shapes.
+	 * 
+	 * @param shape
+	 *            Shape to add.
+	 */
+	public static void addShape(CAShape shape) {
+		recognizedShapes.add(shape);
 	}
 
 	/**
@@ -217,7 +250,11 @@ public class CAShape implements Comparable<CAShape> {
 	 * @return Perimeter of the shape.
 	 */
 	public int getArea() {
-		return areaCells.size();
+		if (areaCells == null) {
+			return 0;
+		} else {
+			return areaCells.size();
+		}
 	}
 
 	/**
@@ -227,11 +264,16 @@ public class CAShape implements Comparable<CAShape> {
 	 * @return Perimeter of the shape.
 	 */
 	public int getPerimeter() {
-		return outlineCells.size();
+		if (outlineCells == null) {
+			return 0;
+		} else {
+			return outlineCells.size();
+		}
 	}
 
 	public String toString() {
-		return "(Shape) [hash: " + hashCode() + ", area: " + getArea() + "]";
+		return "(" + this.getClass().getSimpleName() + ") [hash: " + hashCode()
+				+ ", area: " + getArea() + "]";
 		// return "(Shape) [area: " + getArea() + ", left: " + left + ", top: "
 		// + top + ", right: " + right + ", bottom: " + bottom + "]\n";
 	}
@@ -285,5 +327,37 @@ public class CAShape implements Comparable<CAShape> {
 	 */
 	public boolean getValidate() {
 		return validate;
+	}
+
+	/**
+	 * Requests this CAShape to determine what shape it is, such as a rectangle,
+	 * circle and so on.
+	 * 
+	 * @return A subclass of CAShape corresponding to the shape found.
+	 */
+	public CAShape identify() {
+		for (CAShape shape : recognizedShapes) {
+			CAShape detectedShape = shape.detect(this);
+			if (detectedShape != null) {
+				return detectedShape;
+			}
+		}
+		return new UnknownShape(this);
+	}
+
+	/**
+	 * Determines whether the given parameters describe this shape.
+	 * <p>
+	 * Subclasses should extend this. It would have been nice to define this
+	 * method static but Java does not allow inheritance of static methods.
+	 * 
+	 * @param shape
+	 *            An unidentified shape.
+	 * @return An instance of the detected shape if detected or indeterminate
+	 *         otherwise.
+	 */
+	public CAShape detect(CAShape shape) {
+		/* Method stub */
+		return null;
 	}
 }

@@ -53,7 +53,7 @@ public class CAClient {
 		picture.setOriginUpperLeft();
 
 		picture = preparePicture(picture);
-		 picture = findEdges(picture);
+		picture = findEdges(picture);
 		picture = detectShapes(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
@@ -110,7 +110,6 @@ public class CAClient {
 	protected Picture detectShapes(Picture picture) {
 		CAShapeDetector caShapeDetector = new CAShapeDetector(0.005f);
 		picture = caShapeDetector.apply(picture);
-		caShapeDetector.printSummary();
 		return picture;
 	}
 }

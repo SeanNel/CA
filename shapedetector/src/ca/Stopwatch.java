@@ -27,7 +27,7 @@ public class Stopwatch {
 
 	/** Pauses timer. */
 	public void pause() {
-		additionalTime = time();
+		additionalTime += time();
 		running = false;
 	}
 
@@ -43,42 +43,28 @@ public class Stopwatch {
 	 * @return Time elapsed since timer was started.
 	 */
 	public long time() {
-		return System.currentTimeMillis() - timer + additionalTime;
+		if (running) {
+			return System.currentTimeMillis() - timer + additionalTime;
+		} else {
+			return additionalTime;
+		}
 	}
 
 	/**
 	 * Prints time elapsed without resetting timer.
-	 * 
-	 * @param label
-	 *            Specifies a text label to give context to the output message.
-	 */
-	public void printLap(String label) {
-		System.out.println(label + time() + " ms");
-	}
-
-	/**
-	 * Prints time elapsed without resetting timer.
-	 */
-	public void printLap() {
-		System.out.println("time: " + time() + " ms");
-	}
-
-	/**
-	 * Prints time elapsed and resets timer.
 	 * 
 	 * @param label
 	 *            Specifies a text label to give context to the output message.
 	 */
 	public void print(String label) {
-		printLap(label);
-		start();
+		System.out.print(label);
+		print();
 	}
 
 	/**
-	 * Prints time elapsed and resets timer.
+	 * Prints time elapsed without resetting timer.
 	 */
 	public void print() {
-		printLap();
-		start();
+		System.out.println(time() + " ms");
 	}
 }
