@@ -3,15 +3,16 @@ package ca.shapedetector;
 import graphics.ColourCompare;
 
 import java.awt.Color;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import std.Picture;
 
 import ca.CACell;
 import ca.Stopwatch;
-import ca.shapedetector.shapes.Rectangle;
-import ca.shapedetector.shapes.UnknownShape;
+import ca.shapedetector.shapes.CARectangle;
+import ca.shapedetector.shapes.CASquare;
+import ca.shapedetector.shapes.CAUnknownShape;
 
 /**
  * Finds shapes in an image.
@@ -53,7 +54,8 @@ public class CAShapeDetector extends CAShaped {
 	public CAShapeDetector(float epsilon) {
 		super(epsilon);
 		/* TODO: Add more shapes. */
-		CAShape.addShape(new Rectangle());
+		CAShape.addShape(new CASquare());
+		CAShape.addShape(new CARectangle());
 	}
 
 	@Override
@@ -71,23 +73,34 @@ public class CAShapeDetector extends CAShaped {
 		Stopwatch stopwatch = new Stopwatch();
 		long t1 = 0;
 		long t2 = 0;
+		long t3 = 0;
+		List<CAShape> shapes = new LinkedList<CAShape>(this.shapes);
+		for (CAShape shape : shapes) {
+			/* Assimilates insignificant shapes into neighbouring ones. */
+			if (shape.getArea() < minArea) {
+				assimilateShape(shape);
+			}
+		}
+		this.shapes = shapes;
+		t1 = stopwatch.time();
+		shapes = new LinkedList<CAShape>();
 
-		List<CAShape> shapes = new ArrayList<CAShape>();
 		for (CAShape shape : this.shapes) {
-			/* Calculate gradients. */
+			/* Calculates gradients. */
 			stopwatch.start();
 			shape.calculateGradients();
 			t1 += stopwatch.time();
 
-			/* Identify shapes. */
+			/* Identifies shapes. */
 			stopwatch.start();
 			shapes.add(shape.identify());
 			t2 += stopwatch.time();
 		}
 		this.shapes = shapes;
 
-		System.out.println("Calculated gradients: " + t1 + " ms");
-		System.out.println("Identified shapes: " + t2 + " ms");
+		System.out.println("Assimilated shapes: " + t1 + " ms");
+		System.out.println("Calculated gradients: " + t2 + " ms");
+		System.out.println("Identified shapes: " + t3 + " ms");
 	}
 
 	/**
@@ -103,7 +116,7 @@ public class CAShapeDetector extends CAShaped {
 		System.out.println("Detected shapes: ");
 		for (CAShape shape : shapes) {
 			/* using instanceof does not seem to work here. */
-			if (shape.getClass() != UnknownShape.class) {
+			if (shape.getClass() != CAUnknownShape.class) {
 				System.out.println(shape);
 				shape.setColour(new Color(240, 250, 250));
 				drawShape(shape, Color.green);
@@ -144,14 +157,15 @@ public class CAShapeDetector extends CAShaped {
 	public void drawLabel(CAShape shape, Color colour) {
 		graphics.setColor(colour);
 		graphics.drawString(shape.getClass().getSimpleName(),
-				shape.centroidX(), shape.centroidY() - 5);
+				shape.getCentroidX(), shape.getCentroidY() - 5);
 
-		graphics.drawString("w=" + shape.width() + ", h=" + shape.height(),
-				shape.centroidX(), shape.centroidY() + 15);
+		graphics.drawString(
+				"w=" + shape.getWidth() + ", h=" + shape.getHeight(),
+				shape.getCentroidX(), shape.getCentroidY() + 15);
 	}
 
 	/**
-	 * Draws the centroid of the shape in the specified colour.
+	 * Draws an x at the centroid of the shape in the specified colour.
 	 * 
 	 * @param shape
 	 *            Shape of which to draw the centroid.
@@ -159,11 +173,15 @@ public class CAShapeDetector extends CAShaped {
 	 *            Centroid colour.
 	 */
 	public void drawCentroid(CAShape shape, Color colour) {
-		setColour(getCell(shape.centroidX() - 1, shape.centroidY() - 1), colour);
-		setColour(getCell(shape.centroidX() + 1, shape.centroidY() - 1), colour);
-		setColour(getCell(shape.centroidX(), shape.centroidY()), colour);
-		setColour(getCell(shape.centroidX() - 1, shape.centroidY() + 1), colour);
-		setColour(getCell(shape.centroidX() + 1, shape.centroidY() + 1), colour);
+		setColour(getCell(shape.getCentroidX() - 1, shape.getCentroidY() - 1),
+				colour);
+		setColour(getCell(shape.getCentroidX() + 1, shape.getCentroidY() - 1),
+				colour);
+		setColour(getCell(shape.getCentroidX(), shape.getCentroidY()), colour);
+		setColour(getCell(shape.getCentroidX() - 1, shape.getCentroidY() + 1),
+				colour);
+		setColour(getCell(shape.getCentroidX() + 1, shape.getCentroidY() + 1),
+				colour);
 	}
 
 	@Override
@@ -173,6 +191,7 @@ public class CAShapeDetector extends CAShaped {
 			initCell(cell);
 			findEdges(cell);
 			active = true;
+			break;
 		case 1:
 			/* Necessary to init if pass 1 was skipped. */
 			initCell(cell);
@@ -181,9 +200,11 @@ public class CAShapeDetector extends CAShaped {
 			break;
 		case 2:
 			findOutlines(cell);
-			active = true;
-		case 3:
-			assimilateInsignificantShapes(cell);
+			// active = true;
+			// break;
+			// case 3:
+			// assimilateInsignificantShapes(cell);
+			break;
 		}
 		// System.out.println(cell);
 	}
@@ -252,6 +273,12 @@ public class CAShapeDetector extends CAShaped {
 
 			if (getShape(cell) != getShape(neighbour)) {
 				getShape(cell).addOutlineCell(cell);
+			} else {
+				/*
+				 * This excludes area cells from the next step, which is
+				 * assimilating small shapes into bigger ones.
+				 */
+				cell.setState(CACell.INACTIVE);
 			}
 			/*
 			 * Note that the shape's areaCell collection already contains this
@@ -261,12 +288,82 @@ public class CAShapeDetector extends CAShaped {
 	}
 
 	/**
-	 * Assimilates insignificant shapes into neighbouring shapes.
+	 * Assimilates the specified shape into a neighbouring shape if it is too
+	 * small to be of importance.
+	 * 
+	 * @param shape
+	 *            Shape to assimilate.
+	 */
+	public void assimilateShape(CAShape shape) {
+		/** A list of all the shapes next to this one. */
+		List<CAShape> neighbouringShapes = new LinkedList<CAShape>();
+
+		/* Gathers all the shapes next to this one. */
+		for (CACell cell : shape.getOutlineCells()) {
+			CACell[] neighbourhood = cell.getNeighbourhood();
+
+			for (int i = 0; i < neighbourhoodSize; i++) {
+				CACell neighbour = neighbourhood[i];
+				CAShape neighbouringShape = getShape(neighbour);
+				if (neighbour == cell || neighbour == paddingCell
+						|| neighbouringShape == shape) {
+					continue;
+				}
+
+				neighbouringShapes.add(neighbouringShape);
+			}
+		}
+
+		/** This gives the least difference to a neighbouring shape. */
+		float minDifference = 2f;
+		/**
+		 * A representative shape from the neighbouring shape most similar to
+		 * this shape.
+		 * <p>
+		 * Referencing a representative cell of the shape instead of the shape
+		 * itself helps avoid synchronization issues.
+		 */
+		CACell similarCell = null;
+
+		/*
+		 * Find a representative cell from the shape next to this one that is
+		 * most similar to this shape.
+		 */
+		for (CAShape neighbouringShape : neighbouringShapes) {
+			Color colour1 = getShapeAverageColour(shape);
+			Color colour2;
+			// synchronized (neighbouringShape) {
+			colour2 = getShapeAverageColour(neighbouringShape);
+			// }
+			float difference = ColourCompare.getDifference(colour1, colour2);
+			if (difference < minDifference) {
+				minDifference = difference;
+				similarCell = neighbouringShape.areaCells.get(0);
+			}
+		}
+
+		/*
+		 * Merging representative cells of the two shapes instead of the shapes
+		 * themselves helps avoid synchronization issues.
+		 */
+		mergeCells(shape.areaCells.get(0), similarCell);
+	}
+
+	/**
+	 * Assimilates insignificant shapes into neighbouring shapes on a cell by
+	 * cell basis.
+	 * <p>
+	 * This method seems to be inferior to the assimilateShape method.
 	 * 
 	 * @param cell
 	 *            Cell to update.
 	 */
 	public void assimilateInsignificantShapes(CACell cell) {
+		CAShape shape = getShape(cell);
+		if (getShape(cell).getArea() >= minArea) {
+			return;
+		}
+
 		/** This gives the least difference to a neighbouring shape. */
 		float minDifference = 2f;
 		/**
@@ -282,13 +379,13 @@ public class CAShapeDetector extends CAShaped {
 			if (neighbour == cell || neighbour == paddingCell) {
 				continue;
 			}
-
-			if (getShape(cell).getArea() >= minArea) {
-				return;
-			}
 			CAShape neighbouringShape = getShape(neighbour);
-			if (getShape(cell) != neighbouringShape) {
-				Color colour1 = getShapeAverageColour(getShape(cell));
+			if (neighbouringShape == shape) {
+				continue;
+			}
+
+			if (shape != neighbouringShape) {
+				Color colour1 = getShapeAverageColour(shape);
 				Color colour2;
 				synchronized (neighbouringShape) {
 					colour2 = getShapeAverageColour(neighbouringShape);

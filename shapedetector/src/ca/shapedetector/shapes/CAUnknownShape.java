@@ -7,11 +7,11 @@ import ca.shapedetector.CAShape;
  * 
  * @author Sean
  */
-public class UnknownShape extends CAShape {
-	public UnknownShape() {
+public class CAUnknownShape extends CAShape {
+	public CAUnknownShape() {
 	}
 	
-	public UnknownShape(CAShape shape) {
+	public CAUnknownShape(CAShape shape) {
 		super(shape);
 	}
 }

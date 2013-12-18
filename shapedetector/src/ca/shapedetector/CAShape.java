@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import ca.CACell;
-import ca.shapedetector.shapes.UnknownShape;
+import ca.shapedetector.shapes.CAUnknownShape;
 
 /**
  * A shape made up of CACells.
@@ -48,8 +48,6 @@ public class CAShape implements Comparable<CAShape> {
 	protected static Set<CAShape> recognizedShapes = new HashSet<CAShape>();
 	/** A shape that fails to be recognized. */
 	public static final CAShape indeterminate = new CAShape();
-	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
-	public float tolerance = 0.2f;
 
 	/**
 	 * Singleton constructor.
@@ -91,7 +89,6 @@ public class CAShape implements Comparable<CAShape> {
 		bottom = shape.bottom;
 		colour = shape.colour;
 		validate = shape.validate;
-		tolerance = shape.tolerance;
 	}
 
 	/**
@@ -154,7 +151,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's top y-coordinate.
 	 */
-	public int top() {
+	public int getTop() {
 		return top;
 	}
 
@@ -164,7 +161,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's top y-coordinate.
 	 */
-	public int bottom() {
+	public int getBottom() {
 		return bottom;
 	}
 
@@ -174,7 +171,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's top x-coordinate.
 	 */
-	public int left() {
+	public int getLeft() {
 		return left;
 	}
 
@@ -184,7 +181,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's top x-coordinate.
 	 */
-	public int right() {
+	public int getRight() {
 		return right;
 	}
 
@@ -193,7 +190,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's width.
 	 */
-	public int width() {
+	public int getWidth() {
 		return right - left;
 	}
 
@@ -202,7 +199,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Shape's height.
 	 */
-	public int height() {
+	public int getHeight() {
 		return bottom - top;
 	}
 
@@ -211,7 +208,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Centroid's x-cooordinate.
 	 */
-	public int centroidX() {
+	public int getCentroidX() {
 		return (left + right) / 2;
 	}
 
@@ -220,7 +217,7 @@ public class CAShape implements Comparable<CAShape> {
 	 * 
 	 * @return Centroid's y-cooordinate.
 	 */
-	public int centroidY() {
+	public int getCentroidY() {
 		return (top + bottom) / 2;
 	}
 
@@ -272,10 +269,9 @@ public class CAShape implements Comparable<CAShape> {
 	}
 
 	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") [hash: " + hashCode()
-				+ ", area: " + getArea() + "]";
-		// return "(Shape) [area: " + getArea() + ", left: " + left + ", top: "
-		// + top + ", right: " + right + ", bottom: " + bottom + "]\n";
+		return "(" + this.getClass().getSimpleName() + ") [area: " + getArea()
+				+ ", x: " + getCentroidX() + ", y: " + getCentroidY()
+				+ ", width: " + getWidth() + ", height: " + getHeight() + "]";
 	}
 
 	/**
@@ -342,7 +338,7 @@ public class CAShape implements Comparable<CAShape> {
 				return detectedShape;
 			}
 		}
-		return new UnknownShape(this);
+		return new CAUnknownShape(this);
 	}
 
 	/**
