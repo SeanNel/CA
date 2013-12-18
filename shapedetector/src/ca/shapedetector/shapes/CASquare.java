@@ -1,7 +1,5 @@
 package ca.shapedetector.shapes;
 
-import ca.shapedetector.CAShape;
-
 public class CASquare extends CARectangle {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	public static float tolerance = 0.1f;
@@ -29,7 +27,7 @@ public class CASquare extends CARectangle {
 
 		float a = (float) (lengthDifference * lengthDifference)
 				/ (float) shape.getArea();
-		System.out.println(a);
+		// System.out.println(a);
 		if (a < tolerance) {
 			return new CASquare(shape);
 		} else {

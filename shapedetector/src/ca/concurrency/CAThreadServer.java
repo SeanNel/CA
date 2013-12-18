@@ -1,6 +1,7 @@
 package ca.concurrency;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.LinkedList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import ca.CA;
 import ca.CACell;
@@ -15,26 +16,24 @@ public class CAThreadServer extends Thread {
 	CA ca;
 	/** States whether the server is waiting for input. */
 	protected volatile boolean active;
-	/** The number of threads to be used by default. */
-	protected static final int defaultThreads = 80;
 	/** Special cell that signals the server to stop waiting for input. */
 	protected static final CACell end = new CACell();
 
 	/** Number of threads to create. */
-	protected int numThreads;
-	/** Array of all the cells created by this server. */
+	protected int numThreads = 8;
+	/** Array of all the threads created by this server. */
 	protected CACellThread[] threads;
 	/** Queue of cells waiting to be assigned to threads. */
-	protected ArrayBlockingQueue<CACell> pending;
+	protected LinkedBlockingQueue<CACell> pending;
 	/** Queue of threads that are available to be assigned cells to update. */
-	protected ArrayBlockingQueue<CACellThread> threadPool;
+	protected LinkedBlockingQueue<CACellThread> threadPool;
 
 	/**
 	 * Creates server with default number of threads.
 	 */
 	public CAThreadServer(CA ca) {
 		this.ca = ca;
-		init(defaultThreads);
+		init(numThreads);
 	}
 
 	/**
@@ -58,26 +57,26 @@ public class CAThreadServer extends Thread {
 		this.numThreads = numThreads;
 
 		active = true;
-		pending = new ArrayBlockingQueue<CACell>(numThreads);
-		threadPool = new ArrayBlockingQueue<CACellThread>(numThreads);
+		pending = new LinkedBlockingQueue<CACell>(numThreads);
+		threadPool = new LinkedBlockingQueue<CACellThread>(numThreads);
 		threads = new CACellThread[numThreads];
 
 		/*
-		 * Setting the server priority low while setting cell threads to high
-		 * improves performance a little when there are very many threads.
+		 * Setting the server priority high while setting cell threads to low
+		 * improves performance a little (in the order of a few dozen ms).
 		 */
 		try {
 			for (int i = 0; i < numThreads; i++) {
 				CACellThread thread = new CACellThread(this);
 				thread.start();
-				// thread.setPriority(MAX_PRIORITY);
+				this.setPriority(MIN_PRIORITY);
 				threads[i] = thread;
 				threadPool.put(thread);
 			}
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}
-		// this.setPriority(MIN_PRIORITY);
+		this.setPriority(MAX_PRIORITY);
 	}
 
 	/**
@@ -129,11 +128,11 @@ public class CAThreadServer extends Thread {
 			}
 
 			/* Wait for all threads to finish. */
-			ArrayBlockingQueue<CACellThread> finishedThreads = new ArrayBlockingQueue<CACellThread>(
-					numThreads);
+			LinkedList<CACellThread> finishedThreads = new LinkedList<CACellThread>();
 			while (finishedThreads.size() < numThreads) {
+				/* Should also check that the thread has in fact finished. */
 				CACellThread thread = threadPool.take();
-				finishedThreads.put(thread);
+				finishedThreads.add(thread);
 			}
 
 			/* Free allocated memory for garbage collection. */

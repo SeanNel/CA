@@ -10,6 +10,7 @@ import java.util.List;
 import std.Picture;
 import ca.CA;
 import ca.CACell;
+import ca.shapedetector.shapes.CAShape;
 
 /**
  * A cellular automaton that maintains groups of cells attached to CAShapes.
@@ -22,10 +23,6 @@ public class CAShaped extends CA {
 	protected CAShape[][] shapeAssociations;
 	/** List of unique shapes. */
 	protected List<CAShape> shapes;
-
-	// public long time1;
-	// public long time2;
-	// public long time3;
 
 	/* Used for more advanced drawing */
 	public Graphics graphics;
@@ -63,18 +60,6 @@ public class CAShaped extends CA {
 				shapes.add(shape);
 			}
 		}
-	}
-
-	@Override
-	protected void endPass() {
-		super.endPass();
-
-		// System.out.println("MERGING TIME 1: " + time1);
-		// System.out.println("MERGING TIME 2: " + time2);
-		// System.out.println("MERGING TIME 3: " + time3);
-		// time1 = 0;
-		// time2 = 0;
-		// time3 = 0;
 	}
 
 	/**
@@ -117,6 +102,8 @@ public class CAShaped extends CA {
 
 	/**
 	 * Gets the list of shapes found.
+	 * 
+	 * @return List of shapes found.
 	 */
 	public List<CAShape> getShapes() {
 		return shapes;
@@ -147,7 +134,7 @@ public class CAShaped extends CA {
 		if (shape1 == shape2) {
 			return; /* NB */
 		}
-		// Stopwatch stopwatch = new Stopwatch();
+//		Stopwatch stopwatch = new Stopwatch();
 		synchronized (shape1) {
 			synchronized (shape2) {
 				/*
@@ -168,15 +155,11 @@ public class CAShaped extends CA {
 					setShape(cell, newShape);
 				}
 				/* Must be removed before merging. */
-				// time1 += stopwatch.time();
-				// stopwatch.start();
 				shapes.remove(oldShape);
-				// time2 += stopwatch.time();
-				// stopwatch.start();
 				newShape.merge(oldShape);
-				// time3 += stopwatch.time();
 			}
 		}
+//		time += stopwatch.time();
 	}
 
 	/**

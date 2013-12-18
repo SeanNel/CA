@@ -91,7 +91,7 @@ public class CAClient {
 	 * @return Monochrome picture of the edges found.
 	 */
 	protected Picture findEdges(Picture picture) {
-		CAEdgeFinder caEdgeFinder = new CAEdgeFinder(0.05f, 2);
+		CAEdgeFinder caEdgeFinder = new CAEdgeFinder(0.05f, 1); //2
 		picture = caEdgeFinder.apply(picture);
 
 		/* May need to take join fractured edges and shrink thick outlines. */

@@ -1,6 +1,6 @@
 package ca.concurrency;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import ca.CACell;
 
@@ -15,7 +15,7 @@ public class CACellThread extends Thread {
 	/** When this 'cell' is encountered, signals this thread to stop. */
 	protected static final CACell end = new CACell();
 	/** A queue that accepts a CACell to process or the 'end' singleton. */
-	protected ArrayBlockingQueue<CACell> pending;
+	protected LinkedBlockingQueue<CACell> pending;
 
 	/**
 	 * Number of slots for waiting cells.
@@ -35,7 +35,7 @@ public class CACellThread extends Thread {
 	 */
 	public CACellThread(CAThreadServer server) {
 		this.server = server;
-		pending = new ArrayBlockingQueue<CACell>(queueLength);
+		pending = new LinkedBlockingQueue<CACell>(queueLength);
 	}
 
 	/**
@@ -51,6 +51,7 @@ public class CACellThread extends Thread {
 			// "CACellThread::finish() queue length exceeded");
 			// }
 			pending.put(cell);
+			
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}
@@ -75,7 +76,7 @@ public class CACellThread extends Thread {
 	}
 
 	/**
-	 * Signal this thread to stop once its done with its pending jobs.
+	 * Signals this thread to stop once its done with its pending jobs.
 	 */
 	public void finish() {
 		try {
@@ -83,6 +84,13 @@ public class CACellThread extends Thread {
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}
+	}
+
+	/**
+	 * Signals that this thread has finished.
+	 */
+	public boolean isFinished() {
+		return pending == null;
 	}
 
 	/**

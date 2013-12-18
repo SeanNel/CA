@@ -224,6 +224,7 @@ public class CA {
 		}
 		threadServer.finish();
 		synchronized (threadServer) {
+			/* Wait for all the threads to finish. */
 		}
 	}
 

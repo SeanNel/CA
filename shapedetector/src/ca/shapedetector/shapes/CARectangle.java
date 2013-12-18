@@ -1,6 +1,5 @@
 package ca.shapedetector.shapes;
 
-import ca.shapedetector.CAShape;
 
 public class CARectangle extends CAShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */

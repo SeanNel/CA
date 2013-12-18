@@ -1,6 +1,5 @@
 package ca.shapedetector.shapes;
 
-import ca.shapedetector.CAShape;
 
 /**
  * An unrecognized shape.

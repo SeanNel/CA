@@ -10,8 +10,32 @@ import std.Picture;
  * @author Sean
  */
 public class ColourCompare {
-	/** YCbCrColorSpace colour space. */
+	/** YCbCr colour space. */
 	static final YCbCrColorSpace colourSpace = new YCbCrColorSpace();
+
+	/**
+	 * Computes Euclidian distance between two colour vectors. Assumes both
+	 * vectors have the same size.
+	 * <p>
+	 * The Color.getColorComponents() method returns a float array, so it makes
+	 * sense to work in the same format. In addition the integer component is
+	 * never greater than 255, and floats give greater precision when computing
+	 * the square root to get distance.
+	 * 
+	 * @param vector1
+	 *            A vector to find the distance from.
+	 * @param vector2
+	 *            A vector to find the distance to.
+	 * @return Distance between the vectors.
+	 */
+	public static float distance(float[] vector1, float[] vector2) {
+		float sum = 0.0f;
+		for (int i = 0; i < vector1.length; i++) {
+			float x = vector1[i] - vector2[i];
+			sum += x * x;
+		}
+		return (float) Math.sqrt(sum);
+	}
 
 	/**
 	 * Gets the similarity between two colours.
@@ -52,12 +76,9 @@ public class ColourCompare {
 
 		float[] p1Components = colour1.getColorComponents(null);
 		float[] p2Components = colour2.getColorComponents(null);
-		ColourVector v1 = new ColourVector(p1Components);
-		ColourVector v2 = new ColourVector(p2Components);
 
-		// Compute Euclidian distance between colour vectors:
-		double distance = v1.distance(v2);
-		double max_distance = Math.sqrt(v1.size());
+		double distance = distance(p1Components, p2Components);
+		double max_distance = Math.sqrt(p1Components.length);
 
 		return (float) distance / (float) max_distance;
 	}

@@ -1,4 +1,4 @@
-package ca.shapedetector;
+package ca.shapedetector.shapes;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import ca.CACell;
-import ca.shapedetector.shapes.CAUnknownShape;
 
 /**
  * A shape made up of CACells.
@@ -46,8 +45,6 @@ public class CAShape implements Comparable<CAShape> {
 
 	/** List of recognizable shapes. */
 	protected static Set<CAShape> recognizedShapes = new HashSet<CAShape>();
-	/** A shape that fails to be recognized. */
-	public static final CAShape indeterminate = new CAShape();
 
 	/**
 	 * Singleton constructor.
@@ -269,9 +266,10 @@ public class CAShape implements Comparable<CAShape> {
 	}
 
 	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") [area: " + getArea()
-				+ ", x: " + getCentroidX() + ", y: " + getCentroidY()
-				+ ", width: " + getWidth() + ", height: " + getHeight() + "]";
+		return "(" + this.getClass().getSimpleName() + ") [x: "
+				+ getCentroidX() + ", y: " + getCentroidY() + ", width: "
+				+ getWidth() + ", height: " + getHeight() + ", area: "
+				+ getArea() + "]";
 	}
 
 	/**
