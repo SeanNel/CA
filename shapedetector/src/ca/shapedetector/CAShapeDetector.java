@@ -9,22 +9,28 @@ import java.util.List;
 import std.Picture;
 
 import ca.CACell;
+import ca.Stopwatch;
 import ca.shapedetector.shapes.Rectangle;
 import ca.shapedetector.shapes.UnknownShape;
 
 /**
  * Finds shapes in an image.
  * <p>
- * On the 1st pass, finds the edges, ensuring that edges are closed loops, and
- * in so doing also groups cells together into shapes.
+ * On the (optional) 1st pass, finds the edges. It seems better to do this from
+ * a separate CA with r > 1. Time lost seems negligible.
+ * <p>
+ * On the 2nd pass, finds the outlines, ensuring that outlines are closed loops,
+ * and in so doing also groups cells together into shapes.
  * <p>
  * On the 2nd pass, the outlines of shapes are found.
  * <p>
- * TODO: On the 3rd pass, insignificant shapes are assimilated into neighbouring
- * shapes.
+ * On the 3rd pass, insignificant shapes are assimilated into neighbouring
+ * shapes. (seems to work)
  * <p>
- * On the 4th pass, shapes are requested to identify themselves (as circles,
- * squares and so on).
+ * The CA is done. Now outline cells are to calculate their gradients.
+ * <p>
+ * Then shapes are requested to identify themselves (as circles, squares and so
+ * on).
  * <p>
  * Note that the apparent thickness of edges is irrelevant. Each shape's outline
  * is determined by a single layer of cells and this is ensured by the
@@ -34,10 +40,10 @@ import ca.shapedetector.shapes.UnknownShape;
  */
 public class CAShapeDetector extends CAShaped {
 	/**
-	 * Colour that outline cells turn to when they become inactive, that is the
-	 * foreground colour of the output image.
+	 * Colour that edge cells turn to, that is the foreground colour of the
+	 * output image.
 	 */
-	public final static Color OUTLINE_COLOUR = new Color(0, 0, 0);
+	public final static Color EDGE_COLOUR = new Color(0, 0, 0);
 	/**
 	 * Shapes with areas smaller than this will be assimilated into larger
 	 * shapes.
@@ -52,28 +58,45 @@ public class CAShapeDetector extends CAShaped {
 
 	@Override
 	public Picture apply(Picture picture) {
+		/* Skips integrated edge finding . */
+		passes = 1;
+
 		Picture output = super.apply(picture);
 		output = pointOutShapes(output);
 		return output;
 	}
 
 	@Override
-	protected void endPass() {
-		super.endPass();
+	protected void postProcess() {
+		Stopwatch stopwatch = new Stopwatch();
+		long t1 = 0;
+		long t2 = 0;
 
-		switch (passes) {
-		case 1:
-			/* Pass 3 gets skipped until it gets fixed. */
-		case 3:
-			List<CAShape> shapes = new ArrayList<CAShape>();
-			for (CAShape shape : this.shapes) {
-				shapes.add(shape.identify());
-			}
-			this.shapes = shapes;
-			break;
+		List<CAShape> shapes = new ArrayList<CAShape>();
+		for (CAShape shape : this.shapes) {
+			/* Calculate gradients. */
+			stopwatch.start();
+			shape.calculateGradients();
+			t1 += stopwatch.time();
+
+			/* Identify shapes. */
+			stopwatch.start();
+			shapes.add(shape.identify());
+			t2 += stopwatch.time();
 		}
+		this.shapes = shapes;
+
+		System.out.println("Calculated gradients: " + t1 + " ms");
+		System.out.println("Identified shapes: " + t2 + " ms");
 	}
 
+	/**
+	 * Displays which shapes were found where.
+	 * 
+	 * @param picture
+	 *            Picture to render to.
+	 * @return Rendered picture.
+	 */
 	public Picture pointOutShapes(Picture picture) {
 		graphics = pictureAfter.getImage().getGraphics();
 		System.out.println("Number of shapes: " + shapes.size());
@@ -143,100 +166,149 @@ public class CAShapeDetector extends CAShaped {
 		setColour(getCell(shape.centroidX() + 1, shape.centroidY() + 1), colour);
 	}
 
-	/**
-	 * Updates the specified cell.
-	 * <p>
-	 * On the 1st pass, finds shapes (groups of cells of similar colour).
-	 * <p>
-	 * On the 2nd pass, to find the edge cells, checks whether cell neighbours
-	 * any cells belonging to a different shape.
-	 */
 	@Override
 	public void updateCell(CACell cell) {
-		super.updateCell(cell);
-		CACell[] neighbourhood = cell.getNeighbourhood();
+		switch (passes) {
+		case 0:
+			initCell(cell);
+			findEdges(cell);
+			active = true;
+		case 1:
+			/* Necessary to init if pass 1 was skipped. */
+			initCell(cell);
+			findShapes(cell);
+			active = true;
+			break;
+		case 2:
+			findOutlines(cell);
+			active = true;
+		case 3:
+			assimilateInsignificantShapes(cell);
+		}
+		// System.out.println(cell);
+	}
 
-		/**
-		 * On the 3rd pass, this gives the least difference to a neighbouring
-		 * shape.
-		 */
-		float minDifference = 2f;
-		/**
-		 * On the 3rd pass, if this cell's shape is smaller than the minimum
-		 * size, this cell's shape will be assimilated into the superiorCell's
-		 * shape.
-		 */
-		CACell superiorCell = new CACell();
+	public void findEdges(CACell cell) {
+		CACell[] neighbourhood = cell.getNeighbourhood();
+		for (int i = 0; i < neighbourhoodSize; i++) {
+			CACell neighbour = neighbourhood[i];
+			if (neighbour == cell || neighbour == paddingCell) {
+				continue;
+			}
+			float difference = ColourCompare.getDifference(getColour(cell),
+					getColour(neighbour));
+			if (difference > epsilon) {
+				setEdge(cell);
+				return;
+			}
+		}
+		setArea(cell);
+	}
+
+	public void setEdge(CACell cell) {
+		setColour(cell, EDGE_COLOUR);
+	}
+
+	public void setArea(CACell cell) {
+		setColour(cell, QUIESCENT_COLOUR);
+	}
+
+	/**
+	 * Cells of similar colour are merged together into shapes.
+	 * 
+	 * @param cell
+	 *            Cell to update.
+	 */
+	public void findShapes(CACell cell) {
+		CACell[] neighbourhood = cell.getNeighbourhood();
 
 		for (int i = 0; i < neighbourhoodSize; i++) {
 			CACell neighbour = neighbourhood[i];
 			if (neighbour == cell || neighbour == paddingCell) {
 				continue;
 			}
-			float difference;
-			switch (passes) {
-			case 0:
-				/*
-				 * During the 1st pass, cells of similar colour are merged
-				 * together into shapes.
-				 */
-				difference = ColourCompare.getDifference(getColour(cell),
-						getColour(neighbour));
-				if (difference < epsilon) {
-					mergeCells(cell, neighbour);
-				}
-				active = true;
-				// cell.setState(CACell.ACTIVE);
-				break;
-			case 1:
-				/*
-				 * During the 2nd pass, the outline cells are separated from the
-				 * shapes' area cells.
-				 */
-				if (getShape(cell) != getShape(neighbour)) {
-					getShape(cell).addOutlineCell(cell);
-				}
-				/*
-				 * Note that the shape's areaCell collection already contains
-				 * this cell, so do not add it again.
-				 */
-				active = true;
-				// cell.setState(CACell.ACTIVE);
-				break;
-			case 2:
-				/*
-				 * During the 3rd pass, shapes smaller than the minimum size are
-				 * assimilated into the neighbouring shape most similar to this
-				 * one.
-				 */
-				if (getShape(cell).getArea() >= minArea) {
-					return;
-				}
-				CAShape neighbouringShape = getShape(neighbour);
-				if (getShape(cell) != neighbouringShape) {
-					Color colour1 = getShapeAverageColour(getShape(cell));
-					Color colour2;
-					synchronized (neighbouringShape) {
-						colour2 = getShapeAverageColour(neighbouringShape);
-					}
-					difference = ColourCompare.getDifference(colour1, colour2);
-					if (difference < minDifference) {
-						minDifference = difference;
-						superiorCell = neighbour;
-					}
-				}
-				break;
+			float difference = ColourCompare.getDifference(getColour(cell),
+					getColour(neighbour));
+			if (difference < epsilon) {
+				mergeCells(cell, neighbour);
 			}
 		}
-		/*
-		 * On the 3rd pass, when this cell's shape is found to be insignificant,
-		 * this shape is merged with the neighbouring shape that is most similar
-		 * to it.
-		 */
-		if (passes == 2 && minDifference < 2f) {
-			mergeCells(cell, superiorCell);
-			// cell.setState(CACell.INACTIVE);
+	}
+
+	/**
+	 * Finds outline cells of shapes.
+	 * 
+	 * @param cell
+	 *            Cell to update.
+	 */
+	public void findOutlines(CACell cell) {
+		CACell[] neighbourhood = cell.getNeighbourhood();
+
+		for (int i = 0; i < neighbourhoodSize; i++) {
+			CACell neighbour = neighbourhood[i];
+			if (neighbour == cell || neighbour == paddingCell) {
+				continue;
+			}
+
+			if (getShape(cell) != getShape(neighbour)) {
+				getShape(cell).addOutlineCell(cell);
+			}
+			/*
+			 * Note that the shape's areaCell collection already contains this
+			 * cell, so do not add it again.
+			 */
 		}
-		// System.out.println(cell);
+	}
+
+	/**
+	 * Assimilates insignificant shapes into neighbouring shapes.
+	 * 
+	 * @param cell
+	 *            Cell to update.
+	 */
+	public void assimilateInsignificantShapes(CACell cell) {
+		/** This gives the least difference to a neighbouring shape. */
+		float minDifference = 2f;
+		/**
+		 * If this cell's shape is smaller than the minimum size, this cell's
+		 * shape will be assimilated into the superiorCell's shape.
+		 */
+		CACell superiorCell = null;
+
+		CACell[] neighbourhood = cell.getNeighbourhood();
+
+		for (int i = 0; i < neighbourhoodSize; i++) {
+			CACell neighbour = neighbourhood[i];
+			if (neighbour == cell || neighbour == paddingCell) {
+				continue;
+			}
+
+			if (getShape(cell).getArea() >= minArea) {
+				return;
+			}
+			CAShape neighbouringShape = getShape(neighbour);
+			if (getShape(cell) != neighbouringShape) {
+				Color colour1 = getShapeAverageColour(getShape(cell));
+				Color colour2;
+				synchronized (neighbouringShape) {
+					colour2 = getShapeAverageColour(neighbouringShape);
+				}
+				float difference = ColourCompare
+						.getDifference(colour1, colour2);
+				if (difference < minDifference) {
+					minDifference = difference;
+					superiorCell = neighbour;
+				}
+			}
+		}
+
+		/*
+		 * When this cell's shape is found to be insignificant, this shape is
+		 * merged with the neighbouring shape that is most similar to it.
+		 */
+		if (minDifference < 2f) {
+			mergeCells(cell, superiorCell);
+		}
+		// cell.setState(CACell.INACTIVE);
 	}
 }

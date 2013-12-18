@@ -16,7 +16,7 @@ public class CAThreadServer extends Thread {
 	/** States whether the server is waiting for input. */
 	protected volatile boolean active;
 	/** The number of threads to be used by default. */
-	protected static final int defaultThreads = 8;
+	protected static final int defaultThreads = 80;
 	/** Special cell that signals the server to stop waiting for input. */
 	protected static final CACell end = new CACell();
 

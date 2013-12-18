@@ -360,4 +360,19 @@ public class CAShape implements Comparable<CAShape> {
 		/* Method stub */
 		return null;
 	}
+
+	/**
+	 * Calculates the gradient for each of this shape's outline cells.
+	 */
+	public void calculateGradients() {
+		orderOutlineCells();
+		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * Places outline cells in linear sequence.
+	 */
+	private void orderOutlineCells() {
+		// TODO Auto-generated method stub
+	}
 }

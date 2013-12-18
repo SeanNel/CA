@@ -201,6 +201,7 @@ public class CA {
 			System.out.println(this.getClass().getSimpleName() + " pass #"
 					+ passes + ", elapsed time: " + stopwatch.time() + " ms");
 		}
+		postProcess();
 
 		return pictureAfter;
 	}
@@ -226,10 +227,21 @@ public class CA {
 		}
 	}
 
+	/**
+	 * What happens after each pass of the CA.
+	 */
 	protected void endPass() {
 		passes++;
 		pictureBefore = new Picture(pictureAfter);
 		// draw();
+	}
+
+	/**
+	 * Applies subsequent changes to the CA that do not relate to individual
+	 * cells. Subclasses should extend this.
+	 */
+	protected void postProcess() {
+		/* Method stub */
 	}
 
 	/**
@@ -243,6 +255,16 @@ public class CA {
 	 *            The cell to update.
 	 */
 	public void updateCell(CACell cell) {
+		initCell(cell);
+	}
+
+	/**
+	 * Caches the neighbouring cells of the specified cell.
+	 * 
+	 * @param cell
+	 *            The cell to initialize.
+	 */
+	protected void initCell(CACell cell) {
 		if (cell.getNeighbourhood() == null) {
 			switch (neighbourhoodModel) {
 			case MOORE_NEIGHBOURHOOD:

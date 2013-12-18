@@ -108,7 +108,7 @@ public class CAClient {
 	 * @return Picture displaying where shapes were found.
 	 */
 	protected Picture detectShapes(Picture picture) {
-		CAShapeDetector caShapeDetector = new CAShapeDetector(0.005f);
+		CAShapeDetector caShapeDetector = new CAShapeDetector(0.05f);
 		picture = caShapeDetector.apply(picture);
 		return picture;
 	}
