@@ -18,13 +18,6 @@ public class CAPolygon extends CAShape {
 
 	protected CAShape identify(CAShape shape) {
 		/* TODO: method stub */
-
-		/* Assume this is a polygon */
-		if (true) {
-			// if (CARectangle.)
-			return new CAPolygon();
-		} else {
-			return null;
-		}
+		return null;
 	}
 }

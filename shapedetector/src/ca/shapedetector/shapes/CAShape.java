@@ -107,9 +107,9 @@ public class CAShape {
 	}
 
 	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") [centroid: "
-				+ arrayToString(getCentroid()) + ", dimensions: "
-				+ arrayToString(getDimensions()) + "]";
+		return "(" + this.getClass().getSimpleName() + ") [" + getStats()
+				+ ", centroid: " + arrayToString(getCentroid())
+				+ ", dimensions: " + arrayToString(getDimensions()) + "]";
 	}
 
 	protected String getStats() {

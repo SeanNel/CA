@@ -1,8 +1,5 @@
 package ca.shapedetector;
 
-import graphics.ColourCompare;
-
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -15,35 +12,26 @@ import std.StdDraw;
 import ca.CA;
 import ca.CACell;
 import ca.Stopwatch;
-import ca.shapedetector.shapes.CARectangle;
-import ca.shapedetector.shapes.CAShape;
-import ca.shapedetector.shapes.CAUnknownShape;
+import ca.rules.cacell.*;
+import ca.rules.protoshape.*;
+import ca.shapedetector.shapes.*;
 
 /**
- * Finds shapes in an image.
+ * Finds shapes in an image. Accepts bmp, png and jpg images.
  * <p>
  * Usage: CAShapeDetector <image_path>
  * <p>
- * On the (optional) 1st pass, finds the edges. It seems better to do this from
- * a separate CA with r > 1. It is unclear whether doing it here would bring
- * much performance benefit.
+ * Some images to test with are:
  * <p>
- * On the 2nd pass, finds the outlines, ensuring that outlines are closed loops,
- * and in so doing also groups cells together into shapes.
+ * img.png: Greyscale image with dithered patterns.
  * <p>
- * On the 2nd pass, the outlines of shapes are found.
+ * test1.png: Simple monochrome image.
  * <p>
- * On the 3rd pass, insignificant shapes are assimilated into neighbouring
- * shapes. (seems to work)
+ * pipe.png: Low contrast image with text.
  * <p>
- * The CA is done. Now outline cells are to calculate their gradients.
+ * batman.jpg: Low monochrome contrast image.
  * <p>
- * Then shapes are requested to identify themselves (as circles, squares and so
- * on).
- * <p>
- * Note that the apparent thickness of edges is irrelevant. Each shape's outline
- * is determined by a single layer of cells and this is ensured by the
- * algorithm.
+ * shapes.png: Low monochrome contrast image.
  * 
  * @author Sean
  */
@@ -54,50 +42,39 @@ public class CAShapeDetector extends CA {
 	protected Set<CAProtoShape> protoShapes;
 	/** List of detected shapes. */
 	protected List<CAShape> shapes;
-	/**
-	 * Shapes with areas smaller than this will be assimilated into larger
-	 * shapes.
-	 */
-	protected int minArea = 25;
-	/**
-	 * Colour that cells turn to when they become inactive, that is the
-	 * background colour of the output image.
-	 */
-	public final static Color QUIESCENT_COLOUR = new Color(255, 255, 255);
-	/**
-	 * Colour that edge cells turn to, that is the foreground colour of the
-	 * output image.
-	 */
-	public final static Color EDGE_COLOUR = new Color(200, 200, 200);
 
 	/**
 	 * Applies shape detector to image given as argument on the command line.
-	 * Some images to test with are:
-	 * <p>
-	 * img.png: Greyscale image with dithered patterns.
-	 * <p>
-	 * test1.png: Simple monochrome image.
-	 * <p>
-	 * pipe.png: Low contrast image with text.
-	 * <p>
-	 * batman.jpg: Low monochrome contrast image.
-	 * <p>
-	 * shapes.png: Low monochrome contrast image.
 	 * 
-	 * @param args
+	 * @param path
 	 *            Path to image. Accepts bmp, png and jpg images.
+	 * @param epsilon
+	 *            The difference threshold expressed as a fraction.
+	 * @param r
+	 *            Search radius. Determines the size of the neighbourhood.
 	 */
 	public static void main(String[] args) {
 		StdDraw.frame.setTitle("CA Shape Detector");
-		Stopwatch stopwatch = new Stopwatch();
+
+		String path;
+		float epsilon = 0.05f;
+		int r = 1;
 
 		if (args.length == 0) {
 			System.out
 					.println("Please specify a path to the image to process.");
 			return;
+		} else {
+			path = args[0];
+		}
+		if (args.length > 1) {
+			epsilon = Float.parseFloat(args[1]);
+		}
+		if (args.length > 2) {
+			r = Integer.parseInt(args[2]);
 		}
 
-		Picture picture = new Picture(args[0]);
+		Picture picture = new Picture(path);
 		StdDraw.setCanvasSize(picture.width(), picture.height());
 		picture.setOriginUpperLeft();
 
@@ -105,7 +82,8 @@ public class CAShapeDetector extends CA {
 		// picture = Filter.monochrome(picture);
 		// picture = Posterize.apply(picture, 3);
 
-		CAShapeDetector shapeDetector = new CAShapeDetector(0.05f, 1); //0.05f, 1
+		Stopwatch stopwatch = new Stopwatch();
+		CAShapeDetector shapeDetector = new CAShapeDetector(epsilon, r);
 		picture = shapeDetector.apply(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
@@ -115,6 +93,12 @@ public class CAShapeDetector extends CA {
 	public CAShapeDetector(float epsilon, int r) {
 		super(epsilon, r);
 		// neighbourhoodModel = VANNEUMANN_NEIGHBOURHOOD;
+
+		processes = new ArrayList<CACellRule>(3);
+		processes.add(new CANoiseRemoverRule(this));
+		processes.add(new CAEdgeFinderRule(this));
+		processes.add(new CAShapeFinderRule(this));
+		processes.add(new CAOutlineFinderRule(this));
 	}
 
 	@Override
@@ -128,7 +112,8 @@ public class CAShapeDetector extends CA {
 		 * performs better than ArrayList. Might have to make this
 		 * Collections.synchronizedSet(...);
 		 */
-		protoShapes = new HashSet<CAProtoShape>();
+		protoShapes = new HashSet<CAProtoShape>(lattice.length
+				* lattice[0].length);
 		/*
 		 * Would it be better to do this later in parallel? Doesn't seem to take
 		 * much time anyway.
@@ -147,82 +132,33 @@ public class CAShapeDetector extends CA {
 	@Override
 	public Picture apply(Picture picture) {
 		/* Skips integrated noise removal & edge finding. */
-//		passes = 2;
+		// passes = 2;
 
-		Picture output = super.apply(picture);
-		output = pointOutShapes(output);
-		return output;
-	}
-
-	/* For performance profiling */
-	public long time;
-
-	@Override
-	protected void endPass() {
-		super.endPass();
-
-		// System.out.println("TIME: " + time);
-		// time = 0;
-	}
-
-	// Stopwatch stopwatch = new Stopwatch();
-	// time += stopwatch.time();
-
-	@Override
-	protected void postProcess() {
-		Stopwatch stopwatch = new Stopwatch();
-		long t1 = 0;
-		long t2 = 0;
-		long t3 = 0;
-		long t4 = 0;
+		super.apply(picture);
+		shapes = new LinkedList<CAShape>();
 		Set<CAProtoShape> oldProtoShapes = new HashSet<CAProtoShape>(
 				protoShapes);
+		CAProtoShapeAssimilatorRule shapeAssimilator = new CAProtoShapeAssimilatorRule(
+				this);
 		/*
 		 * TODO: order shapes in terms of area, then take a subset to
 		 * assimilate. Should guarantee (O)NlogN performance instead of (O)N as
 		 * done here.
 		 */
+		Stopwatch assimilatorStopwatch = new Stopwatch();
 		for (CAProtoShape shape : oldProtoShapes) {
-			/* Assimilates insignificant shapes into neighbouring ones. */
-			if (shape.getArea() < minArea) {
-				/*
-				 * May be null if this shape has already been merged from this
-				 * loop...
-				 */
-				if (shape.getOutlineCells() != null) {
-					assimilateShape(shape);
-				} else {
-					continue;
-				}
-			}
+			shapeAssimilator.update(shape);
 		}
-		t1 = stopwatch.time();
+		assimilatorStopwatch.print("Assimilated shapes: ");
 
-		CAShape shapeDetector = new CAShape(pictureAfter);
+		CAProtoShapeIdentifierRule protoShapeIdentifier = new CAProtoShapeIdentifierRule(
+				this);
 
-		shapes = new LinkedList<CAShape>();
 		for (CAProtoShape protoShape : protoShapes) {
-			// System.out.println("*** " + protoShape);
-			/* Arranges outline cells in order. */
-			stopwatch.start();
-			// protoShape.orderOutlineCells();
-			t2 += stopwatch.time();
-
-			/* Calculates gradients. */
-			stopwatch.start();
-			protoShape.calculateGradients();
-			t3 += stopwatch.time();
-
-			/* Identifies shapes. */
-			stopwatch.start();
-			shapes.add(shapeDetector.identifyShape(protoShape));
-			t4 += stopwatch.time();
+			protoShapeIdentifier.update(protoShape);
 		}
 
-		System.out.println("Assimilated shapes: " + t1 + " ms");
-		System.out.println("Arranged outlines: " + t2 + " ms");
-		System.out.println("Calculated gradients: " + t3 + " ms");
-		System.out.println("Identified shapes: " + t4 + " ms");
+		return pointOutShapes(pictureAfter);
 	}
 
 	/**
@@ -232,23 +168,30 @@ public class CAShapeDetector extends CA {
 	 *            1st cell to merge with.
 	 * @param cell2
 	 *            2nd cell to merge with.
+	 * @return The resulting protoShape.
 	 */
-	public synchronized void mergeCells(CACell cell1, CACell cell2) {
-		mergeShapes(getShape(cell1), getShape(cell2));
+	public synchronized CAProtoShape mergeCells(CACell cell1, CACell cell2) {
+		if (cell1 == null || cell2 == null) {
+			return null;
+		} else {
+			return mergeShapes(getShape(cell1), getShape(cell2));
+		}
 	}
 
 	/**
-	 * Merges 2 shapes together.
+	 * Merges 2 protoShapes together.
 	 * 
 	 * @see CAProtoShapeMergerThread
 	 * @param shape1
-	 *            1st shape to merge with.
+	 *            1st protoShape to merge with.
 	 * @param shape2
-	 *            2st shape to merge with.
+	 *            2st protoShape to merge with.
+	 * @return The resulting protoShape.
 	 */
-	protected void mergeShapes(CAProtoShape shape1, CAProtoShape shape2) {
+	protected CAProtoShape mergeShapes(CAProtoShape shape1, CAProtoShape shape2) {
+		/* NB */
 		if (shape1 == shape2) {
-			return; /* NB */
+			return null;
 		}
 		synchronized (shape1) {
 			synchronized (shape2) {
@@ -272,6 +215,7 @@ public class CAShapeDetector extends CA {
 				/* Must be removed before merging. */
 				protoShapes.remove(oldShape);
 				newShape.merge(oldShape);
+				return newShape;
 			}
 		}
 	}
@@ -330,283 +274,6 @@ public class CAShapeDetector extends CA {
 		return picture;
 	}
 
-	@Override
-	public void updateCell(CACell cell) {
-		switch (passes) {
-		case 0:
-			initCell(cell);
-			removeNoise(cell);
-			active = true;
-			break;
-		case 1:
-			/* Resetting the neighbourhood may improve performance for r > 1 */
-			// cell.setNeighbourhood(gatherCloseNeighbours(cell));
-			findEdges(cell);
-			active = true;
-			break;
-		case 2:
-			// cell.getNeighbourhood().clear(); /* Free the memory? */
-			cell.setNeighbourhood(gatherCardinalNeighbours(cell));
-			findShapes(cell);
-			active = true;
-			break;
-		case 3:
-			findOutlines(cell);
-			break;
-		}
-		// System.out.println(cell);
-	}
-
-	/**
-	 * Caches the neighbouring cells of the specified cell. Optimized for Moore
-	 * neighbourhood, r=1. Does not include the cell in its own neighbourhood.
-	 * 
-	 * @param cell
-	 *            The cell to initialize.
-	 */
-	protected List<CACell> gatherCloseNeighbours(CACell cell) {
-		int[] coordinates = cell.getCoordinates();
-		List<CACell> neighbourhood = new ArrayList<CACell>();
-		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
-		neighbourhood.add(getCell(coordinates[0], coordinates[1] - 1));
-		neighbourhood.add(getCell(coordinates[0] + 1, coordinates[1] - 1));
-		neighbourhood.add(getCell(coordinates[0] + 1, coordinates[1]));
-		neighbourhood.add(getCell(coordinates[0] + 1, coordinates[1] + 1));
-		neighbourhood.add(getCell(coordinates[0], coordinates[1] + 1));
-		neighbourhood.add(getCell(coordinates[0] - 1, coordinates[1] + 1));
-		neighbourhood.add(getCell(coordinates[0] - 1, coordinates[1]));
-		neighbourhood.add(getCell(coordinates[0] - 1, coordinates[1] - 1));
-		return neighbourhood;
-	}
-
-	/**
-	 * Caches the neighbouring cells of the specified cell. Optimized for
-	 * VanNeumann neighbourhood, r=1. Does not include the cell in its own
-	 * neighbourhood.
-	 * 
-	 * @param cell
-	 *            The cell to initialize.
-	 */
-	protected List<CACell> gatherCardinalNeighbours(CACell cell) {
-		int[] coordinates = cell.getCoordinates();
-		List<CACell> neighbourhood = new ArrayList<CACell>();
-		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
-		neighbourhood.add(getCell(coordinates[0], coordinates[1] - 1));
-		neighbourhood.add(getCell(coordinates[0], coordinates[1] + 1));
-		neighbourhood.add(getCell(coordinates[0] - 1, coordinates[1]));
-		neighbourhood.add(getCell(coordinates[0] + 1, coordinates[1]));
-		return neighbourhood;
-	}
-
-	/**
-	 * Gathers the specified cell's Moore neighbourhood with r=1, not including
-	 * the current cell. Places cells in clockwise order, starting with the cell
-	 * directly above this one.
-	 * 
-	 * @param cell
-	 *            Cell to get neighbourhood of.
-	 * @return The cell's neighbourhood.
-	 */
-	protected List<CACell> meetOutlineNeighbours(CACell cell) {
-		return gatherCloseNeighbours(cell);
-	}
-
-	/**
-	 * Removes noise from image.
-	 * 
-	 * @param cell
-	 */
-	public void removeNoise(CACell cell) {
-		float maxDifference = 0f;
-
-		List<CACell> neighbourhood = cell.getNeighbourhood();
-		Color[] colours = new Color[neighbourhood.size()];
-		int i = 0;
-		for (CACell neighbour : neighbourhood) {
-			if (neighbour == cell || neighbour == paddingCell) {
-				continue;
-			}
-			Color colour = getColour(neighbour);
-			colours[i++] = colour;
-			float difference = ColourCompare.getDifference(getColour(cell),
-					colour);
-			if (difference > maxDifference) {
-				maxDifference = difference;
-			}
-		}
-
-		Color averageColour = ColourCompare.averageColour(colours);
-
-		if (maxDifference < epsilon) {
-			/*
-			 * Sets pixel to the average colour of the surrounding pixels. Has a
-			 * blurring effect.
-			 */
-			setColour(cell, averageColour);
-		}
-	}
-
-	/**
-	 * Finds the edges in the image.
-	 * 
-	 * @param cell
-	 */
-	public void findEdges(CACell cell) {
-		List<CACell> neighbourhood = cell.getNeighbourhood();
-		for (CACell neighbour : neighbourhood) {
-			if (neighbour != cell && neighbour != paddingCell) {
-				float difference = ColourCompare.getDifference(getColour(cell),
-						getColour(neighbour));
-				if (difference > epsilon) {
-					setColour(cell, EDGE_COLOUR);
-					return;
-				}
-			}
-		}
-		setColour(cell, QUIESCENT_COLOUR);
-	}
-
-	/**
-	 * Groups cells of similar colour together into shapes.
-	 * 
-	 * @param cell
-	 *            Cell to update.
-	 */
-	public void findShapes(CACell cell) {
-		List<CACell> neighbourhood = cell.getNeighbourhood();
-		for (CACell neighbour : neighbourhood) {
-			if (neighbour != cell && neighbour != paddingCell
-					&& getShape(neighbour) != getShape(cell)) {
-				float difference = ColourCompare.getDifference(getColour(cell),
-						getColour(neighbour));
-				if (difference < epsilon) {
-					mergeCells(cell, neighbour);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Assimilates the specified shape into a neighbouring shape if it is too
-	 * small to be of importance.
-	 * 
-	 * @param shape
-	 *            Shape to assimilate.
-	 */
-	public void assimilateShape(CAProtoShape shape) {
-		/** A list of all the shapes next to this one. */
-		Set<CAProtoShape> neighbouringShapes = new HashSet<CAProtoShape>();
-		/*
-		 * Gathers all the shapes next to this one. Duplicates would slow down
-		 * the next step.
-		 */
-		for (CACell cell : shape.getOutlineCells()) {
-			List<CACell> neighbourhood = cell.getNeighbourhood();
-			for (CACell neighbour : neighbourhood) {
-				if (neighbour != cell && neighbour != paddingCell) {
-					CAProtoShape neighbouringShape = getShape(neighbour);
-					if (neighbouringShape != shape) {
-						neighbouringShapes.add(neighbouringShape);
-					}
-				}
-			}
-		}
-
-		/** This gives the least difference to a neighbouring shape. */
-		float minDifference = 2f;
-		/**
-		 * A representative shape from the neighbouring shape most similar to
-		 * this shape.
-		 * <p>
-		 * Referencing a representative cell of the shape instead of the shape
-		 * itself helps avoid synchronization issues.
-		 */
-		CACell similarCell = null;
-
-		/*
-		 * Finds a representative cell from the shape next to this one that is
-		 * most similar to this shape.
-		 */
-		for (CAProtoShape neighbouringShape : neighbouringShapes) {
-			Color colour1 = getShapeAverageColour(shape);
-			Color colour2;
-			// synchronized (neighbouringShape) {
-			CACell repCell = neighbouringShape.getAreaCells().get(0);
-			/*
-			 * getShapeAverageColour is expensive, so instead we can compare the
-			 * representative cell with this one.
-			 */
-			colour2 = getColour(repCell); // getShapeAverageColour(neighbouringShape);
-			// }
-			float difference = ColourCompare.getDifference(colour1, colour2);
-			if (difference < minDifference) {
-				minDifference = difference;
-				similarCell = repCell; // neighbouringShape.getAreaCells().get(0)
-			}
-		}
-
-		/*
-		 * Merging representative cells of the two shapes instead of the shapes
-		 * themselves helps avoid synchronization issues.
-		 */
-		mergeCells(shape.getAreaCells().get(0), similarCell);
-	}
-
-	/**
-	 * Gets the average colour of the shape.
-	 * <p>
-	 * This is calculated here instead of from CAProtoShape because for that to
-	 * be possible, a reference to the CA has to be stored in each shape. When
-	 * there are thousands of shapes, this extra memory use can become
-	 * significant.
-	 * 
-	 * @return Average colour.
-	 */
-	protected Color getShapeAverageColour(CAProtoShape shape) {
-		synchronized (shape) {
-			if (shape.getValidate()) {
-				Color[] colours = new Color[shape.getAreaCells().size()];
-				for (int i = 0; i < colours.length; i++) {
-					colours[i] = getColour(shape.getAreaCells().get(i));
-				}
-				shape.setColour(ColourCompare.averageColour(colours));
-			}
-			return shape.getColour();
-		}
-	}
-
-	/**
-	 * Finds outline cells of shapes.
-	 * 
-	 * @param cell
-	 *            Cell to update.
-	 */
-	public void findOutlines(CACell cell) {
-		List<CACell> neighbourhood = cell.getNeighbourhood();
-		for (CACell neighbour : neighbourhood) {
-			if (neighbour != cell && neighbour != paddingCell) {
-				CAProtoShape shape = getShape(cell);
-				if (shape != getShape(neighbour)) {
-					/*
-					 * Makes a copy of the cell, so that this CA's cells
-					 * continue to use a standard neighbourhood, then expands
-					 * the outlineCell's neighbourhood.
-					 */
-					// CACell outlineCell = new CACell(cell.getCoordinates(),
-					// CACell.INACTIVE, meetOutlineNeighbours(cell));
-					cell.setNeighbourhood(meetOutlineNeighbours(cell));
-					shape.addOutlineCell(cell);
-
-					return;
-				}
-			}
-			/*
-			 * Note that the shape's areaCell collection already contains this
-			 * cell, so do not add it again.
-			 */
-		}
-	}
-
 	/**
 	 * Gets the list of shapes found.
 	 * 
@@ -614,5 +281,9 @@ public class CAShapeDetector extends CA {
 	 */
 	public List<CAShape> getShapes() {
 		return shapes;
+	}
+
+	public void addShape(CAShape shape) {
+		shapes.add(shape);
 	}
 }

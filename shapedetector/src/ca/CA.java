@@ -7,6 +7,7 @@ import java.util.List;
 import std.Picture;
 import std.StdDraw;
 import ca.concurrency.CAThreadServer;
+import ca.rules.cacell.CACellRule;
 
 /**
  * Cellular automaton for processing an image.
@@ -16,6 +17,10 @@ import ca.concurrency.CAThreadServer;
 public class CA {
 	/** Two dimensional array of CACells. */
 	protected CACell[][] lattice;
+	/** Processes to apply to each cell in sequence. */
+	public List<CACellRule> processes;
+	/** Currently active process. */
+	int currentProcess;
 	/**
 	 * Picture first given to this CAModel to process or in the event that the
 	 * CAModel did not finish after its first pass, this is the output of the
@@ -36,7 +41,7 @@ public class CA {
 	 * 
 	 * @see graphics.ColourCompare
 	 */
-	protected float epsilon;
+	private float epsilon;
 	/** Search radius. Determines the size of the neighbourhood. */
 	protected int r;
 	/** Signals whether there are cells that are still due to update. */
@@ -81,7 +86,7 @@ public class CA {
 		 * Might instead want to set epsilon dynamically according to the colour
 		 * range in the image.
 		 */
-		this.epsilon = epsilon;
+		this.setEpsilon(epsilon);
 		this.r = r;
 		stopwatch = new Stopwatch();
 	}
@@ -201,8 +206,6 @@ public class CA {
 			System.out.println(this.getClass().getSimpleName() + " pass #"
 					+ passes + ", elapsed time: " + stopwatch.time() + " ms");
 		}
-		postProcess();
-
 		return pictureAfter;
 	}
 
@@ -237,6 +240,12 @@ public class CA {
 		if (drawOnUpdate) {
 			draw();
 		}
+		if (!active) {
+			currentProcess++;
+		}
+		if (currentProcess < processes.size()) {
+			active = true;
+		}
 	}
 
 	/**
@@ -248,17 +257,13 @@ public class CA {
 	}
 
 	/**
-	 * Where the cell update rule is defined.
-	 * <p>
-	 * Subclasses should extend this. Public because it is called from
-	 * CAThreadServer. Cell neighbourhoods are loaded as each cell updates, so
-	 * that advantage can be taken of the concurrent threads.
+	 * Applies the current process to the cell.
 	 * 
 	 * @param cell
 	 *            The cell to update.
 	 */
 	public void updateCell(CACell cell) {
-		initCell(cell);
+		processes.get(currentProcess).update(cell);
 	}
 
 	/**
@@ -267,7 +272,7 @@ public class CA {
 	 * @param cell
 	 *            The cell to initialize.
 	 */
-	protected void initCell(CACell cell) {
+	public void gatherNeighbours(CACell cell) {
 		if (cell.getNeighbourhood() == null) {
 			List<CACell> neighbourhood = null;
 			switch (neighbourhoodModel) {
@@ -340,5 +345,20 @@ public class CA {
 	 */
 	public int getPasses() {
 		return passes;
+	}
+
+	/**
+	 * @return the epsilon
+	 */
+	public float getEpsilon() {
+		return epsilon;
+	}
+
+	/**
+	 * @param epsilon
+	 *            the epsilon to set
+	 */
+	public void setEpsilon(float epsilon) {
+		this.epsilon = epsilon;
 	}
 }
