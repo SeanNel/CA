@@ -106,7 +106,6 @@ public class CAShapeDetector extends CA {
 		// picture = Posterize.apply(picture, 3);
 
 		CAShapeDetector shapeDetector = new CAShapeDetector(0.05f, 1); //0.05f, 1
-		shapeDetector.setPicture(picture);
 		picture = shapeDetector.apply(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
