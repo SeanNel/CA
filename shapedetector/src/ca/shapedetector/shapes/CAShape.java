@@ -1,50 +1,44 @@
 package ca.shapedetector.shapes;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+
+import std.Picture;
 
 import ca.CACell;
+import ca.shapedetector.CAProtoShape;
 
 /**
  * A shape made up of CACells.
  * 
  * @author Sean
  */
-public class CAShape implements Comparable<CAShape> {
-	/**
-	 * Collection of cells that make up this shape.
-	 * <p>
-	 * Not required to be a set, since cells are guaranteed to be unique.
-	 */
-	protected List<CACell> areaCells;
-	/**
-	 * Collection of cells on the perimeter of this shape. This is a subset of
-	 * areaCells.
-	 * <p>
-	 * Not required to be a set, since cells are guaranteed to be unique.
-	 */
-	protected List<CACell> outlineCells;
+public class CAShape {
+	/** A reference to the protoShape that gave rise to this CAShape. */
+	protected CAProtoShape protoShape;
+	/** Angle that shape is rotated (in radians). */
+	protected float orientation;
+	/** Picture to draw on. */
+	protected Graphics2D graphics;
+	/** Shape's fill colour. */
+	protected Color fillColour;
+	/** Shape's outline colour. */
+	protected Color outlineColour;
+	/** Shape's centroid colour. */
+	protected Color centroidColour;
+	/** Shape's text label colour. */
+	protected Color labelColour;
 
-	/** The top y-coordinate of this shape. */
-	protected int top;
-	/** The bottom y-coordinate of this shape. */
-	protected int bottom;
-	/** The left x-coordinate of this shape. */
-	protected int left;
-	/** The top x-coordinate of this shape. */
-	protected int right;
+	protected static final Font DEFAULT_FONT = new Font("SansSerif",
+			Font.PLAIN, 10);
+	/** Shape's text label font. */
+	protected Font font;
 
-	/** Average colour of shape's area cells. */
-	protected Color colour;
-	/** Signals that shape should update its averageColour. */
-	protected boolean validate;
-
-	/** List of recognizable shapes. */
-	protected static Set<CAShape> recognizedShapes = new HashSet<CAShape>();
+	/* Array of fundamental shapes from which more specific shapes can be found. */
+	protected static final CAShape[] basicShapes = { new CARectangle(),
+			new CACircle() };
 
 	/**
 	 * Singleton constructor.
@@ -53,320 +47,190 @@ public class CAShape implements Comparable<CAShape> {
 	}
 
 	/**
-	 * Creates a new shape associated with the specified cell. Assumes that the
-	 * cell is mapped to this shape.
+	 * General constructor.
 	 * 
-	 * @see CAShaped::shapeTable.
-	 * @param cell
-	 *            A cell that is to belong to the shape.
+	 * @param protoshape
+	 *            The CAProtoShape that gave rise to this CAShape.
 	 */
-	public CAShape(CACell cell) {
-		colour = Color.white;
-		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
-		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
-		int[] coordinates = cell.getCoordinates();
-		left = right = coordinates[0];
-		top = bottom = coordinates[1];
-		areaCells.add(cell);
-		validate = true;
+	public CAShape(CAProtoShape protoShape) {
+		this.protoShape = protoShape;
+
+		defaultColours();
 	}
 
 	/**
-	 * Copy constructor.
+	 * Master constructor.
 	 * 
-	 * @param shape
-	 *            The shape to make a copy of.
+	 * @param canvas
+	 *            A picture to render identified shapes on.
 	 */
-	public CAShape(CAShape shape) {
-		areaCells = shape.areaCells;
-		outlineCells = shape.outlineCells;
-		left = shape.left;
-		right = shape.right;
-		top = shape.top;
-		bottom = shape.bottom;
-		colour = shape.colour;
-		validate = shape.validate;
+	public CAShape(Picture picture) {
+		graphics = picture.getImage().createGraphics();
+
+		defaultColours();
+	}
+
+	protected void defaultColours() {
+		fillColour = new Color(230, 245, 230);
+		outlineColour = Color.green;
+		centroidColour = Color.magenta;
+		labelColour = Color.blue;
+		font = DEFAULT_FONT;
 	}
 
 	/**
-	 * Add a shape to the list of recognizable shapes.
+	 * Gets the dimensions of this CAShape, for example its width and height.
 	 * 
-	 * @param shape
-	 *            Shape to add.
+	 * @return The dimensions of this CAShape.
 	 */
-	public static void addShape(CAShape shape) {
-		recognizedShapes.add(shape);
-	}
-
-	/**
-	 * Transfers all cells from the specified shape to the current shape.
-	 * <p>
-	 * Updates the shape boundaries at the same time, since this takes almost no
-	 * time to do.
-	 * 
-	 * @param shape
-	 *            Shape to merge with.
-	 */
-	public void merge(CAShape shape) {
-		validate = true;
-
-		if (shape.left < left) {
-			left = shape.left;
+	public int[] getDimensions() {
+		int[][] boundaries = protoShape.getBoundaries();
+		int[] dimensions = new int[boundaries[0].length];
+		for (int i = 0; i < dimensions.length; i++) {
+			dimensions[i] = boundaries[1][i] - boundaries[0][i];
 		}
-		if (shape.right > right) {
-			right = shape.right;
+		return dimensions;
+	}
+
+	/**
+	 * Gets this CAShape's centroid.
+	 * 
+	 * @return The centroid's coordinates.
+	 */
+	public int[] getCentroid() {
+		int[][] boundaries = protoShape.getBoundaries();
+		int[] centroid = new int[boundaries[0].length];
+		for (int i = 0; i < centroid.length; i++) {
+			centroid[i] = (boundaries[1][i] + boundaries[0][i]) / 2;
 		}
-
-		if (shape.top < top) {
-			top = shape.top;
-		}
-		if (shape.bottom > bottom) {
-			bottom = shape.bottom;
-		}
-		areaCells.addAll(shape.getAreaCells());
-		/*
-		 * It is necessary to free up memory or there will soon be no space left
-		 * on the heap.
-		 */
-		shape.destroy();
-	}
-
-	/**
-	 * Add a cell to the collection of cells that make up the outline of this
-	 * shape.
-	 * 
-	 * @param cell
-	 *            Cell to add.
-	 */
-	public void addOutlineCell(CACell cell) {
-		outlineCells.add(cell);
-	}
-
-	/**
-	 * Gets the top y-coordinate of this shape, that is the minimum y-coordinate
-	 * of the cells making up this shape.
-	 * 
-	 * @return Shape's top y-coordinate.
-	 */
-	public int getTop() {
-		return top;
-	}
-
-	/**
-	 * Gets the bottom y-coordinate of this shape, that is the maximum
-	 * y-coordinate of the cells making up this shape.
-	 * 
-	 * @return Shape's top y-coordinate.
-	 */
-	public int getBottom() {
-		return bottom;
-	}
-
-	/**
-	 * Gets the top x-coordinate of this shape, that is the minimum x-coordinate
-	 * of the cells making up this shape.
-	 * 
-	 * @return Shape's top x-coordinate.
-	 */
-	public int getLeft() {
-		return left;
-	}
-
-	/**
-	 * Gets the bottom x-coordinate of this shape, that is the maximum
-	 * x-coordinate of the cells making up this shape.
-	 * 
-	 * @return Shape's top x-coordinate.
-	 */
-	public int getRight() {
-		return right;
-	}
-
-	/**
-	 * Gets this shape's width.
-	 * 
-	 * @return Shape's width.
-	 */
-	public int getWidth() {
-		return right - left;
-	}
-
-	/**
-	 * Gets this shape's height.
-	 * 
-	 * @return Shape's height.
-	 */
-	public int getHeight() {
-		return bottom - top;
-	}
-
-	/**
-	 * Gets the x-coordinate of this shape's centroid.
-	 * 
-	 * @return Centroid's x-cooordinate.
-	 */
-	public int getCentroidX() {
-		return (left + right) / 2;
-	}
-
-	/**
-	 * Gets the y-coordinate of this shape's centroid.
-	 * 
-	 * @return Centroid's y-cooordinate.
-	 */
-	public int getCentroidY() {
-		return (top + bottom) / 2;
-	}
-
-	/**
-	 * Gets the collection of cells that form the shape.
-	 * 
-	 * @return Collection of area cells.
-	 */
-	public List<CACell> getAreaCells() {
-		return areaCells;
-	}
-
-	/**
-	 * Gets the collection of cells that form the outline of the shape. This is
-	 * a subset of areaCells.
-	 * 
-	 * @return Collection of outline cells.
-	 */
-	public List<CACell> getOutlineCells() {
-		return outlineCells;
-	}
-
-	/**
-	 * Gets the area in cells squared, that is the number of cells that make up
-	 * the shape.
-	 * 
-	 * @return Perimeter of the shape.
-	 */
-	public int getArea() {
-		if (areaCells == null) {
-			return 0;
-		} else {
-			return areaCells.size();
-		}
-	}
-
-	/**
-	 * Gets the length of the perimeter, that is the number of cells that form
-	 * the outline of the shape.
-	 * 
-	 * @return Perimeter of the shape.
-	 */
-	public int getPerimeter() {
-		if (outlineCells == null) {
-			return 0;
-		} else {
-			return outlineCells.size();
-		}
+		return centroid;
 	}
 
 	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") [x: "
-				+ getCentroidX() + ", y: " + getCentroidY() + ", width: "
-				+ getWidth() + ", height: " + getHeight() + ", area: "
-				+ getArea() + "]";
+		return "(" + this.getClass().getSimpleName() + ") [centroid: "
+				+ arrayToString(getCentroid()) + ", dimensions: "
+				+ arrayToString(getDimensions()) + "]";
+	}
+
+	protected String getStats() {
+		int[] dimensions = protoShape.getDimensions();
+		return "w=" + dimensions[0] + ", h=" + dimensions[1];
+	}
+
+	protected String arrayToString(int[] array) {
+		if (array == null || array.length == 0) {
+			return "";
+		}
+
+		String str = "" + array[0];
+		for (int i = 1; i < array.length; i++) {
+			str += ", " + array[i];
+		}
+		return str;
 	}
 
 	/**
-	 * Places shapes in order of area size. Guarantees that shapes of identical
-	 * size can coexist in a set of unique shapes.
+	 * Draws this shape and additional information to the canvas.
 	 */
-	@Override
-	public int compareTo(CAShape arg0) {
-		if (this == arg0) {
-			return 0;
-		} else if (getArea() >= arg0.getArea()) {
-			return 1;
-		} else {
-			return -1;
+	public void draw() {
+		drawShape();
+		drawCentroid();
+		drawLabel();
+	}
+
+	/**
+	 * Draws the shape. Subclasses could extend this.
+	 * 
+	 * @param graphics
+	 *            Canvas to draw on.
+	 */
+	public void drawShape() {
+		graphics.setColor(fillColour); // protoShape.getColour()
+		for (CACell cell : protoShape.getAreaCells()) {
+			int[] coordinates = cell.getCoordinates();
+			graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
+		}
+		graphics.setColor(outlineColour);
+		for (CACell cell : protoShape.getOutlineCells()) {
+			int[] coordinates = cell.getCoordinates();
+			graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
 		}
 	}
 
-	/** Attempt to free memory allocated to this shape. */
-	public void destroy() {
-		areaCells = null;
-		outlineCells = null;
+	/**
+	 * Draws a cross at the centroid of the shape in the specified colour.
+	 * 
+	 * @param graphics
+	 *            Canvas to draw on.
+	 */
+	public void drawCentroid() {
+		graphics.setColor(centroidColour);
+		int[] centroid = protoShape.getCentroid();
+
+		graphics.drawLine(centroid[0] - 2, centroid[1] - 2, centroid[0] + 2,
+				centroid[1] + 2);
+		graphics.drawLine(centroid[0] - 2, centroid[1] + 2, centroid[0] + 2,
+				centroid[1] - 2);
 	}
 
 	/**
-	 * Gets this shape's average colour.
+	 * Draws a descriptive label of the shape.
 	 * 
-	 * @return Shape's average colour.
+	 * @param graphics
+	 *            Canvas to draw on.
 	 */
-	public Color getColour() {
-		return colour;
+	public void drawLabel() {
+		int[] centroid = protoShape.getCentroid();
+
+		drawString(getClass().getSimpleName(), centroid[0], centroid[1] - 10);
+		drawString(getStats(), centroid[0], centroid[1] + 10);
 	}
 
 	/**
-	 * Sets this shape's average colour.
+	 * Draws a string.
 	 * 
-	 * @param colour
-	 *            Colour to set to.
+	 * @param graphics
+	 *            Canvas to draw on.
 	 */
-	public void setColour(Color colour) {
-		validate = false;
-		this.colour = colour;
+	public void drawString(String string, int x, int y) {
+		graphics.setColor(labelColour);
+		graphics.setFont(font);
+		FontMetrics metrics = graphics.getFontMetrics();
+
+		int ws = metrics.stringWidth(string);
+		int hs = metrics.getDescent();
+
+		graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
 	}
 
 	/**
-	 * Gets this shape's average colour.
+	 * Identifies the shape.
 	 * 
-	 * @return Boolean value indicating whether shape should revalidate, that is
-	 *         whether its average colour should be recalculated.
+	 * @param protoShape
+	 *            An unidentified shape.
+	 * @return An instance of the detected shape.
 	 */
-	public boolean getValidate() {
-		return validate;
-	}
-
-	/**
-	 * Requests this CAShape to determine what shape it is, such as a rectangle,
-	 * circle and so on.
-	 * 
-	 * @return A subclass of CAShape corresponding to the shape found.
-	 */
-	public CAShape identify() {
-		for (CAShape shape : recognizedShapes) {
-			CAShape detectedShape = shape.detect(this);
+	public CAShape identifyShape(CAProtoShape protoShape) {
+		for (CAShape shape : basicShapes) {
+			CAShape detectedShape = shape.identify(protoShape);
 			if (detectedShape != null) {
+				detectedShape.graphics = graphics;
 				return detectedShape;
 			}
 		}
-		return new CAUnknownShape(this);
+		return new CAUnknownShape(protoShape);
 	}
 
 	/**
-	 * Determines whether the given parameters describe this shape.
+	 * Returns an instance of the shape described by the protoShape.
 	 * <p>
-	 * Subclasses should extend this. It would have been nice to define this
-	 * method static but Java does not allow inheritance of static methods.
+	 * Subclasses should extend this.
 	 * 
-	 * @param shape
+	 * @param protoShape
 	 *            An unidentified shape.
-	 * @return An instance of the detected shape if detected or indeterminate
-	 *         otherwise.
+	 * @return An instance of the detected shape if detected or null otherwise.
 	 */
-	public CAShape detect(CAShape shape) {
-		/* Method stub */
+	protected CAShape identify(CAProtoShape protoShape) {
 		return null;
-	}
-
-	/**
-	 * Calculates the gradient for each of this shape's outline cells.
-	 */
-	public void calculateGradients() {
-		orderOutlineCells();
-		// TODO Auto-generated method stub
-	}
-
-	/**
-	 * Places outline cells in linear sequence.
-	 */
-	private void orderOutlineCells() {
-		// TODO Auto-generated method stub
 	}
 }

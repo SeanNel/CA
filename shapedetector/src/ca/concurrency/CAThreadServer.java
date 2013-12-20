@@ -87,7 +87,9 @@ public class CAThreadServer extends Thread {
 	 */
 	public void enqueue(CACell cell) {
 		try {
-			pending.put(cell);
+			if (cell.getState() == CACell.ACTIVE) {
+				pending.put(cell);
+			}
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}

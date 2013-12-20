@@ -1,32 +1,61 @@
 package ca.shapedetector.shapes;
 
+import ca.shapedetector.CAProtoShape;
 
-public class CARectangle extends CAShape {
+public class CARectangle extends CAPolygon {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
-	public static float tolerance = 0.2f;
-	
+	protected static double tolerance = 0.15;
+
+	protected static final CASquare square = new CASquare();
+
+	private int length;
+	private int width;
+
+	/**
+	 * Singleton constructor.
+	 */
 	public CARectangle() {
 	}
-	
-	public CARectangle(CAShape shape) {
-		super(shape);
+
+	public CARectangle(CAProtoShape protoShape) {
+		super(protoShape);
 	}
 
-	public CAShape detect(CAShape shape) {
+	protected CAShape identify(CAProtoShape protoShape) {
 		/*
 		 * TODO improve on this basic method of detection. Currently this would
 		 * only work for non-rotated rectangles and those that do not enclose
 		 * other shapes.
 		 */
-		int areaDifference = (shape.getWidth() * shape.getHeight()) - shape.getArea();
-		if (areaDifference < 0)
+		int[] dimensions = protoShape.getDimensions();
+		double areaDifference = dimensions[1] * dimensions[0]
+				- protoShape.getArea();
+		if (areaDifference < 0) {
 			areaDifference *= -1;
+		}
 
-		float a = (float) areaDifference / (float) shape.getArea();
+		double a = areaDifference / (double) protoShape.getArea();
 		if (a <= tolerance) {
-			return new CARectangle(shape);
+			CAShape shape = square.identify(protoShape);
+			if (shape != null) {
+				return shape;
+			} else {
+				CARectangle rectangle = new CARectangle(protoShape);
+				if (dimensions[0] > dimensions[1]) {
+					rectangle.length = dimensions[0];
+					rectangle.width = dimensions[1];
+				} else {
+					rectangle.length = dimensions[1];
+					rectangle.width = dimensions[0];
+				}
+				return rectangle;
+			}
 		} else {
 			return null;
 		}
+	}
+
+	protected String getStats() {
+		return "l=" + length + ", w=" + width;
 	}
 }

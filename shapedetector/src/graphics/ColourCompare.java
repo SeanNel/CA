@@ -21,6 +21,9 @@ public class ColourCompare {
 	 * sense to work in the same format. In addition the integer component is
 	 * never greater than 255, and floats give greater precision when computing
 	 * the square root to get distance.
+	 * <p>
+	 * Experiments showed a difference of 100ms when using only ints, so it
+	 * really is not worth the loss in precision.
 	 * 
 	 * @param vector1
 	 *            A vector to find the distance from.

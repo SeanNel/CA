@@ -1,5 +1,7 @@
 package ca;
 
+import java.util.List;
+
 /**
  * The operational unit of a cellular automaton.
  * 
@@ -29,23 +31,26 @@ public class CACell {
 	 * An array of CACells in this cell's neighbourhood, specifically those
 	 * cells within a certain distance from this cell.
 	 */
-	protected CACell[] neighbourhood;
+	protected List<CACell> neighbourhood;
 
-	protected int[] coordinates;
+	protected final int[] coordinates;
 
 	/**
 	 * Constructor.
 	 * 
+	 * @param coordinates
 	 * @param state
 	 *            The initial state of this cell.
+	 * @param neighbourhood
 	 */
-	public CACell(int[] coordinates, int state) {
+	public CACell(int[] coordinates, int state, List<CACell> neighbourhood) {
 		this.coordinates = coordinates;
 		this.state = state;
+		this.neighbourhood = neighbourhood;
 	}
 
 	/**
-	 * Constructor. Cell starts active.
+	 * Constructor. Cell starts active with an empty neighbourhood.
 	 */
 	public CACell(int[] coordinates) {
 		this.coordinates = coordinates;
@@ -56,11 +61,14 @@ public class CACell {
 	 * Singleton constructor.
 	 */
 	public CACell() {
+		coordinates = null;
 		state = INACTIVE;
 	}
 
 	/**
 	 * Sets this cell's state.
+	 * 
+	 * @state Either ACTIVE or INACTIVE.
 	 */
 	public void setState(int state) {
 		this.state = state;
@@ -81,9 +89,9 @@ public class CACell {
 	 * 
 	 * @param cell
 	 *            The cell to get the neighbourhood of.
-	 * @return An array of CACell's from this cell's neighbourhood.
+	 * @return An list of CACell's from this cell's neighbourhood.
 	 */
-	public CACell[] getNeighbourhood() {
+	public List<CACell> getNeighbourhood() {
 		return neighbourhood;
 	}
 
@@ -95,7 +103,7 @@ public class CACell {
 	 * @param neighbourhood
 	 *            The neighbourhood to set to.
 	 */
-	public void setNeighbourhood(CACell[] neighbourhood) {
+	public void setNeighbourhood(List<CACell> neighbourhood) {
 		this.neighbourhood = neighbourhood;
 	}
 

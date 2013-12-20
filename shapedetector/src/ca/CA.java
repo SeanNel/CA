@@ -1,6 +1,8 @@
 package ca;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 import std.Picture;
 import std.StdDraw;
@@ -13,7 +15,7 @@ import ca.concurrency.CAThreadServer;
  */
 public class CA {
 	/** Two dimensional array of CACells. */
-	protected CACell[][] cells;
+	protected CACell[][] lattice;
 	/**
 	 * Picture first given to this CAModel to process or in the event that the
 	 * CAModel did not finish after its first pass, this is the output of the
@@ -41,18 +43,12 @@ public class CA {
 	protected boolean active;
 	/** Coordinates threads to update cells. */
 	protected CAThreadServer threadServer;
-	/** Useful for determining the performance of this program. */
-	protected Stopwatch stopwatch;
 	/** Number of times this CAModel has processed its cells. */
 	protected int passes;
 	/** Dead padding cell. */
 	public final static CACell paddingCell = new CACell();
-
-	/**
-	 * Colour that cells turn to when they become inactive, that is the
-	 * background colour of the output image.
-	 */
-	public final static Color QUIESCENT_COLOUR = new Color(255, 255, 255);
+	/** Useful for determining the performance of this program. */
+	protected Stopwatch stopwatch;
 
 	/** Moore neighbourhood (a square). */
 	public final static int MOORE_NEIGHBOURHOOD = 0;
@@ -65,6 +61,10 @@ public class CA {
 	protected int neighbourhoodModel = MOORE_NEIGHBOURHOOD;
 	/** Stores the calculated size of the neighbourhood. */
 	protected int neighbourhoodSize;
+	/**
+	 * Signals that the image should be image should be drawn after each update.
+	 */
+	protected boolean drawOnUpdate;
 
 	/**
 	 * Constructor.
@@ -87,28 +87,28 @@ public class CA {
 	}
 
 	/**
-	 * Gathers all neighbouring cells within the square 2r*2r centered on (x,y),
+	 * Gathers all neighbouring cells within the square 3r*3r centered on (x,y),
 	 * that is its Moore neighbourhood.
 	 * 
 	 * @param cell
 	 *            Cell to find the neighbourhood of.
+	 * @return Array of cells in the neighbourhood.
 	 */
-	protected void meetNeighboursMoore(CACell cell) {
-		int n = 0;
-		CACell[] neighbourhood = new CACell[neighbourhoodSize];
+	protected List<CACell> gatherNeighboursMoore(CACell cell, int r) {
+		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
 			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
-				neighbourhood[n++] = getCell(i, j);
+				neighbourhood.add(getCell(i, j));
 			}
 		}
-		getCell(coordinates[0], coordinates[1]).setNeighbourhood(neighbourhood);
+		return neighbourhood;
 	}
 
 	/**
 	 * Gathers all neighbouring cells within the given radius.
 	 * <p>
-	 * Begin by assuming all cells are in the square 2r*2r centered on (x,y).
+	 * Begin by assuming all cells are in the square 3r*3r centered on (x,y).
 	 * Then exclude the cells that are not inside the circle.
 	 * <p>
 	 * This method may give slightly better memory performance than the Moore
@@ -119,21 +119,25 @@ public class CA {
 	 * 
 	 * @param cell
 	 *            Cell to find the neighbourhood of.
+	 * @return Array of cells in the neighbourhood.
 	 */
-	protected void meetNeighboursVanNeumann(CACell cell) {
-		int n = 0;
-		CACell[] neighbourhood = new CACell[neighbourhoodSize];
+	protected List<CACell> gatherNeighboursVanNeumann(CACell cell, int r) {
+		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
+			/*
+			 * Seems like rounding errors occur unless we use smaller than AND
+			 * equals in the 2nd loop. TODO Verify that this works for all r.
+			 */
 			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
 				if (((i - coordinates[0]) * (i - coordinates[0]))
 						+ ((j - coordinates[1]) * (j - coordinates[1])) <= r
 						* r) {
-					neighbourhood[n++] = getCell(i, j);
+					neighbourhood.add(getCell(i, j));
 				}
 			}
 		}
-		getCell(coordinates[0], coordinates[1]).setNeighbourhood(neighbourhood);
+		return neighbourhood;
 	}
 
 	/**
@@ -143,13 +147,9 @@ public class CA {
 	 *            Picture to process.
 	 */
 	public void setPicture(Picture picture) {
-		stopwatch.start();
-
 		pictureBefore = picture;
 		pictureAfter = new Picture(picture); /* Creates copy of picture. */
 		loadCells();
-
-		stopwatch.print(this.getClass().getSimpleName() + " loading time: ");
 	}
 
 	/**
@@ -163,15 +163,6 @@ public class CA {
 	 * Initializes cells.
 	 */
 	protected void loadCells() {
-		cells = new CACell[pictureBefore.width()][pictureBefore.height()];
-
-		for (int x = 0; x < cells.length; x++) {
-			for (int y = 0; y < cells[0].length; y++) {
-				int[] coordinates = { x, y };
-				cells[x][y] = new CACell(coordinates);
-			}
-		}
-
 		switch (neighbourhoodModel) {
 		case MOORE_NEIGHBOURHOOD:
 			neighbourhoodSize = 4 * r * r;
@@ -179,6 +170,15 @@ public class CA {
 		case VANNEUMANN_NEIGHBOURHOOD:
 			neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
 			break;
+		}
+
+		lattice = new CACell[pictureBefore.width()][pictureBefore.height()];
+
+		for (int x = 0; x < lattice.length; x++) {
+			for (int y = 0; y < lattice[0].length; y++) {
+				int[] coordinates = { x, y };
+				lattice[x][y] = new CACell(coordinates);
+			}
 		}
 	}
 
@@ -217,9 +217,9 @@ public class CA {
 		active = false;
 		threadServer = new CAThreadServer(this);
 		threadServer.start();
-		for (int x = 0; x < cells.length; x++) {
-			for (int y = 0; y < cells[0].length; y++) {
-				threadServer.enqueue(cells[x][y]);
+		for (int x = 0; x < lattice.length; x++) {
+			for (int y = 0; y < lattice[0].length; y++) {
+				threadServer.enqueue(lattice[x][y]);
 			}
 		}
 		threadServer.finish();
@@ -234,7 +234,9 @@ public class CA {
 	protected void endPass() {
 		passes++;
 		pictureBefore = new Picture(pictureAfter);
-		// draw();
+		if (drawOnUpdate) {
+			draw();
+		}
 	}
 
 	/**
@@ -267,14 +269,16 @@ public class CA {
 	 */
 	protected void initCell(CACell cell) {
 		if (cell.getNeighbourhood() == null) {
+			List<CACell> neighbourhood = null;
 			switch (neighbourhoodModel) {
 			case MOORE_NEIGHBOURHOOD:
-				meetNeighboursMoore(cell);
+				neighbourhood = gatherNeighboursMoore(cell, r);
 				break;
 			case VANNEUMANN_NEIGHBOURHOOD:
-				meetNeighboursVanNeumann(cell);
+				neighbourhood = gatherNeighboursVanNeumann(cell, r);
 				break;
 			}
+			cell.setNeighbourhood(neighbourhood);
 		}
 	}
 
@@ -297,8 +301,8 @@ public class CA {
 	 * @return Cell at the specified position.
 	 */
 	public CACell getCell(int x, int y) {
-		if (x >= 0 && y >= 0 && x < cells.length && y < cells[0].length) {
-			return cells[x][y];
+		if (x >= 0 && y >= 0 && x < lattice.length && y < lattice[0].length) {
+			return lattice[x][y];
 		} else {
 			return paddingCell;
 		}

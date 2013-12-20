@@ -51,7 +51,7 @@ public class CACellThread extends Thread {
 			// "CACellThread::finish() queue length exceeded");
 			// }
 			pending.put(cell);
-			
+
 		} catch (InterruptedException e) {
 			interrupted(e);
 		}
@@ -61,9 +61,7 @@ public class CACellThread extends Thread {
 		try {
 			CACell cell;
 			while ((cell = pending.take()) != end) {
-				if (cell.getState() == CACell.ACTIVE) {
-					server.updateCell(cell);
-				}
+				server.updateCell(cell);
 				server.returnThread(this);
 			}
 
