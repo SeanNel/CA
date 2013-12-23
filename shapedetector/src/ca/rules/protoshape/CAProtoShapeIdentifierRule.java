@@ -3,19 +3,19 @@ package ca.rules.protoshape;
 import ca.Stopwatch;
 import ca.shapedetector.CAProtoShape;
 import ca.shapedetector.CAShapeDetector;
-import ca.shapedetector.shapes.CAShape;
+import ca.shapedetector.shapes.SDShape;
 
 /**
  * Identifies ProtoShapes as CAShapes.
  */
 public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
-	CAShape shapeDetector;
+	SDShape shapeDetector;
 	Stopwatch stopwatch;
 	long[] timers;
 
 	public CAProtoShapeIdentifierRule(CAShapeDetector ca) {
 		super(ca);
-		shapeDetector = new CAShape(ca.getPicture());
+		shapeDetector = new SDShape(ca.getPicture());
 		stopwatch = new Stopwatch();
 		timers = new long[3];
 	}
@@ -24,12 +24,12 @@ public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
 		// System.out.println("*** " + protoShape);
 		/* Arranges outline cells in order. */
 		stopwatch.start();
-		// protoShape.orderOutlineCells();
+		protoShape.arrangeOutlineCells();
 		timers[0] += stopwatch.time();
 
-		/* Calculates gradients. */
+		/* Calculates tangents. */
 		stopwatch.start();
-		protoShape.calculateGradients();
+//		protoShape.calculateTangents();
 		timers[1] += stopwatch.time();
 
 		/* Identifies shapes. */

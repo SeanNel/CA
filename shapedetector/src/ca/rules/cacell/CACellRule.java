@@ -23,4 +23,8 @@ public abstract class CACellRule {
 	public void update(CACell cell) {
 		/** Method stub. */
 	}
+	
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 }

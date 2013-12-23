@@ -23,4 +23,8 @@ public abstract class CAProtoShapeRule {
 	public void update(CAProtoShape protoShape) {
 		/** Method stub. */
 	}
+	
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 }

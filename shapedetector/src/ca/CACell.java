@@ -26,14 +26,15 @@ public class CACell {
 	 * its colour and the state of its neighbourhood.
 	 */
 	protected int state;
-
 	/**
 	 * An array of CACells in this cell's neighbourhood, specifically those
 	 * cells within a certain distance from this cell.
 	 */
 	protected List<CACell> neighbourhood;
-
+	/** The cell's position coordinates. */
 	protected final int[] coordinates;
+	/* TODO: Move this to an array in shapedetector. */
+	protected boolean validate;
 
 	/**
 	 * Constructor.

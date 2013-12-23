@@ -1,6 +1,5 @@
 package ca.shapedetector;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +40,7 @@ public class CAShapeDetector extends CA {
 	/** List of unique protoShapes. */
 	protected Set<CAProtoShape> protoShapes;
 	/** List of detected shapes. */
-	protected List<CAShape> shapes;
+	protected List<SDShape> shapes;
 
 	/**
 	 * Applies shape detector to image given as argument on the command line.
@@ -57,7 +56,7 @@ public class CAShapeDetector extends CA {
 		StdDraw.frame.setTitle("CA Shape Detector");
 
 		String path;
-		float epsilon = 0.05f;
+		float epsilon = 0.02f;
 		int r = 1;
 
 		if (args.length == 0) {
@@ -76,6 +75,9 @@ public class CAShapeDetector extends CA {
 
 		Picture picture = new Picture(path);
 		StdDraw.setCanvasSize(picture.width(), picture.height());
+		StdDraw.setXscale(0, picture.width());
+		StdDraw.setYscale(0, picture.height());
+		StdDraw.setYscale(picture.height(), 0);
 		picture.setOriginUpperLeft();
 
 		// picture = Filter.greyscale(picture);
@@ -87,6 +89,9 @@ public class CAShapeDetector extends CA {
 		picture = shapeDetector.apply(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
+
+		StdDraw.setXscale();
+		StdDraw.setYscale();
 		StdDraw.picture(0.5, 0.5, picture.getImage());
 	}
 
@@ -94,30 +99,26 @@ public class CAShapeDetector extends CA {
 		super(epsilon, r);
 		// neighbourhoodModel = VANNEUMANN_NEIGHBOURHOOD;
 
-		processes = new ArrayList<CACellRule>(3);
-		processes.add(new CANoiseRemoverRule(this));
-		processes.add(new CAEdgeFinderRule(this));
-		processes.add(new CAShapeFinderRule(this));
-		processes.add(new CAOutlineFinderRule(this));
+		drawOnModelUpdate = true;
+		// drawOnCellUpdate = true;
+
+		cellRules = new LinkedList<CACellRule>();
+		cellRules.add(new CANoiseRemoverRule(this));
+		cellRules.add(new CAEdgeFinderRule(this));
+		cellRules.add(new CAShapeFinderRule(this));
+		cellRules.add(new CAOutlineFinderRule(this));
 	}
 
 	@Override
 	public void setPicture(Picture picture) {
-		stopwatch.start();
-
 		super.setPicture(picture);
 		shapeAssociations = new CAProtoShape[picture.width()][picture.height()];
 		/*
 		 * HashSet performs better with the remove method than LinkedList, which
-		 * performs better than ArrayList. Might have to make this
-		 * Collections.synchronizedSet(...);
+		 * performs better than ArrayList.
 		 */
 		protoShapes = new HashSet<CAProtoShape>(lattice.length
 				* lattice[0].length);
-		/*
-		 * Would it be better to do this later in parallel? Doesn't seem to take
-		 * much time anyway.
-		 */
 		for (int x = 0; x < lattice.length; x++) {
 			for (int y = 0; y < lattice[0].length; y++) {
 				CAProtoShape shape = new CAProtoShape(getCell(x, y));
@@ -126,16 +127,20 @@ public class CAShapeDetector extends CA {
 			}
 		}
 
-		stopwatch.print(this.getClass().getSimpleName() + " loading time: ");
+		/*
+		 * Creating these shapeAssociations in parallel actually takes longer
+		 * because of having to synchronize the Set, but it is possible:
+		 */
+		// protoShapes = Collections.synchronizedSet(new HashSet<CAProtoShape>(
+		// lattice.length * lattice[0].length));
+		// cellRules.add(0, new CAProtoShapeAssociationRule(this));
+
 	}
 
 	@Override
 	public Picture apply(Picture picture) {
-		/* Skips integrated noise removal & edge finding. */
-		// passes = 2;
-
 		super.apply(picture);
-		shapes = new LinkedList<CAShape>();
+		shapes = new LinkedList<SDShape>();
 		Set<CAProtoShape> oldProtoShapes = new HashSet<CAProtoShape>(
 				protoShapes);
 		CAProtoShapeAssimilatorRule shapeAssimilator = new CAProtoShapeAssimilatorRule(
@@ -149,7 +154,8 @@ public class CAShapeDetector extends CA {
 		for (CAProtoShape shape : oldProtoShapes) {
 			shapeAssimilator.update(shape);
 		}
-		assimilatorStopwatch.print("Assimilated shapes: ");
+		assimilatorStopwatch.print("Assimilated "
+				+ (oldProtoShapes.size() - protoShapes.size()) + " shapes: ");
 
 		CAProtoShapeIdentifierRule protoShapeIdentifier = new CAProtoShapeIdentifierRule(
 				this);
@@ -157,6 +163,7 @@ public class CAShapeDetector extends CA {
 		for (CAProtoShape protoShape : protoShapes) {
 			protoShapeIdentifier.update(protoShape);
 		}
+		protoShapeIdentifier.printTimers();
 
 		return pointOutShapes(pictureAfter);
 	}
@@ -171,11 +178,7 @@ public class CAShapeDetector extends CA {
 	 * @return The resulting protoShape.
 	 */
 	public synchronized CAProtoShape mergeCells(CACell cell1, CACell cell2) {
-		if (cell1 == null || cell2 == null) {
-			return null;
-		} else {
-			return mergeShapes(getShape(cell1), getShape(cell2));
-		}
+		return mergeProtoShapes(getProtoShape(cell1), getProtoShape(cell2));
 	}
 
 	/**
@@ -188,7 +191,8 @@ public class CAShapeDetector extends CA {
 	 *            2st protoShape to merge with.
 	 * @return The resulting protoShape.
 	 */
-	protected CAProtoShape mergeShapes(CAProtoShape shape1, CAProtoShape shape2) {
+	protected CAProtoShape mergeProtoShapes(CAProtoShape shape1,
+			CAProtoShape shape2) {
 		/* NB */
 		if (shape1 == shape2) {
 			return null;
@@ -210,7 +214,7 @@ public class CAShapeDetector extends CA {
 				}
 
 				for (CACell cell : oldShape.getAreaCells()) {
-					setShape(cell, newShape);
+					setProtoShape(cell, newShape);
 				}
 				/* Must be removed before merging. */
 				protoShapes.remove(oldShape);
@@ -227,7 +231,7 @@ public class CAShapeDetector extends CA {
 	 *            A cell belonging to a shape.
 	 * @return The shape associated with the specified cell.
 	 */
-	public CAProtoShape getShape(CACell cell) {
+	public CAProtoShape getProtoShape(CACell cell) {
 		int[] coordinates = cell.getCoordinates();
 		return shapeAssociations[coordinates[0]][coordinates[1]];
 	}
@@ -240,7 +244,7 @@ public class CAShapeDetector extends CA {
 	 * @param shape
 	 *            The shape associated with the specified cell.
 	 */
-	public void setShape(CACell cell, CAProtoShape shape) {
+	public void setProtoShape(CACell cell, CAProtoShape shape) {
 		int[] coordinates = cell.getCoordinates();
 		shapeAssociations[coordinates[0]][coordinates[1]] = shape;
 	}
@@ -256,11 +260,11 @@ public class CAShapeDetector extends CA {
 		System.out.println("Number of shapes: " + shapes.size());
 		System.out.println("Detected shapes: ");
 		int delta = 2;
-		for (CAShape shape : shapes) {
+		for (SDShape shape : shapes) {
 			/* using instanceof does not seem to work here. */
-			if (shape.getClass() != CAUnknownShape.class) {
+			if (shape.getClass() != SDUnknownShape.class) {
 				/* Ignore the rectangle detected at the image borders. */
-				if (shape instanceof CARectangle
+				if (shape instanceof SDRectangle
 						&& shape.getDimensions()[0] + delta > pictureBefore
 								.width()
 						&& shape.getDimensions()[1] + delta > pictureBefore
@@ -279,11 +283,15 @@ public class CAShapeDetector extends CA {
 	 * 
 	 * @return List of shapes found.
 	 */
-	public List<CAShape> getShapes() {
+	public List<SDShape> getShapes() {
 		return shapes;
 	}
 
-	public void addShape(CAShape shape) {
+	public void addShape(SDShape shape) {
 		shapes.add(shape);
+	}
+
+	public void addProtoShape(CAProtoShape protoShape) {
+		protoShapes.add(protoShape);
 	}
 }

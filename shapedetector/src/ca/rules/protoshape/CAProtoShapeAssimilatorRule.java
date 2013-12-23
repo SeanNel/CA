@@ -21,7 +21,7 @@ public class CAProtoShapeAssimilatorRule extends CAProtoShapeRule {
 	 * Shapes with areas smaller than this will be assimilated into larger
 	 * shapes.
 	 */
-	protected int minArea = 25;
+	protected int minArea = 100;// 25;
 
 	public CAProtoShapeAssimilatorRule(CAShapeDetector ca) {
 		super(ca);
@@ -39,7 +39,7 @@ public class CAProtoShapeAssimilatorRule extends CAProtoShapeRule {
 				 * Recursively merge shapes together until there are no more
 				 * small shapes remaining.
 				 */
-				if (newProtoShape != null) {
+				if (newProtoShape != null && newProtoShape != protoShape) {
 					update(newProtoShape);
 				}
 			}
@@ -56,16 +56,26 @@ public class CAProtoShapeAssimilatorRule extends CAProtoShapeRule {
 	protected CAProtoShape assimilate(CAProtoShape protoShape) {
 		/** A set of all the shapes next to this one. */
 		Set<CAProtoShape> neighbouringShapes = new HashSet<CAProtoShape>();
+
+		List<CACell> outlineCells = protoShape.getOutlineCells();
+		/*
+		 * There may be no outlineCells if the protoShape consisted of only one
+		 * cell.
+		 */
+		if (outlineCells.isEmpty()) {
+			outlineCells.add(protoShape.getAreaCells().get(0));
+		}
 		/*
 		 * Gathers all the shapes next to this one. Duplicates would slow down
 		 * the step after this which iterates through all these shapes, which is
 		 * why neighbouringShapes is a set and not a list.
 		 */
-		for (CACell cell : protoShape.getOutlineCells()) {
+		for (CACell cell : outlineCells) {
 			List<CACell> neighbourhood = cell.getNeighbourhood();
 			for (CACell neighbour : neighbourhood) {
 				if (neighbour != cell && neighbour != CA.paddingCell) {
-					CAProtoShape neighbouringShape = ca.getShape(neighbour);
+					CAProtoShape neighbouringShape = ca
+							.getProtoShape(neighbour);
 					if (neighbouringShape != protoShape) {
 						neighbouringShapes.add(neighbouringShape);
 					}
@@ -126,7 +136,11 @@ public class CAProtoShapeAssimilatorRule extends CAProtoShapeRule {
 		 * Merging representative cells of the two shapes instead of the shapes
 		 * themselves helps avoid synchronization issues.
 		 */
-		return ca.mergeCells(repCell, similarCell);
+		if (similarCell == null) {
+			return protoShape;
+		} else {
+			return ca.mergeCells(repCell, similarCell);
+		}
 	}
 
 	/**

@@ -3,16 +3,12 @@ package ca.shapedetector;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import ca.CA;
 import ca.CACell;
 
 /**
- * A shape made up of CACells.
+ * A ProtoShape made up of CACells.
  * 
  * @author Sean
  */
@@ -42,9 +38,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	/** Signals that shape should update its averageColour. */
 	protected boolean validate;
 
-	/** List of recognizable shapes. */
-	protected static Set<CAProtoShape> recognizedShapes = new HashSet<CAProtoShape>();
-
 	/**
 	 * Singleton constructor.
 	 */
@@ -72,30 +65,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		for (int i = 0; i < coordinates.length; i++) {
 			boundaries[0][i] = boundaries[1][i] = coordinates[i];
 		}
-	}
-
-	/**
-	 * Copy constructor.
-	 * 
-	 * @param shape
-	 *            The shape to make a copy of.
-	 */
-	public CAProtoShape(CAProtoShape protoShape) {
-		areaCells = protoShape.areaCells;
-		outlineCells = protoShape.outlineCells;
-		boundaries = protoShape.boundaries.clone();
-		colour = protoShape.colour;
-		validate = protoShape.validate;
-	}
-
-	/**
-	 * Add a shape to the list of recognizable shapes.
-	 * 
-	 * @param shape
-	 *            Shape to add.
-	 */
-	public static void addShape(CAProtoShape protoShape) {
-		recognizedShapes.add(protoShape);
 	}
 
 	/**
@@ -150,32 +119,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	}
 
 	/**
-	 * Gets the dimensions of this protoShape, for example its width and height.
-	 * 
-	 * @return The dimensions of this protoShape.
-	 */
-	public int[] getDimensions() {
-		int[] dimensions = new int[boundaries[0].length];
-		for (int i = 0; i < dimensions.length; i++) {
-			dimensions[i] = boundaries[1][i] - boundaries[0][i] + 1;
-		}
-		return dimensions;
-	}
-
-	/**
-	 * Gets this protoShape's centroid.
-	 * 
-	 * @return The centroid's coordinates.
-	 */
-	public int[] getCentroid() {
-		int[] centroid = new int[boundaries[0].length];
-		for (int i = 0; i < centroid.length; i++) {
-			centroid[i] = (boundaries[1][i] + boundaries[0][i]) / 2;
-		}
-		return centroid;
-	}
-
-	/**
 	 * Gets the collection of cells that form the shape.
 	 * 
 	 * @return Collection of area cells.
@@ -207,46 +150,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 			return areaCells.size();
 		}
 	}
-
-	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") [centroid: "
-				+ arrayToString(getCentroid()) + ", dimensions: "
-				+ arrayToString(getDimensions()) + "]";
-	}
-
-	protected String arrayToString(int[] array) {
-		if (array.length == 0) {
-			return "";
-		}
-
-		String str = "" + array[0];
-		for (int i = 1; i < array.length; i++) {
-			str += ", " + array[i];
-		}
-		return str;
-	}
-
-	/**
-	 * Places shapes in order of area size. Guarantees that shapes of identical
-	 * size can coexist in a set of unique shapes.
-	 */
-	@Override
-	public int compareTo(CAProtoShape arg0) {
-		if (this == arg0) {
-			return 0;
-		} else if (getArea() >= arg0.getArea()) {
-			return 1;
-		} else {
-			return -1;
-		}
-	}
-
-	/** Attempt to free memory allocated to this shape. */
-	public void destroy() {
-		areaCells = null;
-		outlineCells = null;
-	}
-
 	/**
 	 * Gets this shape's average colour.
 	 * 
@@ -277,70 +180,279 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		return validate;
 	}
 
-	/**
-	 * Calculates the gradient for each of this shape's outline cells.
-	 */
-	public void calculateGradients() {
-		// TODO Auto-generated method stub
+	public String toString() {
+		return "(" + this.getClass().getSimpleName() + ") ["
+				+ arrayToString(boundaries[0]) + ":"
+				+ arrayToString(boundaries[1]) + "]";
 	}
 
+	protected String arrayToString(int[] array) {
+		if (array.length == 0) {
+			return "";
+		}
+
+		String str = "" + array[0];
+		for (int i = 1; i < array.length; i++) {
+			str += ", " + array[i];
+		}
+		return str;
+	}
+
+	/** Attempt to free memory allocated to this shape. */
+	public void destroy() {
+		areaCells = null;
+		outlineCells = null;
+	}
+
+
 	/**
-	 * Places outline cells in linear sequence, with pseudo-random starting
-	 * position.
+	 * Places outline cells in clockwise sequence, with pseudo-random starting
+	 * position along the shape's top boundary (depending on which cell was
+	 * added to the list first).
+	 * <p>
+	 * Notice that this forms a closed loop of the shape's outside, so that it
+	 * automatically disregards any other enveloped shapes. This does not
+	 * however, do anything to add those shapes' areaCells to the shape
+	 * enveloping them.
+	 * <p>
+	 * If areas are to be used for comparison, we should also add those
+	 * areaCells where appropriate. This also means that each cell would now
+	 * possibly be mapped to more than one shape.
 	 */
-	public void orderOutlineCells() {
-		if (outlineCells == null || outlineCells.size() < 4) {
+	public void arrangeOutlineCells() {
+		CACell first = firstOutlineCell();
+		if (first == null) {
 			return;
-		}
-
-		/* Creates temporary list containing the first outlineCell. */
-		ArrayList<CACell> orderedList = new ArrayList<CACell>(
-				outlineCells.size());
-		orderedList.add(outlineCells.get(0));
-
-		CACell previous = null;
-		CACell next = orderedList.get(0);
-		
-		Iterator<CACell> iterator = outlineCells.iterator();
-		iterator.next();
-		while (iterator.hasNext()) {
-			iterator.next();
-			
-			next = nextOutlineCell(previous, next);
-			previous = orderedList.get(orderedList.size() - 1);
-			System.out.println(" :: " + next);
-			orderedList.add(next);
-		}
-
-		outlineCells = orderedList;
-
-		for (CACell c : outlineCells) {
-			System.out.println(c);
+		} else {
+			CALoopFinder loopFinder = new CALoopFinder(outlineCells);
+			outlineCells = loopFinder.getLoop(first);
 		}
 	}
 
 	/**
-	 * Finds the next outline cell. Assumes the cell's neighbourhood is a 3*3
-	 * square. When there is ambiguity, assumes the next cell is above and/or to
-	 * the right. Assumes that the current cell is not included in its own
-	 * neighbourhood.
+	 * Finds a cell along the top boundary.
+	 * <p>
+	 * It is not difficult to ensure that the top-left cell is selected, but any
+	 * one at the top boundary will work, so we'll just pick one, because it's
+	 * faster that way.
 	 * 
-	 * @param previousCell
-	 *            The previous outline cell.
-	 * @param currentCell
-	 *            The current outline cell.
-	 * @return The next outline cell.
+	 * @return The '1st' cell to start the loop of outline cells.
 	 */
-	protected CACell nextOutlineCell(CACell previousCell, CACell currentCell) {
-		List<CACell> neighbourhood = currentCell.getNeighbourhood();
-
-		for (CACell neighbour : neighbourhood) {
-			/* outlineCells >> hashSet or bst etc? */
-			if (neighbour != CA.paddingCell && neighbour != previousCell
-					&& outlineCells.contains(neighbour)) {
-				return neighbour;
+	protected CACell firstOutlineCell() {
+		for (CACell cell : outlineCells) {
+			int[] coordinates = cell.getCoordinates();
+			/* Looks at row along top boundary: */
+			if (coordinates[1] == boundaries[0][1]) {
+				return cell;
 			}
 		}
 		return null;
 	}
+
+	/**
+	 * Places shapes in order of area size. Guarantees that shapes of identical
+	 * size can coexist in a set of unique shapes.
+	 */
+	@Override
+	public int compareTo(CAProtoShape arg0) {
+		if (this == arg0) {
+			return 0;
+		} else if (getArea() >= arg0.getArea()) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
 }
+
+// /**
+// * Draws the shape. Subclasses could extend this.
+// *
+// * @param graphics
+// * Canvas to draw on.
+// */
+// public void drawArea() {
+// graphics.setColor(fillColour); // protoShape.getColour()
+// for (CACell cell : protoShape.getAreaCells()) {
+// int[] coordinates = cell.getCoordinates();
+// graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
+// }
+// graphics.setColor(outlineColour);
+// for (CACell cell : protoShape.getOutlineCells()) {
+// int[] coordinates = cell.getCoordinates();
+// graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
+// }
+// }
+//
+// /**
+// * Draws a cross at the centroid of the shape in the specified colour.
+// *
+// * @param graphics
+// * Canvas to draw on.
+// */
+// public void drawCentroid() {
+// graphics.setColor(centroidColour);
+// int[] centroid = protoShape.getCentroid();
+//
+// graphics.drawLine(centroid[0] - 2, centroid[1] - 2, centroid[0] + 2,
+// centroid[1] + 2);
+// graphics.drawLine(centroid[0] - 2, centroid[1] + 2, centroid[0] + 2,
+// centroid[1] - 2);
+// }
+//
+// /**
+// * Draws a descriptive label of the shape.
+// *
+// * @param graphics
+// * Canvas to draw on.
+// */
+// public void drawLabel() {
+// int[] centroid = protoShape.getCentroid();
+//
+// drawString(getClass().getSimpleName(), centroid[0], centroid[1] - 10);
+// drawString(getStats(), centroid[0], centroid[1] + 10);
+// }
+//
+// /**
+// * Draws a string.
+// *
+// * @param graphics
+// * Canvas to draw on.
+// */
+// public void drawString(String string, int x, int y) {
+// graphics.setColor(labelColour);
+// graphics.setFont(font);
+// FontMetrics metrics = graphics.getFontMetrics();
+//
+// int ws = metrics.stringWidth(string);
+// int hs = metrics.getDescent();
+//
+// graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
+// }
+
+// /**
+// * A sequence of numbers that describe the angles of tangent lines to the
+// * outline of the shape, relative to the x-axis, in degrees. (This way we
+// * avoid the added complication of vertical asymptotes). Degrees may be more
+// * useful in this case due to rounding errors when computing in radians.
+// * Since the tangents will only be multiples of 45deg, we can store them as
+// * integers. Integers also require less storage space and are faster to
+// * compute.
+// */
+// protected List<Integer> tangentLines;
+
+// /**
+// * Gets the collection of integers describing tangent lines to the shape
+// * outline.
+// *
+// * @return Collection of outline cells.
+// */
+// public List<Integer> getTangentLines() {
+// return tangentLines;
+// }
+//
+// /**
+// * Calculates the gradient for each of this shape's outline cells.
+// */
+// public void calculateTangents() {
+// tangentLines = new ArrayList<Integer>(outlineCells.size());
+//
+// Iterator<CACell> previousIterator = outlineCells.iterator();
+// Iterator<CACell> currentIterator = outlineCells.iterator();
+//
+// CACell previous = previousIterator.next();
+// currentIterator.next();
+// CACell current = currentIterator.next();
+//
+// int tangent = getTangent(outlineCells.get(outlineCells.size() - 1),
+// previous);
+// tangentLines.add(tangent);
+//
+// while (currentIterator.hasNext()) {
+// tangent = getTangent(previous, current);
+// tangentLines.add(tangent);
+//
+// previous = previousIterator.next();
+// current = currentIterator.next();
+// }
+// }
+//
+// /**
+// * Gets the angle formed between two adjacent cells.
+// *
+// * @param previous
+// * @param current
+// * @return
+// */
+// protected int getTangent(CACell previous, CACell current) {
+// int[] previousCoordinates = previous.getCoordinates();
+// int[] currentCoordinates = current.getCoordinates();
+//
+// int deltaX = currentCoordinates[0] - previousCoordinates[0];
+// int deltaY = currentCoordinates[1] - previousCoordinates[1];
+//
+// switch (deltaX) {
+// case -1:
+// switch (deltaY) {
+// case -1:
+// return 225;
+// case 0:
+// return 180;
+// case 1:
+// return 135;
+// }
+// break;
+// case 0:
+// switch (deltaY) {
+// case -1:
+// return 90;
+// case 0:
+// throw new RuntimeException(
+// "Error computing tangent to outline cell.");
+// case 1:
+// return 270;
+// }
+// break;
+// case 1:
+// switch (deltaY) {
+// case -1:
+// return 315;
+// case 0:
+// return 0;
+// case 1:
+// return 45;
+// }
+// break;
+// }
+// /*
+// * If this point is reached, the current cell is not adjacent to the
+// * previous one...
+// */
+// return -1;
+// }
+
+// /**
+// * Gets the dimensions of this protoShape, for example its width and height.
+// *
+// * @return The dimensions of this protoShape.
+// */
+// public int[] getDimensions() {
+// int[] dimensions = new int[boundaries[0].length];
+// for (int i = 0; i < dimensions.length; i++) {
+// dimensions[i] = boundaries[1][i] - boundaries[0][i] + 1;
+// }
+// return dimensions;
+// }
+//
+// /**
+// * Gets this protoShape's centroid.
+// *
+// * @return The centroid's coordinates.
+// */
+// public int[] getCentroid() {
+// int[] centroid = new int[boundaries[0].length];
+// for (int i = 0; i < centroid.length; i++) {
+// centroid[i] = (boundaries[1][i] + boundaries[0][i]) / 2;
+// }
+// return centroid;
+// }

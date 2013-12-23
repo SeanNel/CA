@@ -2,6 +2,7 @@ package ca;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import std.Picture;
@@ -18,9 +19,9 @@ public class CA {
 	/** Two dimensional array of CACells. */
 	protected CACell[][] lattice;
 	/** Processes to apply to each cell in sequence. */
-	public List<CACellRule> processes;
-	/** Currently active process. */
-	int currentProcess;
+	public List<CACellRule> cellRules;
+	/** Currently active cell rule. */
+	CACellRule currentCellRule;
 	/**
 	 * Picture first given to this CAModel to process or in the event that the
 	 * CAModel did not finish after its first pass, this is the output of the
@@ -52,8 +53,11 @@ public class CA {
 	protected int passes;
 	/** Dead padding cell. */
 	public final static CACell paddingCell = new CACell();
-	/** Useful for determining the performance of this program. */
-	protected Stopwatch stopwatch;
+	/* Stopwatches useful for determining the performance of this program. */
+	/** Keeps time of how long it takes to complete a pass. */
+	protected Stopwatch passStopwatch;
+	/** Keeps time of how long it takes to complete a rule. */
+	protected Stopwatch ruleStopwatch;
 
 	/** Moore neighbourhood (a square). */
 	public final static int MOORE_NEIGHBOURHOOD = 0;
@@ -69,7 +73,11 @@ public class CA {
 	/**
 	 * Signals that the image should be image should be drawn after each update.
 	 */
-	protected boolean drawOnUpdate;
+	protected boolean drawOnModelUpdate;
+	/**
+	 * Signals that the image should be image should be drawn after each update.
+	 */
+	protected boolean drawOnCellUpdate;
 
 	/**
 	 * Constructor.
@@ -86,9 +94,52 @@ public class CA {
 		 * Might instead want to set epsilon dynamically according to the colour
 		 * range in the image.
 		 */
-		this.setEpsilon(epsilon);
+		this.epsilon = epsilon;
 		this.r = r;
-		stopwatch = new Stopwatch();
+		passStopwatch = new Stopwatch();
+		ruleStopwatch = new Stopwatch();
+	}
+
+	/**
+	 * Sets picture to process and initializes cell lattice.
+	 * 
+	 * @param picture
+	 *            Picture to process.
+	 */
+	public void setPicture(Picture picture) {
+		pictureBefore = picture;
+		pictureAfter = new Picture(picture); /* Creates copy of picture. */
+		loadLattice();
+	}
+
+	/**
+	 * Gets the output image.
+	 */
+	public Picture getPicture() {
+		return pictureAfter;
+	}
+
+	/**
+	 * Initializes the lattice of cells.
+	 */
+	protected void loadLattice() {
+		switch (neighbourhoodModel) {
+		case MOORE_NEIGHBOURHOOD:
+			neighbourhoodSize = 4 * r * r;
+			break;
+		case VANNEUMANN_NEIGHBOURHOOD:
+			neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
+			break;
+		}
+
+		lattice = new CACell[pictureBefore.width()][pictureBefore.height()];
+
+		for (int x = 0; x < lattice.length; x++) {
+			for (int y = 0; y < lattice[0].length; y++) {
+				int[] coordinates = { x, y };
+				lattice[x][y] = new CACell(coordinates);
+			}
+		}
 	}
 
 	/**
@@ -130,10 +181,6 @@ public class CA {
 		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
-			/*
-			 * Seems like rounding errors occur unless we use smaller than AND
-			 * equals in the 2nd loop. TODO Verify that this works for all r.
-			 */
 			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
 				if (((i - coordinates[0]) * (i - coordinates[0]))
 						+ ((j - coordinates[1]) * (j - coordinates[1])) <= r
@@ -146,48 +193,6 @@ public class CA {
 	}
 
 	/**
-	 * Sets picture to process and initializes cells.
-	 * 
-	 * @param picture
-	 *            Picture to process.
-	 */
-	public void setPicture(Picture picture) {
-		pictureBefore = picture;
-		pictureAfter = new Picture(picture); /* Creates copy of picture. */
-		loadCells();
-	}
-
-	/**
-	 * Gets the output image.
-	 */
-	public Picture getPicture() {
-		return pictureAfter;
-	}
-
-	/**
-	 * Initializes cells.
-	 */
-	protected void loadCells() {
-		switch (neighbourhoodModel) {
-		case MOORE_NEIGHBOURHOOD:
-			neighbourhoodSize = 4 * r * r;
-			break;
-		case VANNEUMANN_NEIGHBOURHOOD:
-			neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
-			break;
-		}
-
-		lattice = new CACell[pictureBefore.width()][pictureBefore.height()];
-
-		for (int x = 0; x < lattice.length; x++) {
-			for (int y = 0; y < lattice[0].length; y++) {
-				int[] coordinates = { x, y };
-				lattice[x][y] = new CACell(coordinates);
-			}
-		}
-	}
-
-	/**
 	 * Sets the picture to process and processes it by updating cells until they
 	 * are all done (that is, until they all become inactive).
 	 * 
@@ -196,15 +201,47 @@ public class CA {
 	 * @return Processed picture.
 	 */
 	public Picture apply(Picture picture) {
+		System.out.println(this.getClass().getSimpleName() + " started.");
+		ruleStopwatch.start();
+
 		setPicture(picture);
+		if (drawOnModelUpdate || drawOnCellUpdate) {
+			draw();
+		}
+
+		ruleStopwatch.print("Loading complete, elapsed time: ");
+		ruleStopwatch.start();
+
+		Iterator<CACellRule> ruleIterator = cellRules.iterator();
+		if (ruleIterator.hasNext()) {
+			currentCellRule = ruleIterator.next();
+		} else {
+			throw new RuntimeException("No cell rules defined...");
+		}
 
 		active = true;
 		while (active) {
-			stopwatch.start();
+			passStopwatch.start();
 			updateModel();
-			endPass();
-			System.out.println(this.getClass().getSimpleName() + " pass #"
-					+ passes + ", elapsed time: " + stopwatch.time() + " ms");
+
+			passes++;
+			pictureBefore = new Picture(pictureAfter);
+			if (drawOnModelUpdate) {
+				draw();
+			}
+			if (!active) {
+				System.out.println(currentCellRule + ", elapsed time: "
+						+ ruleStopwatch.time() + " ms");
+				if (ruleIterator.hasNext()) {
+					passes = 0;
+					currentCellRule = ruleIterator.next();
+					ruleStopwatch.start();
+					active = true;
+				}
+			} else {
+				System.out.println(" pass #" + passes + ", elapsed time: "
+						+ passStopwatch.time() + " ms");
+			}
 		}
 		return pictureAfter;
 	}
@@ -232,23 +269,6 @@ public class CA {
 	}
 
 	/**
-	 * What happens after each pass of the CA.
-	 */
-	protected void endPass() {
-		passes++;
-		pictureBefore = new Picture(pictureAfter);
-		if (drawOnUpdate) {
-			draw();
-		}
-		if (!active) {
-			currentProcess++;
-		}
-		if (currentProcess < processes.size()) {
-			active = true;
-		}
-	}
-
-	/**
 	 * Applies subsequent changes to the CA that do not relate to individual
 	 * cells. Subclasses should extend this.
 	 */
@@ -263,7 +283,15 @@ public class CA {
 	 *            The cell to update.
 	 */
 	public void updateCell(CACell cell) {
-		processes.get(currentProcess).update(cell);
+		currentCellRule.update(cell);
+
+		if (drawOnCellUpdate && cell.validate) {
+			int[] coordinates = cell.getCoordinates();
+			StdDraw.setPenColor(pictureAfter
+					.get(coordinates[0], coordinates[1]));
+			StdDraw.drawPixel(coordinates[0], coordinates[1]);
+			cell.validate = false;
+		}
 	}
 
 	/**
@@ -291,7 +319,8 @@ public class CA {
 	 * Displays the modified image on screen.
 	 */
 	public void draw() {
-		StdDraw.picture(0.5, 0.5, pictureAfter.getImage());
+		StdDraw.picture(pictureAfter.width() / 2, pictureAfter.height() / 2,
+				pictureAfter.getImage());
 	}
 
 	/**
@@ -324,6 +353,7 @@ public class CA {
 	public void setColour(CACell cell, Color colour) {
 		int[] coordinates = cell.getCoordinates();
 		pictureAfter.set(coordinates[0], coordinates[1], colour);
+		cell.validate = true;
 	}
 
 	/**
@@ -348,17 +378,9 @@ public class CA {
 	}
 
 	/**
-	 * @return the epsilon
+	 * @return The epsilon value.
 	 */
 	public float getEpsilon() {
 		return epsilon;
-	}
-
-	/**
-	 * @param epsilon
-	 *            the epsilon to set
-	 */
-	public void setEpsilon(float epsilon) {
-		this.epsilon = epsilon;
 	}
 }

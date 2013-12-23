@@ -26,7 +26,7 @@ public class CAShapeFinderRule extends CACellRule {
 		List<CACell> neighbourhood = cell.getNeighbourhood();
 		for (CACell neighbour : neighbourhood) {
 			if (neighbour != cell && neighbour != CA.paddingCell
-					&& ca.getShape(neighbour) != ca.getShape(cell)) {
+					&& ca.getProtoShape(neighbour) != ca.getProtoShape(cell)) {
 				float difference = ColourCompare.getDifference(ca.getColour(cell),
 						ca.getColour(neighbour));
 				if (difference < ca.getEpsilon()) {

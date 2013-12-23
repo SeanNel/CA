@@ -1365,4 +1365,9 @@ public final class StdDraw implements ActionListener, MouseListener,
 				(int) Math.round(ys - hs / 2.0), null);
 		draw();
 	}
+
+	public static void drawPixel(int x, int y) {
+		offscreen.fillRect(x, y, 1, 1);
+		draw();
+	}
 }
