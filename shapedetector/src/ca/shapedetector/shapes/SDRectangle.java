@@ -1,7 +1,6 @@
 package ca.shapedetector.shapes;
 
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 
 public class SDRectangle extends SDShape {
@@ -34,6 +33,7 @@ public class SDRectangle extends SDShape {
 			 */
 			Rectangle2D rectangle = new Rectangle2D.Double(0, 0, 600, 600);
 			identity = new SDPath(rectangle);
+			identity.calculateOrientation();
 		}
 	}
 
@@ -54,7 +54,7 @@ public class SDRectangle extends SDShape {
 	}
 
 	protected void getProperties() {
-		Rectangle rectangle = path.getBounds();
+		Rectangle2D rectangle = path.getBounds();
 
 		length = rectangle.getWidth();
 		width = rectangle.getHeight();

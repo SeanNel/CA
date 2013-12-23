@@ -1,7 +1,7 @@
 package ca.shapedetector.shapes;
 
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 
 import ca.shapedetector.CAProtoShape;
 
@@ -21,7 +21,7 @@ public class SDSquare extends SDRectangle {
 	public SDSquare(SDRectangle shape) {
 		super();
 		path = shape.path;
-		Rectangle bounds = shape.path.getBounds();
+		Rectangle2D bounds = shape.path.getBounds();
 		width = (bounds.getHeight() + bounds.getWidth()) / 2.0;
 	}
 
@@ -48,7 +48,7 @@ public class SDSquare extends SDRectangle {
 	}
 
 	protected void getProperties() {
-		Rectangle bounds = path.getBounds();
+		Rectangle2D bounds = path.getBounds();
 		width = (bounds.getHeight() - bounds.getWidth()) / 2.0;
 
 	}

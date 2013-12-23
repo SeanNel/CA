@@ -4,8 +4,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +97,7 @@ public class SDShape {
 	 * @return A row for each axis, e.g. x and y, with columns for minima and
 	 *         maxima.
 	 */
-	public Rectangle getBoundaries() {
+	public Rectangle2D getBoundaries() {
 		return path.getBounds();
 	}
 
@@ -106,10 +106,10 @@ public class SDShape {
 	 * 
 	 * @return The dimensions of this CAShape.
 	 */
-	public int[] getDimensions() {
-		Rectangle bounds = path.getBounds();
+	public double[] getDimensions() {
+		Rectangle2D bounds = path.getBounds();
 
-		int[] dimensions = { bounds.width, bounds.height };
+		double[] dimensions = { bounds.getWidth(), bounds.getHeight() };
 		return dimensions;
 	}
 
@@ -119,7 +119,7 @@ public class SDShape {
 	 * @return The centroid's coordinates.
 	 */
 	public double[] getCentroid() {
-		Rectangle bounds = path.getBounds();
+		Rectangle2D bounds = path.getBounds();
 
 		double[] centroid = { bounds.getCenterX(), bounds.getCenterY() };
 		return centroid;
@@ -154,7 +154,7 @@ public class SDShape {
 	}
 
 	protected String getDescription() {
-		int[] dimensions = getDimensions();
+		double[] dimensions = getDimensions();
 		return "w=" + dimensions[0] + ", h=" + dimensions[1];
 	}
 

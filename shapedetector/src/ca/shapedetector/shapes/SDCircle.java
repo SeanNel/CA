@@ -1,7 +1,7 @@
 package ca.shapedetector.shapes;
 
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 
 import ca.shapedetector.CAProtoShape;
 
@@ -21,7 +21,7 @@ public class SDCircle extends SDEllipse {
 	public SDCircle(SDEllipse shape) {
 		super();
 		path = shape.path;
-		Rectangle bounds = shape.path.getBounds();
+		Rectangle2D bounds = shape.path.getBounds();
 		width = (bounds.getHeight() + bounds.getWidth()) / 2.0;
 	}
 
@@ -52,7 +52,7 @@ public class SDCircle extends SDEllipse {
 		SDPath path = new SDPath(this.path);
 		path.rotate((Math.PI / 4.0) - path.getOrientation());
 
-		Rectangle bounds = path.getBounds();
+		Rectangle2D bounds = path.getBounds();
 		width = (bounds.getHeight() - bounds.getWidth()) / 2.0;
 
 	}
