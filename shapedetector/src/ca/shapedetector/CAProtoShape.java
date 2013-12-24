@@ -1,11 +1,16 @@
 package ca.shapedetector;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import std.Picture;
+
 import ca.CACell;
+import ca.shapedetector.shapes.SDPath;
 
 /**
  * A ProtoShape made up of CACells.
@@ -48,7 +53,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 * Creates a new shape associated with the specified cell. Assumes that the
 	 * cell is mapped to this shape.
 	 * 
-	 * @see CAShaped::shapeTable.
+	 * @see CAShaped::shapeTable
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
@@ -150,6 +155,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 			return areaCells.size();
 		}
 	}
+
 	/**
 	 * Gets this shape's average colour.
 	 * 
@@ -203,7 +209,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		areaCells = null;
 		outlineCells = null;
 	}
-
 
 	/**
 	 * Places outline cells in clockwise sequence, with pseudo-random starting
@@ -263,72 +268,43 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 			return -1;
 		}
 	}
-}
 
-// /**
-// * Draws the shape. Subclasses could extend this.
-// *
-// * @param graphics
-// * Canvas to draw on.
-// */
-// public void drawArea() {
-// graphics.setColor(fillColour); // protoShape.getColour()
-// for (CACell cell : protoShape.getAreaCells()) {
-// int[] coordinates = cell.getCoordinates();
-// graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
-// }
-// graphics.setColor(outlineColour);
-// for (CACell cell : protoShape.getOutlineCells()) {
-// int[] coordinates = cell.getCoordinates();
-// graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
-// }
-// }
-//
-// /**
-// * Draws a cross at the centroid of the shape in the specified colour.
-// *
-// * @param graphics
-// * Canvas to draw on.
-// */
-// public void drawCentroid() {
-// graphics.setColor(centroidColour);
-// int[] centroid = protoShape.getCentroid();
-//
-// graphics.drawLine(centroid[0] - 2, centroid[1] - 2, centroid[0] + 2,
-// centroid[1] + 2);
-// graphics.drawLine(centroid[0] - 2, centroid[1] + 2, centroid[0] + 2,
-// centroid[1] - 2);
-// }
-//
-// /**
-// * Draws a descriptive label of the shape.
-// *
-// * @param graphics
-// * Canvas to draw on.
-// */
-// public void drawLabel() {
-// int[] centroid = protoShape.getCentroid();
-//
-// drawString(getClass().getSimpleName(), centroid[0], centroid[1] - 10);
-// drawString(getStats(), centroid[0], centroid[1] + 10);
-// }
-//
-// /**
-// * Draws a string.
-// *
-// * @param graphics
-// * Canvas to draw on.
-// */
-// public void drawString(String string, int x, int y) {
-// graphics.setColor(labelColour);
-// graphics.setFont(font);
-// FontMetrics metrics = graphics.getFontMetrics();
-//
-// int ws = metrics.stringWidth(string);
-// int hs = metrics.getDescent();
-//
-// graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
-// }
+	public boolean isInsignificant() {
+		int width = boundaries[1][0] - boundaries[0][0];
+		int height = boundaries[1][1] - boundaries[0][1];
+		return outlineCells == null || outlineCells.size() < 18 || width < 4
+				|| height < 4;
+	}
+
+	public static final Picture debugPicture = new Picture(600, 600);
+
+	public void display() {
+		Graphics2D g = debugPicture.getImage().createGraphics();
+		Area area = SDPath.makeArea(areaCells);
+		// area = SDPath.fillGaps(area);
+
+		SDPath path = new SDPath(area);
+		path.draw(g, Color.blue, new Color(255, 255, 0, 20));
+		debugPicture.show();
+	}
+
+	public double[] calculateCentroid() {
+		List<CACell> cells = getAreaCells();
+		double left = boundaries[0][0];
+		double top = boundaries[0][1];
+		double x = 0;
+		double y = 0;
+		for (CACell cell : cells) {
+			int[] coordinates = cell.getCoordinates();
+			x += coordinates[0] - left;
+			y += coordinates[1] - top;
+		}
+		x = (x / cells.size()) + left;
+		y = (y / cells.size()) + top;
+		double[] centroid = { x, y };
+		return centroid;
+	}
+}
 
 // /**
 // * A sequence of numbers that describe the angles of tangent lines to the

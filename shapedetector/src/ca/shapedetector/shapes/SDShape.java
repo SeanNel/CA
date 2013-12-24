@@ -11,8 +11,6 @@ import java.util.List;
 
 import std.Picture;
 
-import ca.shapedetector.CAProtoShape;
-
 /**
  * A shape derived from the outlineCells of a ProtoShape found by
  * CAShapeDetector.
@@ -80,7 +78,7 @@ public class SDShape {
 		defaultColours();
 		relatedShapes = new ArrayList<SDShape>();
 		relatedShapes.add(new SDRectangle(graphics));
-		relatedShapes.add(new SDEllipse(graphics));
+		// relatedShapes.add(new SDEllipse(graphics));
 	}
 
 	protected void defaultColours() {
@@ -114,15 +112,24 @@ public class SDShape {
 	}
 
 	/**
-	 * Gets this CAShape's centroid.
+	 * Gets this CAShape's center.
+	 * 
+	 * @return The centroid's coordinates.
+	 */
+	public double[] getCenter() {
+		Rectangle2D bounds = path.getBounds();
+
+		double[] center = { bounds.getCenterX(), bounds.getCenterY() };
+		return center;
+	}
+
+	/**
+	 * Gets this CAShape's centroid (center of gravity).
 	 * 
 	 * @return The centroid's coordinates.
 	 */
 	public double[] getCentroid() {
-		Rectangle2D bounds = path.getBounds();
-
-		double[] centroid = { bounds.getCenterX(), bounds.getCenterY() };
-		return centroid;
+		return path.getCentroid();
 	}
 
 	/**
@@ -259,13 +266,11 @@ public class SDShape {
 	 * Assumes that the ProtoShape's outline cells have already been arranged in
 	 * sequence.
 	 * 
-	 * @param protoShape
-	 *            An unidentified shape.
+	 * @param path
+	 *            A path describing the unidentified shape.
 	 * @return An instance of the detected shape.
 	 */
-	public SDShape identifyShape(CAProtoShape protoShape) {
-		SDPath path = new SDPath(protoShape);
-
+	public SDShape identifyShape(SDPath path) {
 		SDShape identifiedShape = null;
 		for (SDShape relatedShape : relatedShapes) {
 			identifiedShape = relatedShape.identify(path);
@@ -287,5 +292,12 @@ public class SDShape {
 	 */
 	protected SDShape identify(SDPath path) {
 		return null;
+	}
+
+	/**
+	 * For debugging.
+	 */
+	public void display() {
+		path.display();
 	}
 }

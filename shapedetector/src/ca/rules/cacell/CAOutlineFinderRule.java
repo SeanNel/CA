@@ -34,6 +34,7 @@ public class CAOutlineFinderRule extends CACellRule {
 		for (CACell neighbour : neighbourhood) {
 			if (neighbour != cell && neighbour != CA.paddingCell
 					&& protoShape != ca.getProtoShape(neighbour)) {
+
 				/*
 				 * May need to make a copy of the cell, so that this CA's cells
 				 * continue to use a standard neighbourhood. But this causes
@@ -45,6 +46,7 @@ public class CAOutlineFinderRule extends CACellRule {
 				/* Expands the outlineCell's neighbourhood. */
 				cell.setNeighbourhood(meetOutlineNeighbours(cell));
 				protoShape.addOutlineCell(cell);
+				return;
 			}
 		}
 	}

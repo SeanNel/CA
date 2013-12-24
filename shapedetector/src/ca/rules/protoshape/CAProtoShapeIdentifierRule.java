@@ -3,6 +3,7 @@ package ca.rules.protoshape;
 import ca.Stopwatch;
 import ca.shapedetector.CAProtoShape;
 import ca.shapedetector.CAShapeDetector;
+import ca.shapedetector.shapes.SDPath;
 import ca.shapedetector.shapes.SDShape;
 
 /**
@@ -21,26 +22,25 @@ public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
 	}
 
 	public void update(CAProtoShape protoShape) {
-		// System.out.println("*** " + protoShape);
-		/* Arranges outline cells in order. */
+		if (protoShape.getArea() < 16) {
+			return;
+		}
+
 		stopwatch.start();
 		protoShape.arrangeOutlineCells();
 		timers[0] += stopwatch.time();
 
-		/* Calculates tangents. */
 		stopwatch.start();
-//		protoShape.calculateTangents();
-		timers[1] += stopwatch.time();
-
-		/* Identifies shapes. */
-		stopwatch.start();
-		ca.addShape(shapeDetector.identifyShape(protoShape));
+		SDPath path = new SDPath(protoShape);
+		if (path.getArea() > 16) {
+			ca.addShape(shapeDetector.identifyShape(path));
+		}
 		timers[2] += stopwatch.time();
 	}
 
 	public void printTimers() {
 		System.out.println("Arranged outlines in order: " + timers[0] + " ms");
-		System.out.println("Calculated gradients: " + timers[1] + " ms");
+		// System.out.println("Calculated gradients: " + timers[1] + " ms");
 		System.out.println("Identified shapes: " + timers[2] + " ms");
 	}
 }

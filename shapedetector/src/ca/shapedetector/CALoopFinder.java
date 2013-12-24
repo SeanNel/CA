@@ -24,6 +24,8 @@ public class CALoopFinder {
 	 * Places outline cells in linear sequence to form a loop, starting with the
 	 * specified cell.
 	 * 
+	 * @bug Sometimes does not find a loop of very jagged-edged shapes.
+	 * 
 	 * @param first
 	 *            The first cell in the loop.
 	 */

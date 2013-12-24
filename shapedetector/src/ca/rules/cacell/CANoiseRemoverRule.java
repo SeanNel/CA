@@ -15,7 +15,7 @@ public class CANoiseRemoverRule extends CACellRule {
 	}
 
 	public void update(CACell cell) {
-		ca.gatherNeighbours(cell);
+		cell.setNeighbourhood(ca.gatherNeighbours(cell));
 		
 		float maxDifference = 0f;
 

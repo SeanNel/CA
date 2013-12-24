@@ -35,7 +35,8 @@ public class SDEllipse extends SDShape {
 			 */
 			Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 100, 100);
 			identity = new SDPath(ellipse);
-			identity.calculateOrientation();
+			// identity.calculateOrientation();
+			// identity.rotate((Math.PI / 4.0) - identity.getOrientation());
 		}
 	}
 
@@ -43,8 +44,8 @@ public class SDEllipse extends SDShape {
 		/* Ensures that the shape is placed upright. */
 		SDPath rotatedPath = new SDPath(path);
 		rotatedPath.rotate((Math.PI / 4.0) - rotatedPath.getOrientation());
-		
-		double match = identity.getDifference(path);
+
+		double match = identity.getDifference(rotatedPath);
 
 		if (1.0 - match < tolerance) {
 			SDEllipse ellipse = new SDEllipse(path, graphics);

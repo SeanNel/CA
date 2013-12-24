@@ -300,19 +300,17 @@ public class CA {
 	 * @param cell
 	 *            The cell to initialize.
 	 */
-	public void gatherNeighbours(CACell cell) {
-		if (cell.getNeighbourhood() == null) {
-			List<CACell> neighbourhood = null;
-			switch (neighbourhoodModel) {
-			case MOORE_NEIGHBOURHOOD:
-				neighbourhood = gatherNeighboursMoore(cell, r);
-				break;
-			case VANNEUMANN_NEIGHBOURHOOD:
-				neighbourhood = gatherNeighboursVanNeumann(cell, r);
-				break;
-			}
-			cell.setNeighbourhood(neighbourhood);
+	public List<CACell> gatherNeighbours(CACell cell) {
+		List<CACell> neighbourhood = null;
+		switch (neighbourhoodModel) {
+		case MOORE_NEIGHBOURHOOD:
+			neighbourhood = gatherNeighboursMoore(cell, r);
+			break;
+		case VANNEUMANN_NEIGHBOURHOOD:
+			neighbourhood = gatherNeighboursVanNeumann(cell, r);
+			break;
 		}
+		return neighbourhood;
 	}
 
 	/**

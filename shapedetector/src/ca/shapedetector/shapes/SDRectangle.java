@@ -33,14 +33,15 @@ public class SDRectangle extends SDShape {
 			 */
 			Rectangle2D rectangle = new Rectangle2D.Double(0, 0, 600, 600);
 			identity = new SDPath(rectangle);
-			identity.calculateOrientation();
+//			identity.calculateOrientation();
+//			identity.rotate((Math.PI / 4.0) - identity.getOrientation());
 		}
 	}
 
 	protected SDShape identify(SDPath path) {
 		/* Ensures that the shape is placed upright. */
 		SDPath rotatedPath = new SDPath(path);
-		rotatedPath.rotate((Math.PI / 4.0) - rotatedPath.getOrientation());
+//		rotatedPath.rotate((Math.PI / 4.0) - rotatedPath.getOrientation());
 
 		double match = identity.getDifference(rotatedPath);
 

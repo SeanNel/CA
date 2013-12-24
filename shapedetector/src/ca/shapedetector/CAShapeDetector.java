@@ -106,6 +106,7 @@ public class CAShapeDetector extends CA {
 		cellRules.add(new CANoiseRemoverRule(this));
 		cellRules.add(new CAEdgeFinderRule(this));
 		cellRules.add(new CAShapeFinderRule(this));
+//		cellRules.add(new CAShapeAssimilatorRule(this));
 		cellRules.add(new CAOutlineFinderRule(this));
 	}
 
@@ -141,21 +142,6 @@ public class CAShapeDetector extends CA {
 	public Picture apply(Picture picture) {
 		super.apply(picture);
 		shapes = new LinkedList<SDShape>();
-		Set<CAProtoShape> oldProtoShapes = new HashSet<CAProtoShape>(
-				protoShapes);
-		CAProtoShapeAssimilatorRule shapeAssimilator = new CAProtoShapeAssimilatorRule(
-				this);
-		/*
-		 * TODO: order shapes in terms of area, then take a subset to
-		 * assimilate. Should guarantee (O)NlogN performance instead of (O)N as
-		 * done here.
-		 */
-		Stopwatch assimilatorStopwatch = new Stopwatch();
-		for (CAProtoShape shape : oldProtoShapes) {
-			shapeAssimilator.update(shape);
-		}
-		assimilatorStopwatch.print("Assimilated "
-				+ (oldProtoShapes.size() - protoShapes.size()) + " shapes: ");
 
 		CAProtoShapeIdentifierRule protoShapeIdentifier = new CAProtoShapeIdentifierRule(
 				this);
@@ -262,7 +248,7 @@ public class CAShapeDetector extends CA {
 		int delta = 2;
 		for (SDShape shape : shapes) {
 			/* using instanceof does not seem to work here. */
-			if (shape.getClass() != SDUnknownShape.class) {
+//			if (shape.getClass() != SDUnknownShape.class) {
 				/* Ignore the rectangle detected at the image borders. */
 				if (shape instanceof SDRectangle
 						&& shape.getDimensions()[0] + delta > pictureBefore
@@ -271,9 +257,13 @@ public class CAShapeDetector extends CA {
 								.height()) {
 					continue;
 				}
-				System.out.println(shape);
+//				System.out.println(shape);
 				shape.draw();
-			}
+
+				/* For debugging */
+//				shape.display();
+//				Input.waitForSpace();
+//			}
 		}
 		return picture;
 	}

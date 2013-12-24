@@ -2,11 +2,8 @@ package ca.shapedetector.shapes;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -17,11 +14,13 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+
+import math.DiscreteFunction;
 
 import std.Picture;
 
 import ca.CACell;
+import ca.Input;
 import ca.shapedetector.CAProtoShape;
 
 /**
@@ -37,22 +36,46 @@ public class SDPath {
 	 * radians).
 	 */
 	protected double orientation;
+	/**
+	 * The area of this shape (in pixels squared).
+	 */
+	protected double area;
+	/**
+	 * The center of gravity of this shape.
+	 */
+	protected double[] centroid;
 
 	public SDPath(CAProtoShape protoShape) {
-		Iterator<CACell> cellIterator = protoShape.getOutlineCells().iterator();
-		int[] coordinates = cellIterator.next().getCoordinates();
-		path = new Path2D.Double();
-		path.moveTo(coordinates[0], coordinates[1]);
-		while (cellIterator.hasNext()) {
-			coordinates = cellIterator.next().getCoordinates();
-			path.lineTo(coordinates[0], coordinates[1]);
-		}
-		path.closePath();
+		// System.out.println("*** SDPath: " + this.hashCode());
+		path = makePath(protoShape.getOutlineCells());
+		centroid = protoShape.calculateCentroid();
 
-		// reduceVertices();
-		orientation = calculateOrientation();
-		/* For debugging */
-		// rotate(orientation);
+		/*
+		 * Alternatively, build the path from only the areaCells. But this seems
+		 * to take much longer for larger shapes.
+		 */
+		// Stopwatch stopwatch = new Stopwatch();
+		// Area area = makeArea(protoShape.getAreaCells());
+		// stopwatch.print("makearea time: ");
+		// stopwatch.start();
+		// area = fillGaps(area);
+		// stopwatch.print("fillgaps time: ");
+		// path = new Path2D.Double();
+		// path.append(area, true);
+		// stopwatch.print("append time: ");
+		// stopwatch.start();
+
+		this.area = calculateArea();
+
+		/*
+		 * Until the calculateOrientation method is finished, use results from
+		 * the diameter method:
+		 */
+		 orientation = calculateDiameterOrientation();
+		// orientation = calculateOrientation();
+
+		// display();
+		// Input.waitForSpace();
 	}
 
 	/**
@@ -62,8 +85,10 @@ public class SDPath {
 	 */
 	public SDPath(SDPath original) {
 		orientation = original.orientation;
+		area = original.area;
 		path = (Path2D.Double) original.path.clone();
 
+		/* The following may be slightly more efficient by skipping the cast */
 		// path = new Path2D.Double();
 		// path.append(original.path, true);
 	}
@@ -78,14 +103,14 @@ public class SDPath {
 	public SDPath(Shape shape) {
 		path = new Path2D.Double();
 		path.append(shape, true);
+		area = calculateArea();
 
 		// orientation = calculateOrientation();
 		// rotate(-orientation);
 	}
 
 	/**
-	 * Creates a polygonal estimation of the given ellipse, rotated such that
-	 * its major axis lies parallel to the x-axis.
+	 * Creates a polygonal estimation of the given ellipse.
 	 * 
 	 * @param shape
 	 */
@@ -119,13 +144,17 @@ public class SDPath {
 		return path.getBounds2D();
 	}
 
+	public double getArea() {
+		return area;
+	}
+
 	/**
 	 * Gets the area enclosed by the path. Formula source:
 	 * http://www.mathopenref.com/coordpolygonarea.html
 	 * 
 	 * @return Area in pixels squared.
 	 */
-	public double getArea() {
+	public double calculateArea() {
 		PathIterator pathIterator1 = path.getPathIterator(null);
 		PathIterator pathIterator2 = path.getPathIterator(null);
 		pathIterator2.next();
@@ -155,25 +184,51 @@ public class SDPath {
 	}
 
 	/**
-	 * Gets the orientation of this path relative to the x-axis, in radians.
+	 * Gets the orientation of this path's axis of symmetry relative to the
+	 * x-axis, in radians.
 	 * 
 	 * @return Orientation angle in radians.
 	 */
 	protected double calculateOrientation() {
-		List<Double> azimuthDistribution = getAzimuthHistogram(16);
-		/*
-		 * TODO: find the (principal) vertical line of symmetry from the data,
-		 * which is the angle of the axis of symmetry, aka the orientation we
-		 * seek.
-		 */
+		int n = 16;
+		List<Double> azimuthDistribution = getAzimuthHistogram(n);
+		List<Double> symmetryDistribution = new ArrayList<Double>(
+				azimuthDistribution.size());
+		List<Double> rotatedHistogram = new ArrayList<Double>(
+				azimuthDistribution);
 
-		/* Until this method is finished, use results from the diameter method: */
-		return calculateDiameterOrientation();
+		System.out.println("*** SDPath");
+		Iterator<Double> azimuthIterator = azimuthDistribution.iterator();
+
+		int i = 0;
+		while (azimuthIterator.hasNext()) {
+			rotatedHistogram = DiscreteFunction.rotateHistogram(
+					rotatedHistogram, 1);
+			List<Double> f = DiscreteFunction.functionDifference(
+					azimuthDistribution, rotatedHistogram);
+			f = DiscreteFunction.absoluteValue(f);
+			Double column = DiscreteFunction.integrate(f);
+
+			symmetryDistribution.add(column);
+			System.out.println("theta: "
+					+ Math.round(Math.toDegrees(i++ * 2.0 * Math.PI / n))
+					+ ", r: " + column);
+
+			azimuthIterator.next();
+		}
+
+		/*
+		 * Makes sure the peak isn't always matched to the start position by
+		 * narrowing the domain.
+		 */
+		int x = DiscreteFunction.findValley(symmetryDistribution, n / 8, n);
+		double orientation = (x) * 2.0 * Math.PI / n; // x + 0.5
+		return orientation;
 	}
 
 	/**
-	 * Gets the area distribution of the path. Greater precision is achieved
-	 * with more sectors.
+	 * Gets the area distribution of the path. Greater precision should be
+	 * achieved with more sectors.
 	 * <p>
 	 * Casts triangles subtended by the centroid of the path, with base vertices
 	 * along a circle that encloses the path. Returns a list of the areas
@@ -183,20 +238,15 @@ public class SDPath {
 	 * calculate, and do not overlap. It may or may not be necessary to extend
 	 * them out such that the base of each triangle is tangent to the circle.
 	 * <p>
-	 * It may also be better to use the center of gravity instead of the center
-	 * of the path boundaries. This could be gathered from adding all the
-	 * outlineCells x and y positions together to get a weighted center value.
+	 * TODO: it does not quite work yet.
 	 * 
 	 * @return The number of sectors to divide the azimuth into.
 	 */
 	protected List<Double> getAzimuthHistogram(int numSectors) {
 		double sweep = 2.0 * Math.PI / (double) numSectors;
-		double radius;
-		if (path.getBounds2D().getWidth() > path.getBounds2D().getHeight()) {
-			radius = path.getBounds2D().getWidth() / 2.0;
-		} else {
-			radius = path.getBounds2D().getHeight() / 2.0;
-		}
+		double w = path.getBounds2D().getWidth();
+		double h = path.getBounds2D().getHeight();
+		double radius = Math.sqrt(w * w + h * h);
 		double sectorArea = radius * radius * Math.sin(sweep / 2.0)
 				* Math.cos(sweep / 2.0);
 
@@ -218,8 +268,9 @@ public class SDPath {
 		//
 		// linegraph.addSeries(azimuth_series);
 		//
+		// System.out.println("***");
 		for (int i = 0; i < numSectors; i++) {
-			double theta = sweep * i;
+			double theta = sweep * (i - 0.5);
 			double x1 = centroidX + radius * Math.cos(theta);
 			double y1 = centroidY + radius * Math.sin(theta);
 			double x2 = centroidX + radius * Math.cos(theta + sweep);
@@ -236,9 +287,8 @@ public class SDPath {
 			SDPath projectionPath = new SDPath(sectorShape);
 			double projectionArea = sectorArea - projectionPath.getArea();
 			azimuthHistogram.add(projectionArea);
-
 			// azimuth_series.add(projectionArea);
-
+			// System.out.println(projectionArea);
 		}
 		// linegraph.render();
 		// waitForSpace();
@@ -377,7 +427,8 @@ public class SDPath {
 
 	/**
 	 * Calculates the difference ratio between this path and the specified path
-	 * by comparing their areas.
+	 * by comparing their areas. Assumes that the path has been rotated
+	 * correctly.
 	 * 
 	 * @param path
 	 *            The path to compare this path to.
@@ -385,16 +436,8 @@ public class SDPath {
 	 */
 	public double getDifference(SDPath path) {
 		path = new SDPath(path);
-		/* Assumes that the path has been rotated correctly. */
 		scaleToIdentity(this, path);
-
-		/* Take a look at how the comparison is done... */
-		// debugIdentify(this, path);
-
-		/*
-		 * TODO: May want to cache the areas of shapes to speed up future
-		 * comparisons.
-		 */
+		path.area = path.calculateArea();
 
 		double areaDifference = Math.abs(this.getArea() - path.getArea());
 		/*
@@ -402,7 +445,11 @@ public class SDPath {
 		 * greater area than the identity shape.
 		 */
 		double match = Math.abs(1.0 - (areaDifference / this.getArea()));
-		// System.out.println(match);
+
+		// /* For debugging: take a look at how the comparison is done... */
+		// System.out.println("Match: " + match);
+		// displayIdentification(this, path);
+		// Input.waitForSpace();
 		return match;
 	}
 
@@ -417,14 +464,14 @@ public class SDPath {
 	public static void scaleToIdentity(SDPath identity, SDPath path) {
 		/* Assumes that the path has been rotated appropriately. */
 		Rectangle2D identityBounds = identity.getBounds();
-		// Rectangle2D pathBounds = path.getBounds2D();
 		path.resize(identityBounds);
 	}
 
 	public static final Picture debugPicture = new Picture(400, 400);
 	public static int debugI = 0;
 
-	public void debugIdentify(SDPath identity, SDPath unidentified) {
+	public static void displayIdentification(SDPath identity,
+			SDPath unidentified) {
 		Rectangle bounds = new Rectangle(0, 0, 200, 200);
 		Graphics2D g = debugPicture.getImage().createGraphics();
 		g.setColor(Color.white);
@@ -443,7 +490,7 @@ public class SDPath {
 				new Color(0, 230, 230, 50));
 
 		String str1 = "(Shape) area=" + unidentified.getArea()
-				+ ", orientation=" + identity.getOrientation();
+				+ ", orientation=" + unidentified.getOrientation();
 		String str2 = "(Identity) area=" + identity.getArea()
 				+ ", orientation=" + identity.getOrientation();
 		String str3 = "(" + debugI++ + ") Press space to continue...";
@@ -453,65 +500,110 @@ public class SDPath {
 		g.drawString(str3, 10, 385);
 
 		debugPicture.show();
-		waitForSpace();
+		Input.waitForSpace();
 	}
 
-	public void debugPaths(SDPath identity, SDPath unidentified) {
+	public void display() {
+		displayPath(this);
+	}
+
+	public static void displayPath(SDPath path) {
 		Rectangle bounds = new Rectangle(0, 0, 400, 400);
 		Graphics2D g = debugPicture.getImage().createGraphics();
 		g.setColor(Color.white);
 		g.fillRect(0, 0, 400, 400);
 
-		identity = new SDPath(identity);
-		unidentified = new SDPath(unidentified);
-		// identity.path.transform(AffineTransform.getTranslateInstance(300,
-		// 300));
-		// unidentified.path.transform(AffineTransform.getTranslateInstance(300,
-		// 300));
-		// unidentified.rotate(unidentified.orientation);
-		unidentified.resize(bounds);
-		identity.resize(bounds);
-		unidentified.move(200, 200);
-		identity.move(200, 200);
-		unidentified.draw(g, new Color(255, 200, 0, 230), new Color(230, 200,
-				0, 50));
-		identity.draw(g, new Color(0, 255, 255, 230),
-				new Color(0, 230, 230, 50));
+		path = new SDPath(path);
+		path.resize(bounds);
+		path.move(200, 200);
+		path.draw(g, new Color(255, 200, 0, 230), new Color(230, 200, 0, 50));
 
-		String str1 = "(Shape) area=" + unidentified.getArea()
-				+ ", orientation=" + identity.getOrientation();
-		String str2 = "(Identity) area=" + identity.getArea()
-				+ ", orientation=" + identity.getOrientation();
-		String str3 = "(" + debugI++ + ") Press space to continue...";
+		String str1 = "(Shape) area=" + path.getArea();
+		String str2 = "orientation=" + path.getOrientation() + " rad ("
+				+ Math.toDegrees(path.getOrientation()) + " deg)";
+		String str3 = "Press space to continue...";
 		g.setColor(Color.black);
 		g.drawString(str1, 10, 20);
 		g.drawString(str2, 10, 35);
 		g.drawString(str3, 10, 385);
 
 		debugPicture.show();
-		waitForSpace();
 	}
 
-	public void waitForSpace() {
-		final CountDownLatch latch = new CountDownLatch(2);
-		KeyEventDispatcher dispatcher = new KeyEventDispatcher() {
-			// Anonymous class invoked from EDT
-			public boolean dispatchKeyEvent(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_SPACE)
-					latch.countDown();
-				return false;
+	/**
+	 * Construct a path from a list of cells describing the outline.
+	 * 
+	 * @param cells
+	 * @return
+	 */
+	protected static Path2D.Double makePath(List<CACell> cells) {
+		Iterator<CACell> cellIterator = cells.iterator();
+		int[] coordinates = cellIterator.next().getCoordinates();
+		Path2D.Double path = new Path2D.Double();
+		path.moveTo(coordinates[0], coordinates[1]);
+		while (cellIterator.hasNext()) {
+			coordinates = cellIterator.next().getCoordinates();
+			path.lineTo(coordinates[0], coordinates[1]);
+		}
+		path.closePath();
+		return path;
+	}
+
+	/**
+	 * Construct a path from a list of cells describing the area.
+	 * 
+	 * @param cells
+	 * @return
+	 */
+	public static Area makeArea(List<CACell> cells) {
+		Area area = new Area();
+		Iterator<CACell> cellIterator = cells.iterator();
+		while (cellIterator.hasNext()) {
+			CACell cell = cellIterator.next();
+			int[] coordinates = cell.getCoordinates();
+			Rectangle2D rectangle = new Rectangle2D.Double(coordinates[0],
+					coordinates[1], 1, 1);
+			area.add(new Area(rectangle));
+		}
+
+		return area;
+	}
+
+	/**
+	 * Fills in gaps of an area.
+	 * 
+	 * @param cells
+	 * @return
+	 */
+	public static Area fillGaps(Area area) {
+		area = new Area(area);
+		PathIterator pathIterator = area.getPathIterator(null);
+		double[] coordinates = new double[6];
+		Path2D path = new Path2D.Double();
+		path.moveTo(coordinates[0], coordinates[1]);
+
+		while (!pathIterator.isDone()) {
+			int type = pathIterator.currentSegment(coordinates);
+			switch (type) {
+			case PathIterator.SEG_MOVETO:
+				path.closePath();
+				Area segmentArea = new Area(path);
+				area.add(segmentArea);
+				path = new Path2D.Double();
+				path.moveTo(coordinates[0], coordinates[1]);
+				break;
+			case PathIterator.SEG_LINETO:
+				path.lineTo(coordinates[0], coordinates[1]);
+				break;
 			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager()
-				.addKeyEventDispatcher(dispatcher);
-		try {
-			latch.await();
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} // current thread waits here until countDown() is called
-		KeyboardFocusManager.getCurrentKeyboardFocusManager()
-				.removeKeyEventDispatcher(dispatcher);
+
+			pathIterator.next();
+		}
+		return area;
+	}
+
+	public double[] getCentroid() {
+		return centroid;
 	}
 
 }
