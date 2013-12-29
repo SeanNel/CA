@@ -9,6 +9,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import ca.shapedetector.path.SDPath;
+
 import std.Picture;
 
 /**
@@ -24,7 +26,7 @@ public class SDShape {
 	protected List<SDShape> relatedShapes;
 
 	/** Picture to draw on. */
-	protected Graphics2D graphics;
+	protected Picture picture;
 	/** Shape's fill colour. */
 	protected Color fillColour;
 	/** Shape's outline colour. */
@@ -46,14 +48,6 @@ public class SDShape {
 	}
 
 	/**
-	 * Singleton constructor.
-	 */
-	public SDShape(Graphics2D graphics) {
-		this.graphics = graphics;
-		defaultColours();
-	}
-
-	/**
 	 * Constructor.
 	 * 
 	 * @param path
@@ -61,9 +55,9 @@ public class SDShape {
 	 * @param graphics
 	 *            The graphics object to draw to.
 	 */
-	public SDShape(SDPath path, Graphics2D graphics) {
+	public SDShape(SDPath path, Picture picture) {
 		this.path = path;
-		this.graphics = graphics;
+		this.picture = picture;
 		defaultColours();
 	}
 
@@ -74,11 +68,14 @@ public class SDShape {
 	 *            A picture to render identified shapes on.
 	 */
 	public SDShape(Picture picture) {
-		graphics = picture.getImage().createGraphics();
+		this.picture = picture;
 		defaultColours();
 		relatedShapes = new ArrayList<SDShape>();
-		relatedShapes.add(new SDRectangle(graphics));
-		// relatedShapes.add(new SDEllipse(graphics));
+		loadRelatedShapes();
+	}
+
+	protected void loadRelatedShapes() {
+		/* Method stub */
 	}
 
 	protected void defaultColours() {
@@ -193,6 +190,7 @@ public class SDShape {
 	 * Draws this shape and additional information to the canvas.
 	 */
 	public void draw() {
+		Graphics2D graphics = picture.getImage().createGraphics();
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON);
 		drawShape();
@@ -206,7 +204,7 @@ public class SDShape {
 	 * @param colour
 	 * */
 	protected void drawShape() {
-		path.draw(graphics, outlineColour, fillColour);
+		path.draw(picture, outlineColour, fillColour);
 	}
 
 	/**
@@ -216,6 +214,7 @@ public class SDShape {
 	 *            Canvas to draw on.
 	 */
 	public void drawCentroid() {
+		Graphics2D graphics = picture.getImage().createGraphics();
 		graphics.setColor(centroidColour);
 		int centroidX = (int) getCentroid()[0];
 		int centroidY = (int) getCentroid()[1];
@@ -233,14 +232,16 @@ public class SDShape {
 	 *            Canvas to draw on.
 	 */
 	public void drawLabel() {
-		graphics.setColor(labelColour);
 		int centroidX = (int) getCentroid()[0];
 		int centroidY = (int) getCentroid()[1];
 
 		drawString(getClass().getSimpleName(), centroidX, centroidY - 10);
 		// drawString(getDescription(), centroidX, centroidY + 10);
-		drawString("x=" + centroidX + ", y=" + centroidY, centroidX,
-				centroidY + 10);
+		drawString("x=" + centroidX + ", y=" + centroidY,
+				centroidX, centroidY + 10);
+		int theta = (int) Math.toDegrees(path.getOrientation());
+		drawString("theta=" + theta,
+				centroidX, centroidY + 30);
 	}
 
 	/**
@@ -250,6 +251,7 @@ public class SDShape {
 	 *            Canvas to draw on.
 	 */
 	public void drawString(String string, int x, int y) {
+		Graphics2D graphics = picture.getImage().createGraphics();
 		graphics.setColor(labelColour);
 		graphics.setFont(font);
 		FontMetrics metrics = graphics.getFontMetrics();
@@ -272,15 +274,16 @@ public class SDShape {
 	 */
 	public SDShape identifyShape(SDPath path) {
 		SDShape identifiedShape = null;
+
 		for (SDShape relatedShape : relatedShapes) {
 			identifiedShape = relatedShape.identify(path);
 
 			if (identifiedShape != null) {
-				identifiedShape.graphics = graphics;
+				identifiedShape.picture = picture;
 				return identifiedShape;
 			}
 		}
-		return new SDUnknownShape(path, graphics);
+		return new SDUnknownShape(path, picture);
 	}
 
 	/**
@@ -298,6 +301,6 @@ public class SDShape {
 	 * For debugging.
 	 */
 	public void display() {
-		path.display();
+		path.displayHighlight(picture);
 	}
 }

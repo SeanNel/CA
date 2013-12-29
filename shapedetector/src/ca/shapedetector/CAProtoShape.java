@@ -10,7 +10,7 @@ import java.util.List;
 import std.Picture;
 
 import ca.CACell;
-import ca.shapedetector.shapes.SDPath;
+import ca.shapedetector.path.SDPath;
 
 /**
  * A ProtoShape made up of CACells.
@@ -278,13 +278,18 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 
 	public static final Picture debugPicture = new Picture(600, 600);
 
+	public static void clearDebugPicture() {
+		Graphics2D graphics = debugPicture.getImage().createGraphics();
+		graphics.setColor(Color.white);
+		graphics.fillRect(0, 0, debugPicture.width(), debugPicture.height());
+	}
+
 	public void display() {
-		Graphics2D g = debugPicture.getImage().createGraphics();
 		Area area = SDPath.makeArea(areaCells);
 		// area = SDPath.fillGaps(area);
 
 		SDPath path = new SDPath(area);
-		path.draw(g, Color.blue, new Color(255, 255, 0, 20));
+		path.draw(debugPicture, Color.blue, new Color(255, 255, 0, 20));
 		debugPicture.show();
 	}
 

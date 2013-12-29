@@ -53,9 +53,9 @@ public class CAOutlineFinderRule extends CACellRule {
 
 	/**
 	 * Gathers the specified cell's Moore neighbourhood with r=1, not including
-	 * the current cell. Places cells in clockwise order, starting with the cell
-	 * directly above this one. The sequence determines how outline cells will
-	 * be ordered.
+	 * the current cell. Places cells in anti-clockwise order, starting with the
+	 * cell directly above this one. The sequence determines how outline cells
+	 * will be ordered.
 	 * 
 	 * @param cell
 	 *            Cell to get neighbourhood of.
@@ -66,14 +66,14 @@ public class CAOutlineFinderRule extends CACellRule {
 		List<CACell> neighbourhood = new ArrayList<CACell>(8);
 		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
 
-		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] - 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
 		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] - 1));
+		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
+		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] - 1));
+		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
 		return neighbourhood;
 	}
 }

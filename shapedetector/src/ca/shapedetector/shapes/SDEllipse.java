@@ -1,8 +1,11 @@
 package ca.shapedetector.shapes;
 
-import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+
+import ca.shapedetector.path.SDPath;
+
+import std.Picture;
 
 public class SDEllipse extends SDShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
@@ -17,13 +20,13 @@ public class SDEllipse extends SDShape {
 	public SDEllipse() {
 	}
 
-	public SDEllipse(Graphics2D graphics) {
-		super(graphics);
+	public SDEllipse(Picture picture) {
+		super(picture);
 		loadIdentity();
 	}
 
-	public SDEllipse(SDPath path, Graphics2D graphics) {
-		super(path, graphics);
+	public SDEllipse(SDPath path, Picture picture) {
+		super(path, picture);
 		getProperties();
 	}
 
@@ -48,7 +51,7 @@ public class SDEllipse extends SDShape {
 		double match = identity.getDifference(rotatedPath);
 
 		if (1.0 - match < tolerance) {
-			SDEllipse ellipse = new SDEllipse(path, graphics);
+			SDEllipse ellipse = new SDEllipse(path, picture);
 			SDShape shape = SDCircle.identify(ellipse);
 			return shape;
 		} else {

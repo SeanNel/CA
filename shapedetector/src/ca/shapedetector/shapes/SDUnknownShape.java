@@ -1,6 +1,7 @@
 package ca.shapedetector.shapes;
 
-import java.awt.Graphics2D;
+import ca.shapedetector.path.SDPath;
+import std.Picture;
 
 /**
  * An unrecognized shape.
@@ -15,8 +16,8 @@ public class SDUnknownShape extends SDShape {
 	public SDUnknownShape() {
 	}
 
-	public SDUnknownShape(SDPath path, Graphics2D graphics) {
-		super(path, graphics);
+	public SDUnknownShape(SDPath path, Picture picture) {
+		super(path, picture);
 	}
 
 	protected SDShape identify(SDPath path) {

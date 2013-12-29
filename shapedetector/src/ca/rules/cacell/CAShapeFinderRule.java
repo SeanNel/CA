@@ -21,14 +21,22 @@ public class CAShapeFinderRule extends CACellRule {
 	}
 
 	public void update(CACell cell) {
+		/*
+		 * Do not generate shapes from the edges, only from the spaces in
+		 * between.
+		 */
+		if (ca.getColour(cell).equals(CAEdgeFinderRule.EDGE_COLOUR)) {
+			return;
+		}
+
 		cell.setNeighbourhood(gatherCardinalNeighbours(cell));
-		
+
 		List<CACell> neighbourhood = cell.getNeighbourhood();
 		for (CACell neighbour : neighbourhood) {
 			if (neighbour != cell && neighbour != CA.paddingCell
 					&& ca.getProtoShape(neighbour) != ca.getProtoShape(cell)) {
-				float difference = ColourCompare.getDifference(ca.getColour(cell),
-						ca.getColour(neighbour));
+				float difference = ColourCompare.getDifference(
+						ca.getColour(cell), ca.getColour(neighbour));
 				if (difference < ca.getEpsilon()) {
 					ca.mergeCells(cell, neighbour);
 				}

@@ -1,9 +1,11 @@
 package ca.shapedetector.shapes;
 
-import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
+import std.Picture;
+
 import ca.shapedetector.CAProtoShape;
+import ca.shapedetector.path.SDPath;
 
 public class SDCircle extends SDEllipse {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
@@ -14,8 +16,8 @@ public class SDCircle extends SDEllipse {
 	public SDCircle() {
 	}
 
-	public SDCircle(SDPath path, Graphics2D graphics) {
-		super(path, graphics);
+	public SDCircle(SDPath path, Picture picture) {
+		super(path, picture);
 	}
 
 	public SDCircle(SDEllipse shape) {

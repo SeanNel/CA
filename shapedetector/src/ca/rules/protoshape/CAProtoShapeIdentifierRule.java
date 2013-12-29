@@ -3,20 +3,20 @@ package ca.rules.protoshape;
 import ca.Stopwatch;
 import ca.shapedetector.CAProtoShape;
 import ca.shapedetector.CAShapeDetector;
-import ca.shapedetector.shapes.SDPath;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.path.SDPath;
+import ca.shapedetector.shapes.SDRootShape;
 
 /**
  * Identifies ProtoShapes as CAShapes.
  */
 public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
-	SDShape shapeDetector;
+	SDRootShape shapeDetector;
 	Stopwatch stopwatch;
 	long[] timers;
 
 	public CAProtoShapeIdentifierRule(CAShapeDetector ca) {
 		super(ca);
-		shapeDetector = new SDShape(ca.getPicture());
+		shapeDetector = new SDRootShape(ca.getPicture());
 		stopwatch = new Stopwatch();
 		timers = new long[3];
 	}
@@ -34,6 +34,7 @@ public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
 		SDPath path = new SDPath(protoShape);
 		if (path.getArea() > 16) {
 			ca.addShape(shapeDetector.identifyShape(path));
+//			Input.waitForSpace();
 		}
 		timers[2] += stopwatch.time();
 	}

@@ -1,7 +1,8 @@
 package ca.shapedetector.shapes;
 
-import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+
+import std.Picture;
 
 import ca.shapedetector.CAProtoShape;
 
@@ -11,18 +12,18 @@ public class SDSquare extends SDRectangle {
 
 	private double width;
 
-	public SDSquare() {
+	public SDSquare(Picture picture) {
+		super(picture);
 	}
 
-	public SDSquare(SDPath path, Graphics2D graphics) {
-		super(path, graphics);
-	}
-
-	public SDSquare(SDRectangle shape) {
-		super();
+	public SDSquare(SDRectangle shape, Picture picture) {
+		super(picture);
 		path = shape.path;
 		Rectangle2D bounds = shape.path.getBounds();
 		width = (bounds.getHeight() + bounds.getWidth()) / 2.0;
+	}
+	
+	protected void loadRelatedShapes() {
 	}
 
 	protected SDShape identify(CAProtoShape protoShape) {
@@ -41,7 +42,7 @@ public class SDSquare extends SDRectangle {
 		double area = rectangle.getLength() * rectangle.getWidth();
 //		System.out.println(delta / area);
 		if (delta / area < tolerance) {
-			return new SDSquare(rectangle);
+			return new SDSquare(rectangle, rectangle.picture);
 		} else {
 			return rectangle;
 		}

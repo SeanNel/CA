@@ -1,6 +1,9 @@
 package ca.shapedetector;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -56,7 +59,7 @@ public class CAShapeDetector extends CA {
 		StdDraw.frame.setTitle("CA Shape Detector");
 
 		String path;
-		float epsilon = 0.02f;
+		float epsilon = 0.04f;
 		int r = 1;
 
 		if (args.length == 0) {
@@ -95,6 +98,54 @@ public class CAShapeDetector extends CA {
 		StdDraw.picture(0.5, 0.5, picture.getImage());
 	}
 
+	private class ProtoShapeSorter implements Comparable<ProtoShapeSorter> {
+		CAProtoShape protoShape;
+
+		public ProtoShapeSorter(CAProtoShape protoShape) {
+			this.protoShape = protoShape;
+		}
+
+		@Override
+		public int compareTo(ProtoShapeSorter arg0) {
+			double x1 = (protoShape.getBoundaries()[0][1] - protoShape
+					.getBoundaries()[0][0]) / 2.0;
+			double y1 = (protoShape.getBoundaries()[1][1] - protoShape
+					.getBoundaries()[1][0]) / 2.0;
+
+			double x2 = (arg0.protoShape.getBoundaries()[0][1] - arg0.protoShape
+					.getBoundaries()[0][0]) / 2.0;
+			double y2 = (arg0.protoShape.getBoundaries()[1][1] - arg0.protoShape
+					.getBoundaries()[1][0]) / 2.0;
+
+			if (x1 == x2 && y1 == y2) {
+				return 0;
+			} else if (y1 < y2) {
+				return -1;
+			} else {
+				if (x1 < x2) {
+					return -1;
+				} else {
+					return 1;
+				}
+			}
+		}
+
+	}
+
+	protected Set<CAProtoShape> sortProtoShapes(Set<CAProtoShape> shapes) {
+		ProtoShapeSorter[] shapeSorter = new ProtoShapeSorter[shapes.size()];
+		Iterator<CAProtoShape> iterator = shapes.iterator();
+		for (int i = 0; i < shapes.size(); i++) {
+			shapeSorter[i] = new ProtoShapeSorter(iterator.next());
+		}
+		Arrays.sort(shapeSorter);
+		Set<CAProtoShape> sortedShapes = new LinkedHashSet<CAProtoShape>();
+		for (ProtoShapeSorter s : shapeSorter) {
+			sortedShapes.add(s.protoShape);
+		}
+		return sortedShapes;
+	}
+
 	public CAShapeDetector(float epsilon, int r) {
 		super(epsilon, r);
 		// neighbourhoodModel = VANNEUMANN_NEIGHBOURHOOD;
@@ -106,7 +157,7 @@ public class CAShapeDetector extends CA {
 		cellRules.add(new CANoiseRemoverRule(this));
 		cellRules.add(new CAEdgeFinderRule(this));
 		cellRules.add(new CAShapeFinderRule(this));
-//		cellRules.add(new CAShapeAssimilatorRule(this));
+		// cellRules.add(new CAShapeAssimilatorRule(this));
 		cellRules.add(new CAOutlineFinderRule(this));
 	}
 
@@ -142,6 +193,12 @@ public class CAShapeDetector extends CA {
 	public Picture apply(Picture picture) {
 		super.apply(picture);
 		shapes = new LinkedList<SDShape>();
+
+		/*
+		 * To ease debugging, sort the shapes in the order a human would see
+		 * them.
+		 */
+		protoShapes = sortProtoShapes(protoShapes);
 
 		CAProtoShapeIdentifierRule protoShapeIdentifier = new CAProtoShapeIdentifierRule(
 				this);
@@ -248,22 +305,21 @@ public class CAShapeDetector extends CA {
 		int delta = 2;
 		for (SDShape shape : shapes) {
 			/* using instanceof does not seem to work here. */
-//			if (shape.getClass() != SDUnknownShape.class) {
-				/* Ignore the rectangle detected at the image borders. */
-				if (shape instanceof SDRectangle
-						&& shape.getDimensions()[0] + delta > pictureBefore
-								.width()
-						&& shape.getDimensions()[1] + delta > pictureBefore
-								.height()) {
-					continue;
-				}
-//				System.out.println(shape);
-				shape.draw();
+			// if (shape.getClass() != SDUnknownShape.class) {
+			/* Ignore the rectangle detected at the image borders. */
+			if (shape instanceof SDRectangle
+					&& shape.getDimensions()[0] + delta > pictureBefore.width()
+					&& shape.getDimensions()[1] + delta > pictureBefore
+							.height()) {
+				continue;
+			}
+			// System.out.println(shape);
+			shape.draw();
 
-				/* For debugging */
-//				shape.display();
-//				Input.waitForSpace();
-//			}
+			/* For debugging */
+			// shape.display();
+			// Input.waitForSpace();
+			// }
 		}
 		return picture;
 	}

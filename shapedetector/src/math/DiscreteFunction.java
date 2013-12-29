@@ -1,11 +1,81 @@
 package math;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 public class DiscreteFunction {
-	/* TODO: Fourier transform */
+
+	/**
+	 * Stretches or compresses the function to the specified length.
+	 * 
+	 * @param f1
+	 * @param length
+	 */
+	public static double[] fit(double[] f1, int length) {
+		double[] f = new double[length];
+
+		for (int x = 0; x < length; x++) {
+			double a = (double) f1.length / (double) length * (double) x;
+			f[x] = f1[(int) Math.floor(a)];
+		}
+		return f;
+	}
+
+	public static double[] crop(double[] f1, int length) {
+		double[] f = new double[length];
+
+		for (int x = 0; x < length; x++) {
+			f[x] = f1[x];
+		}
+		return f;
+	}
+
+	/**
+	 * Smoothes out the function over the number of data points specified.
+	 * 
+	 * @param f1
+	 * @param delta
+	 */
+	public static void smoothe(double[] f, int delta) {
+		if (f.length < delta) {
+			return;
+		}
+
+		double[] f1 = f.clone();
+		int delta1 = (int) Math.floor(delta / 2.0);
+
+		for (int x = 0; x < f.length; x++) {
+			f[x] = getMedian(f1, x - delta1, delta);
+		}
+	}
+
+	/**
+	 * Gets the median (average) of a number of data points.
+	 * 
+	 * @param f
+	 *            Array of data points.
+	 * @param x1
+	 *            Start offset.
+	 * @param delta
+	 *            Number of samples to average over.
+	 * @return
+	 */
+	public static double getMedian(double[] f, int x1, int delta) {
+		double median = 0.0;
+
+		if (x1 < 0) {
+			x1 = f.length + x1;
+		} else if (x1 >= f.length) {
+			x1 = x1 - f.length;
+		}
+
+		for (int i = 0; i < delta; i++) {
+			int x = x1 + i;
+			if (x >= f.length) {
+				x = x - f.length;
+			}
+			median += f[x];
+		}
+
+		return median / (double) delta;
+	}
 
 	/**
 	 * Gets the difference between two discrete functions (assumes both have the
@@ -17,105 +87,102 @@ public class DiscreteFunction {
 	 * @param f2
 	 * @return
 	 */
-	public static List<Double> functionDifference(List<Double> f1,
-			List<Double> f2) {
-		List<Double> f = new ArrayList<Double>(f1.size());
-		Iterator<Double> f1Iterator = f1.iterator();
-		Iterator<Double> f2Iterator = f2.iterator();
-		while (f1Iterator.hasNext()) {
-			Double y1 = f1Iterator.next();
-			Double y2 = f2Iterator.next();
-			f.add(y1 - y2);
+	public static double[] difference(double[] f1, double[] f2) {
+		double[] f = new double[f1.length];
+
+		for (int x = 0; x < f1.length; x++) {
+			f[x] = f1[x] - f2[x];
 		}
 		return f;
 	}
 
 	/**
-	 * Finds x coordinate of absolute minimum in the specified domain.
+	 * Finds x coordinate of the absolute minimum.
 	 * 
-	 * @param discreteFunction
+	 * @param f
+	 * @return
+	 */
+	public static int findValley(double[] f) {
+		return findValley(f, 0, f.length);
+	}
+
+	/**
+	 * Finds x coordinate of the absolute minimum in the specified domain.
+	 * 
+	 * @param f
 	 * @param x1
 	 * @param x2
 	 * @return
 	 */
-	public static int findValley(List<Double> discreteFunction, int x1, int x2) {
-		Double minimum = Double.MAX_VALUE;
-		int minimumPosition1 = 0;
-		int minimumPosition2 = 0;
+	public static int findValley(double[] f, int x1, int x2) {
+		double minimum = Double.MAX_VALUE;
+		int minimumPosition = 0;
 
-		Iterator<Double> iterator = discreteFunction.iterator();
-
-		for (int i = 0; i < x1; i++) {
-			iterator.next();
-		}
-
-		for (int x = x1; iterator.hasNext() && x < x2; x++) {
-			Double column = iterator.next();
-			if (column < minimum) {
-				minimum = column;
-				minimumPosition1 = x;
-			} else if (column == minimum) {
-				minimumPosition2 = x;
+		for (int x = x1; x < x2; x++) {
+			double y = f[x];
+			if (y < minimum) {
+				minimum = y;
+				minimumPosition = x;
 			}
 		}
 
-		/* Crude estimate of Fourier transform */
-		double position = Math.round((minimumPosition2 - minimumPosition1) / 2);
-		return (int) position;
+		return minimumPosition;
 	}
 
 	/**
-	 * Finds x coordinate of absolute maximum.
+	 * Finds x coordinate of the absolute maximum.
 	 * 
-	 * @param discreteFunction
+	 * @param f
 	 * @return
 	 */
-	public static int findPeak(List<Double> discreteFunction) {
-		Double maximum = 0.0;
-		int maximumPosition1 = 0;
-		int maximumPosition2 = 0;
-		Iterator<Double> iterator = discreteFunction.iterator();
+	public static int findPeak(double[] f) {
+		return findPeak(f, 0, f.length);
+	}
 
-		for (int i = 0; iterator.hasNext(); i++) {
-			Double column = iterator.next();
-			if (column > maximum) {
-				maximum = column;
-				maximumPosition1 = i;
-			} else if (column == maximum) {
-				maximumPosition2 = i;
+	/**
+	 * Finds x coordinate of the absolute maximum in the specified domain.
+	 * 
+	 * @param f
+	 * @param x1
+	 * @param x2
+	 * @return
+	 */
+	public static int findPeak(double[] f, int x1, int x2) {
+		double maximum = Double.MIN_VALUE;
+		int maximumPosition = 0;
+
+		for (int x = x1; x < x2; x++) {
+			double y = f[x];
+			if (y > maximum) {
+				maximum = y;
+				maximumPosition = x;
 			}
 		}
 
-		/* Crude estimate of Fourier transform */
-		double position = Math.round((maximumPosition2 - maximumPosition1) / 2);
-		return (int) position;
+		return maximumPosition;
 	}
 
 	/**
 	 * Gets the absolute value of the function.
 	 * 
-	 * @param discreteFunction
-	 * @return
+	 * @param f
 	 */
-	public static List<Double> absoluteValue(List<Double> discreteFunction) {
-		List<Double> absoluteFunction = new ArrayList<Double>(
-				discreteFunction.size());
-		for (Double y : discreteFunction) {
-			absoluteFunction.add(Math.abs(y));
+	public static void absoluteValue(double[] f) {
+		for (int x = 0; x < f.length; x++) {
+			f[x] = Math.abs(f[x]);
 		}
-		return absoluteFunction;
 
 	}
 
 	/**
 	 * Gets the integral over the entire domain.
 	 * 
-	 * @param discreteFunction
+	 * @param f
 	 * @return
 	 */
-	public static double integrate(List<Double> discreteFunction) {
+	public static double integrate(double[] f) {
 		double integral = 0.0;
-		for (Double y : discreteFunction) {
+		for (double y : f) {
 			integral += y;
 		}
 		return integral;
@@ -124,39 +191,255 @@ public class DiscreteFunction {
 	/**
 	 * Integrates over the specified domain.
 	 * 
-	 * @param discreteFunction
+	 * @param f
 	 * @param x1
 	 * @param x2
 	 * @return
 	 */
-	public static double integrate(List<Double> discreteFunction, int x1, int x2) {
+	public static double integrate(double[] f, int x1, int x2) {
 		double integral = 0.0;
 
-		Iterator<Double> iterator = discreteFunction.iterator();
-		for (int x = 0; iterator.hasNext() && x < x1; x++) {
-			iterator.next();
-		}
-
-		for (int x = x1; iterator.hasNext() && x < x2; x++) {
-			integral += iterator.next();
+		for (int x = x1; x < x2; x++) {
+			integral += f[x];
 		}
 
 		return integral;
 	}
 
 	/**
-	 * Gets histogram rotated by n positions.
+	 * Gets the autocorrelation of the function. TODO: Replace the simple
+	 * Fourier transform function with an FFT for improved performance.
+	 * (O(NlogN) instead of O(N^2))
 	 * 
-	 * @param histogram
+	 * @param f
+	 * @return
+	 */
+	public static double[] autoCorrelation(double[] f) {
+		double i[] = new double[f.length];
+		double imag[] = new double[f.length];
+		double real[] = new double[f.length];
+
+		dft(f, i, real, imag, 0, f.length);
+		f = getModulusSquared(real, imag);
+		dftInverse(f, i, real, imag, 0, f.length);
+		f = real;
+
+		return f;
+	}
+
+	/**
+	 * Filters the input signal for frequencies between min and max values.
+	 * 
+	 * @param f
+	 * @param min
+	 * @param max
+	 * @return
+	 */
+	public static double[] freqBand(double[] f, int min, int max) {
+		double i[] = new double[f.length];
+		double imag[] = new double[f.length];
+		double real[] = new double[f.length];
+
+		dftInverse(f, i, real, imag, min, max);
+		dft(real, imag, f, i, 0, f.length);
+
+		return f;
+	}
+
+	/**
+	 * Gets a a sign wave (for debugging purposes)
+	 * 
+	 * @param length
+	 * @param factor
+	 * @return
+	 */
+	protected static double[] getSin(int length, double factor) {
+		double[] f = new double[length];
+		for (int x = 0; x < f.length; x++) {
+			f[x] = Math.sin(x * factor);
+		}
+		return f;
+	}
+
+	/**
+	 * Gets the modulus squared of a complex function.
+	 * 
+	 * @param real
+	 *            An array of real components
+	 * @param imag
+	 * @return
+	 */
+	protected static double[] getModulusSquared(double[] real, double[] imag) {
+		double[] f = new double[real.length];
+		for (int x = 0; x < real.length; x++) {
+			f[x] = real[x] * real[x] + imag[x] * imag[x];
+		}
+		return f;
+	}
+
+	/**
+	 * Simple implementation of the Fourier transform. That is, it converts a
+	 * function of time to a function of frequency.
+	 * 
+	 * @see http 
+	 *      ://nayuki.eigenstate.org/page/how-to-implement-the-discrete-fourier
+	 *      -transform
+	 * 
+	 * @param inreal
+	 * @param inimag
+	 * @param outreal
+	 * @param outimag
+	 */
+	public static void dft(double[] inreal, double[] inimag, double[] outreal,
+			double[] outimag, int kMin, int kMax) {
+		int n = inreal.length;
+		for (int k = kMin; k < n && k < kMax; k++) {
+			double sumreal = 0;
+			double sumimag = 0;
+			for (int t = 0; t < n; t++) { // For each input element
+				sumreal += inreal[t] * Math.cos(2.0 * Math.PI * t * k / n)
+						+ inimag[t] * Math.sin(2.0 * Math.PI * t * k / n);
+				sumimag += -inreal[t] * Math.sin(2.0 * Math.PI * t * k / n)
+						+ inimag[t] * Math.cos(2.0 * Math.PI * t * k / n);
+			}
+			outreal[k] = sumreal;
+			outimag[k] = sumimag;
+		}
+	}
+
+	/**
+	 * Simple implementation of the inverse Fourier transform. That is, it
+	 * converts a function of frequency to a function of time.
+	 * 
+	 * @param inreal
+	 * @param inimag
+	 * @param outreal
+	 * @param outimag
+	 * @param kMin
+	 * @param kMax
+	 */
+	public static void dftInverse(double[] inreal, double[] inimag,
+			double[] outreal, double[] outimag, int kMin, int kMax) {
+		int n = inreal.length;
+		for (int k = kMin; k < n && k < kMax; k++) {
+			double sumreal = 0;
+			double sumimag = 0;
+			for (int t = 0; t < n; t++) { // For each input element
+				sumreal += inreal[t] * Math.cos(2.0 * Math.PI * t * k / n)
+						+ inimag[t] * Math.sin(2.0 * Math.PI * t * k / n);
+				sumimag += inreal[t] * Math.sin(2.0 * Math.PI * t * k / n)
+						+ inimag[t] * Math.cos(2.0 * Math.PI * t * k / n);
+			}
+			outreal[k] = sumreal;
+			outimag[k] = sumimag;
+		}
+	}
+
+	public static double[] times(double[] f, double x) {
+		for (int i = 0; i < f.length; i++) {
+			f[i] *= x;
+		}
+		return f;
+	}
+
+	public static void add(double[] f, double d) {
+		for (int x = 0; x < f.length; x++) {
+			f[x] += d;
+		}
+	}
+
+	public static double[] dotProduct(double[] f1, double[] f2) {
+		double[] f = new double[f1.length];
+		for (int x = 0; x < f.length; x++) {
+			f[x] = f1[x] * f2[x];
+		}
+		return f;
+	}
+
+	/**
+	 * Loops the data a specified number of times.
+	 * 
+	 * @param f
+	 * @param factor
+	 * @return
+	 */
+	public static double[] loop(double[] f, double factor) {
+		int n = (int) ((double) f.length * factor);
+		double[] f1 = new double[n];
+
+		int x = 0;
+		for (int i = 0; i < n; i++) {
+			x++;
+			if (x >= f.length) {
+				x = 0;
+			}
+			f1[i] = f[x];
+		}
+		return f1;
+	}
+
+	/**
+	 * Takes a function of periodic data, and wrapping it around the ends,
+	 * shifts it the specified number of steps.
+	 * 
+	 * @param f
 	 * @param n
 	 * @return
 	 */
-	public static List<Double> rotateHistogram(List<Double> histogram, int n) {
-		histogram = new ArrayList<Double>(histogram);
-		Double first = histogram.get(0);
-		histogram.remove(0);
-		histogram.add(first);
-		return histogram;
+	public static double[] rotate(double[] f, int n) {
+		double[] f1 = new double[f.length];
+
+		for (int x = 0; x < n; x++) {
+			f1[x] = f[f.length - x - 1];
+		}
+
+		for (int x = 0; x < f.length - n; x++) {
+			f1[x + n] = f[x];
+		}
+		return f1;
 	}
 
+	/**
+	 * Gets the mean value (average) of the function.
+	 *  
+	 * @param f
+	 * @return
+	 */
+	public static double average(double[] f) {
+		return integrate(f) / f.length;
+	}
+
+	/**
+	 * Gets the maximum value of the function.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static double maximum(double[] f) {
+		double maximum = 0.0;
+
+		for (int x = 0; x < f.length; x++) {
+			if (f[x] > maximum) {
+				maximum = f[x];
+			}
+		}
+		return maximum;
+	}
+
+	/**
+	 * Gets the minimum value of the function.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static double minimum(double[] f) {
+		double minimum = Double.MAX_VALUE;
+
+		for (int x = 0; x < f.length; x++) {
+			if (f[x] < minimum) {
+				minimum = f[x];
+			}
+		}
+		return minimum;
+	}
 }
