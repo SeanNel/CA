@@ -7,32 +7,56 @@ import java.util.Iterator;
 import java.util.List;
 
 import math.CartesianVector;
+import ca.shapedetector.shapes.SDShape;
 
 public class SDDistributionHistogram {
+	/* Enumerates the distribution types. */
 	/**
-	 * Gets the gradient distribution of this path.
-	 * <p>
-	 * Specifically, this is the angle between points on the path and the
+	 * This gets the angle between tangents to points along the path and the
 	 * tangent to a circle centered on the centroid of the path. Thus for a
 	 * circular path, the gradient distribution is constant.
 	 */
-	protected static double[] getGradientDistribution(SDPath sdPath) {
+	public static final int RADIAL_GRADIENT_DISTRIBUTION = 0;
+	/**
+	 * This gets the angle of points along the path, relative to the x-axis.
+	 */
+	public static final int ABSOLUTE_GRADIENT_DISTRIBUTION = 1;
+	/**
+	 * This divides the path into triangular sectors around the centroid and
+	 * gets the area of these sectors.
+	 */
+	public static final int RADIAL_AREA_DISTRIBUTION = 10;
+	/**
+	 * This gets the distance between the centroid and points along the path.
+	 */
+	public static final int RADIAL_DISTANCE_DISTRIBUTION = 20;
+
+	/** Should give a straight-line graph */
+	public static final int RELATIVE_DISTANCE = 30;
+	/** Should give a straight-line graph that wraps around at y=2Pi */
+	public static final int RADIAL_ANGLE = 31;
+
+	public static double[] getGradientDistribution(SDShape shape, int type) {
+		if (type == RADIAL_AREA_DISTRIBUTION) {
+			return getAreaDistribution(shape, 16);
+		}
+
 		List<Double> gradientHistogram = new ArrayList<Double>();
 		List<Double> spacingData = new ArrayList<Double>();
 
-		SDPathIterator pathIterator1 = sdPath.iterator();
-		SDPathIterator pathIterator2 = sdPath.iterator();
+		SDPathIterator pathIterator1 = shape.iterator();
+		SDPathIterator pathIterator2 = shape.iterator();
 		pathIterator2.next();
 
 		while (pathIterator2.hasNext()) {
-			gatherGradientDistributionData(pathIterator1, pathIterator2,
-					gradientHistogram, spacingData, sdPath.getCentroid());
+			gatherGradientData(type, pathIterator1, pathIterator2,
+					gradientHistogram, spacingData, shape.getCentroid());
 		}
 
 		/* Includes the last point along the path as well. */
-		pathIterator2 = sdPath.iterator();
-		gatherGradientDistributionData(pathIterator1, pathIterator2,
-				gradientHistogram, spacingData, sdPath.getCentroid());
+		pathIterator2 = shape.iterator();
+		gatherGradientData(type, pathIterator1, pathIterator2,
+				gradientHistogram, spacingData, shape.getCentroid());
 
 		/* TODO Fix me! */
 		// gradientHistogram = balanceGradientDistribution(gradientHistogram,
@@ -41,7 +65,7 @@ public class SDDistributionHistogram {
 		return getArray(gradientHistogram);
 	}
 
-	private static void gatherGradientDistributionData(
+	private static void gatherGradientData(int type,
 			SDPathIterator pathIterator1, SDPathIterator pathIterator2,
 			List<Double> gradientData, List<Double> spacingData,
 			double[] centroid) {
@@ -50,19 +74,37 @@ public class SDDistributionHistogram {
 
 		double[] a = { coordinates1[0], coordinates1[1] };
 		double[] b = { coordinates2[0], coordinates2[1] };
-		double[] vector = CartesianVector.getRelative(a, b);
+		double[] dR = CartesianVector.getRelative(a, b);
 
-		double distance = CartesianVector.getLength(vector);
+		double distance = CartesianVector.getLength(dR);
 		if (distance == 0) {
 			/* TODO fix this */
 			return;
 		}
 		spacingData.add(distance);
 
-		// double gradient = CartesianVector.getAngle(vector);
+		double gradient = 0.0;
+		double[] radial = CartesianVector.getRelative(centroid, b);
 
-		double[] vector2 = CartesianVector.getRelative(centroid, b);
-		double gradient = getGradient(vector, vector2);
+		switch (type) {
+		case RADIAL_DISTANCE_DISTRIBUTION:
+			gradient = CartesianVector.getLength(radial);
+			break;
+		case RADIAL_GRADIENT_DISTRIBUTION:
+			gradient = getGradient(dR, radial);
+			break;
+		case ABSOLUTE_GRADIENT_DISTRIBUTION:
+			gradient = CartesianVector.getAngle(dR);
+			break;
+			// case AREA_DISTRIBUTION:
+			// break;
+		case RELATIVE_DISTANCE:
+			gradient = distance;
+			break;
+		case RADIAL_ANGLE:
+			gradient = CartesianVector.getAngle(radial);
+			break;
+		}
 
 		gradientData.add(gradient);
 	}
@@ -138,10 +180,10 @@ public class SDDistributionHistogram {
 	 * 
 	 * @return The number of sectors to divide the azimuth into.
 	 */
-	protected static double[] getAreaDistribution(SDPath sdPath, int numSectors) {
+	public static double[] getAreaDistribution(SDShape shape, int numSectors) {
 		double sweep = 2.0 * Math.PI / (double) numSectors;
-		double w = sdPath.path.getBounds2D().getWidth();
-		double h = sdPath.path.getBounds2D().getHeight();
+		double w = shape.getBoundaries().getWidth();
+		double h = shape.getBoundaries().getHeight();
 		/*
 		 * The shape will always fit inside the circle if the radius is
 		 * calculated from the center (and not the center of mass).
@@ -150,20 +192,21 @@ public class SDDistributionHistogram {
 		double sectorArea = radius * radius * Math.sin(sweep / 2.0)
 				* Math.cos(sweep / 2.0);
 
-		Area pathShape = new Area(sdPath.path);
+		Area pathShape = shape.getPath().getAreaPolygon();
 
 		double[] symmetryHistogram = new double[numSectors];
 
+		double[] centroid = shape.getCentroid();
 		// System.out.println("***");
 		for (int i = 0; i < numSectors; i++) {
 			double theta = sweep * (i - 0.5);
-			double x1 = sdPath.centroid[0] + radius * Math.cos(theta);
-			double y1 = sdPath.centroid[1] + radius * Math.sin(theta);
-			double x2 = sdPath.centroid[0] + radius * Math.cos(theta + sweep);
-			double y2 = sdPath.centroid[1] + radius * Math.sin(theta + sweep);
+			double x1 = centroid[0] + radius * Math.cos(theta);
+			double y1 = centroid[1] + radius * Math.sin(theta);
+			double x2 = centroid[0] + radius * Math.cos(theta + sweep);
+			double y2 = centroid[1] + radius * Math.sin(theta + sweep);
 
 			Path2D.Double sector = new Path2D.Double();
-			sector.moveTo(sdPath.centroid[0], sdPath.centroid[1]);
+			sector.moveTo(centroid[0], centroid[1]);
 			sector.lineTo(x1, y1);
 			sector.lineTo(x2, y2);
 			sector.closePath();
@@ -171,7 +214,7 @@ public class SDDistributionHistogram {
 			Area sectorShape = new Area(sector);
 			sectorShape.subtract(pathShape);
 			SDPath projectionPath = new SDPath(sectorShape);
-			double projectionArea = sectorArea - projectionPath.getArea();
+			double projectionArea = sectorArea - projectionPath.calculateArea();
 			symmetryHistogram[i] = projectionArea;
 			// System.out.println("theta: " + Math.round(Math.toDegrees(sweep *
 			// (i))) + ", sector area: " + Math.round(projectionArea));

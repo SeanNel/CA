@@ -166,7 +166,13 @@ public final class Picture implements ActionListener {
 	 * Display the picture in a window on the screen.
 	 */
 	public void show() {
+		createGUI();
 
+		// draw
+		frame.repaint();
+	}
+
+	protected void createGUI() {
 		// create the GUI for viewing the image if needed
 		if (frame == null) {
 			frame = new JFrame();
@@ -189,9 +195,6 @@ public final class Picture implements ActionListener {
 			frame.pack();
 			frame.setVisible(true);
 		}
-
-		// draw
-		frame.repaint();
 	}
 
 	/**
@@ -306,6 +309,18 @@ public final class Picture implements ActionListener {
 
 	public BufferedImage getImage() {
 		return image;
+	}
+
+	public void setTitle(String string) {
+		filename = string;
+		if (frame != null) {
+			frame.setTitle(string);
+		}
+	}
+
+	public void move(int x, int y) {
+		createGUI();
+		frame.setLocation(x, y);
 	}
 
 }

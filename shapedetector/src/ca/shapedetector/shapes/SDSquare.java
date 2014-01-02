@@ -4,8 +4,6 @@ import java.awt.geom.Rectangle2D;
 
 import std.Picture;
 
-import ca.shapedetector.CAProtoShape;
-
 public class SDSquare extends SDRectangle {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	protected static double tolerance = 4.0E-4;
@@ -16,18 +14,12 @@ public class SDSquare extends SDRectangle {
 		super(picture);
 	}
 
-	public SDSquare(SDRectangle shape, Picture picture) {
-		super(picture);
-		path = shape.path;
-		Rectangle2D bounds = shape.path.getBounds();
-		width = (bounds.getHeight() + bounds.getWidth()) / 2.0;
-	}
-	
 	protected void loadRelatedShapes() {
 	}
 
-	protected SDShape identify(CAProtoShape protoShape) {
-		return null;
+	public SDSquare(SDRectangle shape) {
+		super(shape);
+		width = (shape.getLength() + shape.getWidth()) / 2.0;
 	}
 
 	/**
@@ -42,14 +34,14 @@ public class SDSquare extends SDRectangle {
 		double area = rectangle.getLength() * rectangle.getWidth();
 //		System.out.println(delta / area);
 		if (delta / area < tolerance) {
-			return new SDSquare(rectangle, rectangle.picture);
+			return new SDSquare(rectangle);
 		} else {
 			return rectangle;
 		}
 	}
 
 	protected void getProperties() {
-		Rectangle2D bounds = path.getBounds();
+		Rectangle2D bounds = getPath().getBounds();
 		width = (bounds.getHeight() - bounds.getWidth()) / 2.0;
 
 	}

@@ -11,18 +11,25 @@ public class SDEllipse extends SDShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	protected static double tolerance = 0.1;
 
-	protected static final SDCircle circle = new SDCircle();
-	protected static SDPath identity;
-
 	private double length;
 	private double width;
 
-	public SDEllipse() {
-	}
-
+	/**
+	 * Identity constructor.
+	 * 
+	 * @param picture
+	 */
 	public SDEllipse(Picture picture) {
 		super(picture);
-		loadIdentity();
+
+		/*
+		 * The size of the identity shape is arbitrary, but large values may
+		 * give better results.
+		 */
+		Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 100, 100);
+		loadPath(new SDPath(ellipse));
+		// identity.calculateOrientation();
+		// identity.rotate(identity.getOrientation());
 	}
 
 	public SDEllipse(SDPath path, Picture picture) {
@@ -30,29 +37,20 @@ public class SDEllipse extends SDShape {
 		getProperties();
 	}
 
-	public void loadIdentity() {
-		if (identity == null) {
-			/*
-			 * The size of the identity shape is arbitrary, but large values
-			 * give better results.
-			 */
-			Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 100, 100);
-			identity = new SDPath(ellipse);
-			// identity.calculateOrientation();
-			// identity.rotate((Math.PI / 4.0) - identity.getOrientation());
-		}
+	public SDEllipse(SDShape shape) {
+		super(shape);
 	}
 
-	protected SDShape identify(SDPath path) {
-		/* Ensures that the shape is placed upright. */
-		SDPath rotatedPath = new SDPath(path);
-		rotatedPath.rotate((Math.PI / 4.0) - rotatedPath.getOrientation());
+	protected void loadRelatedShapes() {
+		relatedShapes.add(new SDCircle(picture));
+	}
 
-		double match = identity.getDifference(rotatedPath);
+	protected SDShape identify(SDShape shape) {
+		double match = compare(shape);
 
 		if (1.0 - match < tolerance) {
-			SDEllipse ellipse = new SDEllipse(path, picture);
-			SDShape shape = SDCircle.identify(ellipse);
+			SDRectangle rectangle = new SDRectangle(getPath(), picture);
+			shape = SDSquare.identify(rectangle);
 			return shape;
 		} else {
 			return null;
@@ -60,7 +58,7 @@ public class SDEllipse extends SDShape {
 	}
 
 	protected void getProperties() {
-		Rectangle2D rectangle = path.getBounds();
+		Rectangle2D rectangle = getPath().getBounds();
 
 		length = rectangle.getWidth();
 		width = rectangle.getHeight();

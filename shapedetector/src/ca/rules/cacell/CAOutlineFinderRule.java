@@ -56,6 +56,9 @@ public class CAOutlineFinderRule extends CACellRule {
 	 * the current cell. Places cells in anti-clockwise order, starting with the
 	 * cell directly above this one. The sequence determines how outline cells
 	 * will be ordered.
+	 * <p>
+	 * NOTE: the order has been made clockwise until the issue with reverse
+	 * PathIterators has been resolved.
 	 * 
 	 * @param cell
 	 *            Cell to get neighbourhood of.
@@ -66,14 +69,28 @@ public class CAOutlineFinderRule extends CACellRule {
 		List<CACell> neighbourhood = new ArrayList<CACell>(8);
 		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
 
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] - 1));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] - 1));
+		// neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] -
+		// 1));
+		// neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
+		// neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] +
+		// 1));
+		// neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
+		// neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] +
+		// 1));
+		// neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
+		// neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] -
+		// 1));
+		// neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
+
 		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] - 1));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
+		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] + 1));
+		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
+		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] - 1));
+
 		return neighbourhood;
 	}
 }

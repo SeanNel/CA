@@ -9,6 +9,7 @@ public class SDRootShape extends SDShape {
 	}
 
 	protected void loadRelatedShapes() {
+		super.loadRelatedShapes();
 		relatedShapes.add(new SDRectangle(picture));
 		// relatedShapes.add(new SDEllipse(graphics));
 	}

@@ -5,7 +5,6 @@ import java.awt.geom.Rectangle2D;
 import std.Picture;
 
 import ca.shapedetector.CAProtoShape;
-import ca.shapedetector.path.SDPath;
 
 public class SDCircle extends SDEllipse {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
@@ -13,22 +12,20 @@ public class SDCircle extends SDEllipse {
 
 	private double width;
 
-	public SDCircle() {
-	}
-
-	public SDCircle(SDPath path, Picture picture) {
-		super(path, picture);
+	public SDCircle(Picture picture) {
+		super(picture);
 	}
 
 	public SDCircle(SDEllipse shape) {
-		super();
-		path = shape.path;
-		Rectangle2D bounds = shape.path.getBounds();
-		width = (bounds.getHeight() + bounds.getWidth()) / 2.0;
+		super(shape);
+		width = (shape.getLength() + shape.getWidth()) / 2.0;
 	}
 
 	protected SDShape identify(CAProtoShape protoShape) {
 		return null;
+	}
+
+	protected void loadRelatedShapes() {
 	}
 
 	/**
@@ -50,13 +47,8 @@ public class SDCircle extends SDEllipse {
 	}
 
 	protected void getProperties() {
-		/* Ensures that the shape is placed upright. */
-		SDPath path = new SDPath(this.path);
-		path.rotate((Math.PI / 4.0) - path.getOrientation());
-
-		Rectangle2D bounds = path.getBounds();
+		Rectangle2D bounds = getPath().getBounds();
 		width = (bounds.getHeight() - bounds.getWidth()) / 2.0;
-
 	}
 
 	protected String getDescription() {

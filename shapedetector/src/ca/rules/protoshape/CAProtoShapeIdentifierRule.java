@@ -3,7 +3,6 @@ package ca.rules.protoshape;
 import ca.Stopwatch;
 import ca.shapedetector.CAProtoShape;
 import ca.shapedetector.CAShapeDetector;
-import ca.shapedetector.path.SDPath;
 import ca.shapedetector.shapes.SDRootShape;
 
 /**
@@ -30,12 +29,13 @@ public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
 		protoShape.arrangeOutlineCells();
 		timers[0] += stopwatch.time();
 
-		stopwatch.start();
-		SDPath path = new SDPath(protoShape);
-		if (path.getArea() > 16) {
-			ca.addShape(shapeDetector.identifyShape(path));
-//			Input.waitForSpace();
+		if (protoShape.getOutlineCells().size() < 16) {
+			return;
 		}
+
+		stopwatch.start();
+		ca.addShape(shapeDetector.identifyShape(protoShape, ca));
+		// Input.waitForSpace();
 		timers[2] += stopwatch.time();
 	}
 

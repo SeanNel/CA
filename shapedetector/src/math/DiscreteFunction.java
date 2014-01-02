@@ -1,6 +1,137 @@
 package math;
 
+import graphics.LineChart;
+
+import java.util.Arrays;
+
+import org.jfree.data.xy.XYIntervalSeriesCollection;
+
+
 public class DiscreteFunction {
+	/* Keeps a chart handy to display distribution data. */
+	protected static final XYIntervalSeriesCollection dataset = new XYIntervalSeriesCollection();
+	public static final LineChart distributionChart = new LineChart(dataset);
+
+	public static void normalize(double[] f) {
+		double norm = Math.sqrt(dotProduct(f, f));
+		times(f, 1.0 / norm);
+	}
+
+	public static void normalizeTo(double[] f, double c) {
+		double norm = c * (double) f.length;
+		times(f, 1.0 / norm);
+	}
+
+	public static double getCorrelation(double[] f, double g[]) {
+		// f = f.clone();
+		// g = g.clone();
+		//
+		// DiscreteFunction.normalizeTo(f, 1.0);
+		// DiscreteFunction.normalizeTo(g, 1.0);
+
+		double h[] = DiscreteFunction.difference(f, g);
+		DiscreteFunction.absoluteValue(h);
+
+		// dataset.removeAllSeries();
+		// dataset.addSeries(distributionChart.getSeries(h, "|f(x)-g(x)|"));
+//		distributionChart.setVisible(true);
+
+		return 1.0 - (DiscreteFunction.integrate(h) / h.length);
+	}
+
+	/* Assumes that the functions have already been normalized as necessary. */
+	public static double[] crossCorrelation(double[] f1, double[] f2) {
+		int n = f1.length;
+		double[] f = new double[n];
+
+		for (int i = 0; i < n; i++) {
+			double integral = 0.0;
+			int x = i;
+			for (int j = 0; j < n; j++) {
+				if (x + 1 >= n) {
+					x = 0;
+				}
+				integral += f1[j] * f2[x++];
+			}
+			f[i] = integral;
+		}
+		return f;
+	}
+
+	/**
+	 * Gets the correlation of the functions. TODO: Replace the simple Fourier
+	 * transform function with an FFT for improved performance. (O(NlogN)
+	 * instead of O(N^2))
+	 * 
+	 * @param f
+	 * @return
+	 */
+
+	/* TODO */
+	public static double[] crossCrrelationFFT(double[] f1, double[] f2) {
+		/* FFT method needs additional normalization */
+		int n = f1.length;
+		double i[] = new double[n];
+		double f1Imag[] = new double[n];
+		double f1Real[] = new double[n];
+		double f2Imag[] = new double[n];
+		double f2Real[] = new double[n];
+
+		dft(f1, i, f1Real, f1Imag, 0, n);
+		dft(f2, i, f2Real, f2Imag, 0, n);
+
+		/* Gets complex conjugate */
+		for (int x = 0; x < n; x++) {
+			f1Imag[x] *= -1.0;
+		}
+
+		f2 = pointwiseProduct(f1Real, f1Imag, f2Real, f2Imag);
+		dftInverse(f2, i, f1, f1Imag, 0, n);
+
+		return f1;
+	}
+
+	/* TODO */
+	/**
+	 * Gets the autocorrelation of the function. TODO: Replace the simple
+	 * Fourier transform function with an FFT for improved performance.
+	 * (O(NlogN) instead of O(N^2))
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static double[] autoCorrelationFFT(double[] f) {
+		int n = f.length;
+		double i[] = new double[n];
+		double imag[] = new double[n];
+		double real[] = new double[n];
+
+		dft(f, i, real, imag, 0, n);
+		f = pointwiseProduct(real, imag, real, imag);
+		dftInverse(f, i, real, imag, 0, n);
+
+		return real;
+	}
+
+	/**
+	 * Filters the input signal for waves with period between min and max
+	 * values.
+	 * 
+	 * @param f
+	 * @param min
+	 * @param max
+	 * @return
+	 */
+	public static double[] bandPass(double[] f, int min, int max) {
+		double i[] = new double[f.length];
+		double imag[] = new double[f.length];
+		double real[] = new double[f.length];
+
+		dftInverse(f, i, real, imag, min, max);
+		dft(real, imag, f, i, 0, f.length);
+
+		return f;
+	}
 
 	/**
 	 * Stretches or compresses the function to the specified length.
@@ -33,7 +164,57 @@ public class DiscreteFunction {
 	 * @param f1
 	 * @param delta
 	 */
-	public static void smoothe(double[] f, int delta) {
+	public static void meanFilter(double[] f, int delta) {
+		if (f.length < delta) {
+			return;
+		}
+
+		double[] f1 = f.clone();
+		int delta1 = (int) Math.floor(delta / 2.0);
+
+		for (int x = 0; x < f.length; x++) {
+			f[x] = getMean(f1, x - delta1, delta);
+		}
+	}
+
+	/**
+	 * Gets the mean (average) of a number of data points.
+	 * 
+	 * @param f
+	 *            Array of data points.
+	 * @param x1
+	 *            Start offset.
+	 * @param delta
+	 *            Number of samples to average over.
+	 * @return
+	 */
+	public static double getMean(double[] f, int x1, int delta) {
+		double mean = 0.0;
+
+		if (x1 < 0) {
+			x1 = f.length + x1;
+		} else if (x1 >= f.length) {
+			x1 = x1 - f.length;
+		}
+
+		for (int i = 0; i < delta; i++) {
+			int x = x1 + i;
+			if (x >= f.length) {
+				x = x - f.length;
+			}
+			mean += f[x];
+		}
+
+		return mean / (double) delta;
+	}
+
+	/**
+	 * Smoothes out the function over the number of data points specified.
+	 * 
+	 * @param f1
+	 * @param delta
+	 */
+	public static void medianFilter(double[] f, int delta) {
 		if (f.length < delta) {
 			return;
 		}
@@ -47,7 +228,7 @@ public class DiscreteFunction {
 	}
 
 	/**
-	 * Gets the median (average) of a number of data points.
+	 * Gets the median of a number of data points.
 	 * 
 	 * @param f
 	 *            Array of data points.
@@ -57,24 +238,21 @@ public class DiscreteFunction {
 	 *            Number of samples to average over.
 	 * @return
 	 */
-	public static double getMedian(double[] f, int x1, int delta) {
-		double median = 0.0;
-
-		if (x1 < 0) {
-			x1 = f.length + x1;
-		} else if (x1 >= f.length) {
-			x1 = x1 - f.length;
+	public static double getMedian(double[] f, int x, int delta) {
+		if (x < 0) {
+			x += f.length;
 		}
 
+		double[] f1 = new double[delta];
 		for (int i = 0; i < delta; i++) {
-			int x = x1 + i;
 			if (x >= f.length) {
 				x = x - f.length;
 			}
-			median += f[x];
+			f1[i] = f[x++];
 		}
-
-		return median / (double) delta;
+		Arrays.sort(f1);
+		int m = (int) Math.round((double) delta / 2.0);
+		return f1[m];
 	}
 
 	/**
@@ -207,72 +385,16 @@ public class DiscreteFunction {
 	}
 
 	/**
-	 * Gets the autocorrelation of the function. TODO: Replace the simple
-	 * Fourier transform function with an FFT for improved performance.
-	 * (O(NlogN) instead of O(N^2))
-	 * 
-	 * @param f
-	 * @return
-	 */
-	public static double[] autoCorrelation(double[] f) {
-		double i[] = new double[f.length];
-		double imag[] = new double[f.length];
-		double real[] = new double[f.length];
-
-		dft(f, i, real, imag, 0, f.length);
-		f = getModulusSquared(real, imag);
-		dftInverse(f, i, real, imag, 0, f.length);
-		f = real;
-
-		return f;
-	}
-
-	/**
-	 * Filters the input signal for frequencies between min and max values.
-	 * 
-	 * @param f
-	 * @param min
-	 * @param max
-	 * @return
-	 */
-	public static double[] freqBand(double[] f, int min, int max) {
-		double i[] = new double[f.length];
-		double imag[] = new double[f.length];
-		double real[] = new double[f.length];
-
-		dftInverse(f, i, real, imag, min, max);
-		dft(real, imag, f, i, 0, f.length);
-
-		return f;
-	}
-
-	/**
-	 * Gets a a sign wave (for debugging purposes)
+	 * Gets a sign wave with the given time period.
 	 * 
 	 * @param length
 	 * @param factor
 	 * @return
 	 */
-	protected static double[] getSin(int length, double factor) {
+	public static double[] getSin(int length, double period, double offset) {
 		double[] f = new double[length];
 		for (int x = 0; x < f.length; x++) {
-			f[x] = Math.sin(x * factor);
-		}
-		return f;
-	}
-
-	/**
-	 * Gets the modulus squared of a complex function.
-	 * 
-	 * @param real
-	 *            An array of real components
-	 * @param imag
-	 * @return
-	 */
-	protected static double[] getModulusSquared(double[] real, double[] imag) {
-		double[] f = new double[real.length];
-		for (int x = 0; x < real.length; x++) {
-			f[x] = real[x] * real[x] + imag[x] * imag[x];
+			f[x] = Math.sin((x - offset) * Math.PI * 2.0 / period);
 		}
 		return f;
 	}
@@ -335,25 +457,52 @@ public class DiscreteFunction {
 		}
 	}
 
-	public static double[] times(double[] f, double x) {
+	public static void times(double[] f, double c) {
 		for (int i = 0; i < f.length; i++) {
-			f[i] *= x;
+			f[i] *= c;
+		}
+	}
+
+	public static void add(double[] f, double c) {
+		for (int x = 0; x < f.length; x++) {
+			f[x] += c;
+		}
+	}
+
+	public static double[] add(double[] f1, double f2[]) {
+		double f[] = new double[f1.length];
+		for (int x = 0; x < f.length; x++) {
+			f[x] = f1[x] + f2[x];
 		}
 		return f;
 	}
 
-	public static void add(double[] f, double d) {
+	private static void pow(double[] f, double c) {
 		for (int x = 0; x < f.length; x++) {
-			f[x] += d;
+			f[x] = Math.pow(f[x], c);
 		}
 	}
 
-	public static double[] dotProduct(double[] f1, double[] f2) {
+	public static double[] pointwiseProduct(double[] f1, double[] f2) {
 		double[] f = new double[f1.length];
 		for (int x = 0; x < f.length; x++) {
 			f[x] = f1[x] * f2[x];
 		}
 		return f;
+	}
+
+	public static double[] pointwiseProduct(double[] f1Real, double[] f1Imag,
+			double[] f2Real, double[] f2Imag) {
+		double[] f = new double[f1Real.length];
+		for (int x = 0; x < f.length; x++) {
+			f[x] = f1Real[x] * f2Real[x] + f1Imag[x] * f2Imag[x];
+		}
+		return f;
+	}
+
+	public static double dotProduct(double[] f1, double[] f2) {
+		double f[] = pointwiseProduct(f1, f2);
+		return integrate(f);
 	}
 
 	/**
@@ -386,22 +535,30 @@ public class DiscreteFunction {
 	 * @param n
 	 * @return
 	 */
-	public static double[] rotate(double[] f, int n) {
-		double[] f1 = new double[f.length];
+	public static double[] rotate(double[] f, int delta) {
+		int n = f.length;
+		double[] f1 = new double[n];
 
-		for (int x = 0; x < n; x++) {
-			f1[x] = f[f.length - x - 1];
+		while (delta >= n) {
+			delta -= n;
+		}
+		while (delta < 0) {
+			delta += n;
 		}
 
-		for (int x = 0; x < f.length - n; x++) {
-			f1[x + n] = f[x];
+		for (int x = 0; x < delta; x++) {
+			f1[x] = f[n - x - 1];
+		}
+
+		for (int x = 0; x < n - delta; x++) {
+			f1[x + delta] = f[x];
 		}
 		return f1;
 	}
 
 	/**
 	 * Gets the mean value (average) of the function.
-	 *  
+	 * 
 	 * @param f
 	 * @return
 	 */

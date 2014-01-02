@@ -1,5 +1,6 @@
 package ca.shapedetector.shapes;
 
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 
 import std.Picture;
@@ -10,14 +11,34 @@ public class SDRectangle extends SDShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	protected static double tolerance = 0.12;
 
-	protected static SDPath identity;
-
 	private double length;
 	private double width;
 
+	/**
+	 * Identity constructor.
+	 * 
+	 * @param picture
+	 */
 	public SDRectangle(Picture picture) {
 		super(picture);
-		loadIdentity();
+
+		/*
+		 * The size of the identity shape is arbitrary, but large values may
+		 * give better results.
+		 */
+		Rectangle2D rectangle = new Rectangle2D.Double(0, 0, 100, 100);
+		Path2D path = new Path2D.Double();
+		path.append(rectangle, true);
+
+		/*
+		 * TODO: either flip the rectangle or get a reversed PathIterator. The
+		 * rectangle is built clockwise but our SDShapes are built
+		 * anti-clockwise.
+		 */
+
+		loadPath(new SDPath(rectangle));
+		// identity.calculateOrientation();
+		// identity.rotate(identity.getOrientation());
 	}
 
 	public SDRectangle(SDPath path, Picture picture) {
@@ -25,33 +46,20 @@ public class SDRectangle extends SDShape {
 		getProperties();
 	}
 
+	public SDRectangle(SDShape shape) {
+		super(shape);
+	}
+
 	protected void loadRelatedShapes() {
 		relatedShapes.add(new SDSquare(picture));
 	}
 
-	public void loadIdentity() {
-		if (identity == null) {
-			/*
-			 * The size of the identity shape is arbitrary, but large values
-			 * give better results.
-			 */
-			Rectangle2D rectangle = new Rectangle2D.Double(0, 0, 300, 300);
-			identity = new SDPath(rectangle);
-			// identity.calculateOrientation();
-			// identity.rotate(identity.getOrientation());
-		}
-	}
-
-	protected SDShape identify(SDPath path) {
-		/* Ensures that the shape is placed upright. */
-		SDPath rotatedPath = new SDPath(path);
-		rotatedPath.rotate(rotatedPath.getOrientation());
-
-		double match = identity.getDifference(rotatedPath);
+	protected SDShape identify(SDShape shape) {
+		double match = compare(shape);
 
 		if (1.0 - match < tolerance) {
-			SDRectangle rectangle = new SDRectangle(path, picture);
-			SDShape shape = SDSquare.identify(rectangle);
+			SDRectangle rectangle = new SDRectangle(getPath(), picture);
+			shape = SDSquare.identify(rectangle);
 			return shape;
 		} else {
 			return null;
@@ -59,7 +67,7 @@ public class SDRectangle extends SDShape {
 	}
 
 	protected void getProperties() {
-		Rectangle2D rectangle = path.getBounds();
+		Rectangle2D rectangle = getPath().getBounds();
 
 		length = rectangle.getWidth();
 		width = rectangle.getHeight();
@@ -76,19 +84,4 @@ public class SDRectangle extends SDShape {
 	public double getWidth() {
 		return width;
 	}
-
-	// public static void main(String[] args) {
-	// Picture picture = new Picture(400, 400);
-	// picture.setOriginLowerLeft();
-	// Graphics2D graphics = picture.getImage().createGraphics();
-	// graphics.setColor(Color.white);
-	// graphics.fillRect(0, 0, 400,400);
-	// // Rectangle2D rectangle = new Rectangle2D.Double(50, 50, 100, 100);
-	// Ellipse2D rectangle = new Ellipse2D.Double(-50, -50, 200, 100);
-	// SDPath p = new SDPath(rectangle);
-	// // p.rotate(-Math.PI / 8.0);
-	// p.calculateOrientation();
-	// // p.displayHighlight(picture);
-	// new SDRectangle(picture).identify(p);
-	// }
 }

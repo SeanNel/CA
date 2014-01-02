@@ -1,6 +1,7 @@
 package ca.shapedetector;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -9,14 +10,18 @@ import java.util.List;
 import java.util.Set;
 
 import std.Picture;
-import std.StdDraw;
-
 import ca.CA;
 import ca.CACell;
 import ca.Stopwatch;
-import ca.rules.cacell.*;
-import ca.rules.protoshape.*;
-import ca.shapedetector.shapes.*;
+import ca.rules.cacell.CACellRule;
+import ca.rules.cacell.CAEdgeFinderRule;
+import ca.rules.cacell.CANoiseRemoverRule;
+import ca.rules.cacell.CAOutlineFinderRule;
+import ca.rules.cacell.CAProtoShapeAssociationRule;
+import ca.rules.cacell.CAShapeFinderRule;
+import ca.rules.protoshape.CAProtoShapeIdentifierRule;
+import ca.shapedetector.shapes.SDRectangle;
+import ca.shapedetector.shapes.SDShape;
 
 /**
  * Finds shapes in an image. Accepts bmp, png and jpg images.
@@ -44,59 +49,6 @@ public class CAShapeDetector extends CA {
 	protected Set<CAProtoShape> protoShapes;
 	/** List of detected shapes. */
 	protected List<SDShape> shapes;
-
-	/**
-	 * Applies shape detector to image given as argument on the command line.
-	 * 
-	 * @param path
-	 *            Path to image. Accepts bmp, png and jpg images.
-	 * @param epsilon
-	 *            The difference threshold expressed as a fraction.
-	 * @param r
-	 *            Search radius. Determines the size of the neighbourhood.
-	 */
-	public static void main(String[] args) {
-		StdDraw.frame.setTitle("CA Shape Detector");
-
-		String path;
-		float epsilon = 0.04f;
-		int r = 1;
-
-		if (args.length == 0) {
-			System.out
-					.println("Please specify a path to the image to process.");
-			return;
-		} else {
-			path = args[0];
-		}
-		if (args.length > 1) {
-			epsilon = Float.parseFloat(args[1]);
-		}
-		if (args.length > 2) {
-			r = Integer.parseInt(args[2]);
-		}
-
-		Picture picture = new Picture(path);
-		StdDraw.setCanvasSize(picture.width(), picture.height());
-		StdDraw.setXscale(0, picture.width());
-		StdDraw.setYscale(0, picture.height());
-		StdDraw.setYscale(picture.height(), 0);
-		picture.setOriginUpperLeft();
-
-		// picture = Filter.greyscale(picture);
-		// picture = Filter.monochrome(picture);
-		// picture = Posterize.apply(picture, 3);
-
-		Stopwatch stopwatch = new Stopwatch();
-		CAShapeDetector shapeDetector = new CAShapeDetector(epsilon, r);
-		picture = shapeDetector.apply(picture);
-
-		System.out.println("Finished in " + stopwatch.time() + " ms");
-
-		StdDraw.setXscale();
-		StdDraw.setYscale();
-		StdDraw.picture(0.5, 0.5, picture.getImage());
-	}
 
 	private class ProtoShapeSorter implements Comparable<ProtoShapeSorter> {
 		CAProtoShape protoShape;
@@ -132,6 +84,54 @@ public class CAShapeDetector extends CA {
 
 	}
 
+	/**
+	 * Applies shape detector to image given as argument on the command line.
+	 * 
+	 * @param path
+	 *            Path to image. Accepts bmp, png and jpg images.
+	 * @param epsilon
+	 *            The difference threshold expressed as a fraction.
+	 * @param r
+	 *            Search radius. Determines the size of the neighbourhood.
+	 */
+	public static void main(String[] args) {
+		String path;
+		float epsilon = 0.04f;
+		int r = 1;
+
+		if (args.length == 0) {
+			System.out
+					.println("Please specify a path to the image to process.");
+			return;
+		} else {
+			path = args[0];
+		}
+		if (args.length > 1) {
+			epsilon = Float.parseFloat(args[1]);
+		}
+		if (args.length > 2) {
+			r = Integer.parseInt(args[2]);
+		}
+
+		Picture picture = new Picture(path);
+
+		// picture = Filter.greyscale(picture);
+		// picture = Filter.monochrome(picture);
+		// picture = Posterize.apply(picture, 3);
+
+		Stopwatch stopwatch = new Stopwatch();
+		CAShapeDetector shapeDetector = new CAShapeDetector(epsilon, r);
+		picture = shapeDetector.apply(picture);
+
+		System.out.println("Finished in " + stopwatch.time() + " ms");
+		shapeDetector.draw();
+	}
+
+	protected void createGUI() {
+		super.createGUI();
+		frame.setTitle("CA Shape Detector");
+	}
+
 	protected Set<CAProtoShape> sortProtoShapes(Set<CAProtoShape> shapes) {
 		ProtoShapeSorter[] shapeSorter = new ProtoShapeSorter[shapes.size()];
 		Iterator<CAProtoShape> iterator = shapes.iterator();
@@ -154,6 +154,7 @@ public class CAShapeDetector extends CA {
 		// drawOnCellUpdate = true;
 
 		cellRules = new LinkedList<CACellRule>();
+		// cellRules.add(new CADummyRule(this));
 		cellRules.add(new CANoiseRemoverRule(this));
 		cellRules.add(new CAEdgeFinderRule(this));
 		cellRules.add(new CAShapeFinderRule(this));
@@ -169,24 +170,22 @@ public class CAShapeDetector extends CA {
 		 * HashSet performs better with the remove method than LinkedList, which
 		 * performs better than ArrayList.
 		 */
-		protoShapes = new HashSet<CAProtoShape>(lattice.length
-				* lattice[0].length);
-		for (int x = 0; x < lattice.length; x++) {
-			for (int y = 0; y < lattice[0].length; y++) {
-				CAProtoShape shape = new CAProtoShape(getCell(x, y));
-				shapeAssociations[x][y] = shape;
-				protoShapes.add(shape);
-			}
-		}
+		// protoShapes = new HashSet<CAProtoShape>(lattice.length
+		// * lattice[0].length);
+		// for (int x = 0; x < lattice.length; x++) {
+		// for (int y = 0; y < lattice[0].length; y++) {
+		// CAProtoShape shape = new CAProtoShape(getCell(x, y));
+		// shapeAssociations[x][y] = shape;
+		// protoShapes.add(shape);
+		// }
+		// }
 
 		/*
-		 * Creating these shapeAssociations in parallel actually takes longer
-		 * because of having to synchronize the Set, but it is possible:
+		 * Creates these shapeAssociations in parallel...
 		 */
-		// protoShapes = Collections.synchronizedSet(new HashSet<CAProtoShape>(
-		// lattice.length * lattice[0].length));
-		// cellRules.add(0, new CAProtoShapeAssociationRule(this));
-
+		protoShapes = Collections.synchronizedSet(new HashSet<CAProtoShape>(
+				lattice.length * lattice[0].length));
+		cellRules.add(0, new CAProtoShapeAssociationRule(this));
 	}
 
 	@Override
@@ -314,11 +313,7 @@ public class CAShapeDetector extends CA {
 				continue;
 			}
 			// System.out.println(shape);
-			shape.draw();
-
-			/* For debugging */
-			// shape.display();
-			// Input.waitForSpace();
+			// shape.draw();
 			// }
 		}
 		return picture;

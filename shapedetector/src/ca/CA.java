@@ -1,12 +1,26 @@
 package ca;
 
 import java.awt.Color;
+import java.awt.FileDialog;
+import java.awt.Graphics2D;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
+
 import std.Picture;
-import std.StdDraw;
 import ca.concurrency.CAThreadServer;
 import ca.rules.cacell.CACellRule;
 
@@ -15,7 +29,7 @@ import ca.rules.cacell.CACellRule;
  * 
  * @author Sean
  */
-public class CA {
+public class CA implements ActionListener {
 	/** Two dimensional array of CACells. */
 	protected CACell[][] lattice;
 	/** Processes to apply to each cell in sequence. */
@@ -42,7 +56,7 @@ public class CA {
 	 * 
 	 * @see graphics.ColourCompare
 	 */
-	private float epsilon;
+	protected float epsilon;
 	/** Search radius. Determines the size of the neighbourhood. */
 	protected int r;
 	/** Signals whether there are cells that are still due to update. */
@@ -79,6 +93,8 @@ public class CA {
 	 */
 	protected boolean drawOnCellUpdate;
 
+	protected JFrame frame;
+
 	/**
 	 * Constructor.
 	 * 
@@ -98,6 +114,8 @@ public class CA {
 		this.r = r;
 		passStopwatch = new Stopwatch();
 		ruleStopwatch = new Stopwatch();
+
+		createGUI();
 	}
 
 	/**
@@ -256,16 +274,12 @@ public class CA {
 	protected void updateModel() {
 		active = false;
 		threadServer = new CAThreadServer(this);
-		threadServer.start();
 		for (int x = 0; x < lattice.length; x++) {
 			for (int y = 0; y < lattice[0].length; y++) {
 				threadServer.enqueue(lattice[x][y]);
 			}
 		}
-		threadServer.finish();
-		synchronized (threadServer) {
-			/* Wait for all the threads to finish. */
-		}
+		threadServer.run();
 	}
 
 	/**
@@ -287,9 +301,9 @@ public class CA {
 
 		if (drawOnCellUpdate && cell.validate) {
 			int[] coordinates = cell.getCoordinates();
-			StdDraw.setPenColor(pictureAfter
-					.get(coordinates[0], coordinates[1]));
-			StdDraw.drawPixel(coordinates[0], coordinates[1]);
+			Graphics2D graphics = pictureAfter.getImage().createGraphics();
+			graphics.setColor(pictureAfter.get(coordinates[0], coordinates[1]));
+			graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
 			cell.validate = false;
 		}
 	}
@@ -311,14 +325,6 @@ public class CA {
 			break;
 		}
 		return neighbourhood;
-	}
-
-	/**
-	 * Displays the modified image on screen.
-	 */
-	public void draw() {
-		StdDraw.picture(pictureAfter.width() / 2, pictureAfter.height() / 2,
-				pictureAfter.getImage());
 	}
 
 	/**
@@ -380,5 +386,66 @@ public class CA {
 	 */
 	public float getEpsilon() {
 		return epsilon;
+	}
+
+	protected void createGUI() {
+		// create the GUI for viewing the image if needed
+		if (frame == null) {
+			frame = new JFrame();
+
+			JMenuBar menuBar = new JMenuBar();
+			JMenu menu = new JMenu("File");
+			menuBar.add(menu);
+			JMenuItem menuItem1 = new JMenuItem(" Save...   ");
+			menuItem1.addActionListener(this);
+			menuItem1.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+					Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+			menu.add(menuItem1);
+			frame.setJMenuBar(menuBar);
+
+			frame.setContentPane(getJLabel());
+			// f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			frame.setTitle("CA");
+			frame.setResizable(false);
+			frame.pack();
+//			frame.setVisible(true);
+		}
+	}
+
+	/**
+	 * Return a JLabel containing this Picture, for embedding in a JPanel,
+	 * JFrame or other GUI widget.
+	 */
+	public JLabel getJLabel() {
+		if (pictureAfter == null || pictureAfter.getImage() == null) {
+			return new JLabel(new ImageIcon());
+		} // no image available
+		ImageIcon icon = new ImageIcon(pictureAfter.getImage());
+		return new JLabel(icon);
+	}
+
+	/**
+	 * Displays the modified image on screen.
+	 */
+	public void draw() {
+		frame.setContentPane(getJLabel());
+		frame.pack();
+		frame.setVisible(true);
+		
+		frame.repaint();
+	}
+
+	/**
+	 * Opens a save dialog box when the user selects "Save As" from the menu.
+	 */
+	public void actionPerformed(ActionEvent e) {
+		FileDialog chooser = new FileDialog(frame,
+				"Use a .png or .jpg extension", FileDialog.SAVE);
+		chooser.setVisible(true);
+		if (chooser.getFile() != null) {
+			pictureAfter.save(chooser.getDirectory() + File.separator
+					+ chooser.getFile());
+		}
 	}
 }
