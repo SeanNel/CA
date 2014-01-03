@@ -41,7 +41,7 @@ public class SDSquare extends SDRectangle {
 	}
 
 	protected void getProperties() {
-		Rectangle2D bounds = getPath().getBounds();
+		Rectangle2D bounds = getBounds();
 		width = (bounds.getHeight() - bounds.getWidth()) / 2.0;
 
 	}

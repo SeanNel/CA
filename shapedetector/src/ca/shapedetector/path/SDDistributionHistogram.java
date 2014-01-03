@@ -1,12 +1,16 @@
 package ca.shapedetector.path;
 
+import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import math.CartesianVector;
+import math.DiscreteFunction;
 import ca.shapedetector.shapes.SDShape;
 
 public class SDDistributionHistogram {
@@ -36,6 +40,48 @@ public class SDDistributionHistogram {
 	/** Should give a straight-line graph that wraps around at y=2Pi */
 	public static final int RADIAL_ANGLE = 31;
 
+	protected double[] getNormalizedDistribution(SDShape shape,
+			int distributionType) {
+		double min;
+		double max;
+
+		double[] distributionData = getGradientDistribution(shape,
+				distributionType);
+
+		switch (distributionType) {
+		case SDDistributionHistogram.RADIAL_AREA_DISTRIBUTION:
+		case SDDistributionHistogram.RADIAL_DISTANCE_DISTRIBUTION:
+			double f[] = distributionData.clone();
+			DiscreteFunction.absoluteValue(f);
+
+			min = DiscreteFunction.minimum(f);
+			max = DiscreteFunction.maximum(f);
+			break;
+		case SDDistributionHistogram.ABSOLUTE_GRADIENT_DISTRIBUTION:
+		case SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION:
+			DiscreteFunction.medianFilter(distributionData, 5);
+
+			min = 0.0;
+			max = Math.PI;
+			break;
+		default:
+			min = 0.0;
+			max = 1.0;
+		}
+
+		/* TODO Fix me! or maybe not... */
+		// gradientHistogram = balanceGradientDistribution(gradientHistogram,
+		// spacingData);
+
+		distributionData = DiscreteFunction.fit(distributionData, 100);
+
+		/* Normalizes the data. */
+		DiscreteFunction.add(distributionData, -min);
+		DiscreteFunction.times(distributionData, 1.0 / (max - min));
+
+		return distributionData;
+	}
+
 	public static double[] getGradientDistribution(SDShape shape, int type) {
 		if (type == RADIAL_AREA_DISTRIBUTION) {
 			return getAreaDistribution(shape, 16);
@@ -57,10 +103,6 @@ public class SDDistributionHistogram {
 		pathIterator2 = shape.iterator();
 		gatherGradientData(type, pathIterator1, pathIterator2,
 				gradientHistogram, spacingData, shape.getCentroid());
-
-		/* TODO Fix me! */
-		// gradientHistogram = balanceGradientDistribution(gradientHistogram,
-		// spacingData);
 
 		return getArray(gradientHistogram);
 	}
@@ -96,8 +138,8 @@ public class SDDistributionHistogram {
 		case ABSOLUTE_GRADIENT_DISTRIBUTION:
 			gradient = CartesianVector.getAngle(dR);
 			break;
-			// case AREA_DISTRIBUTION:
-			// break;
+		// case AREA_DISTRIBUTION:
+		// break;
 		case RELATIVE_DISTANCE:
 			gradient = distance;
 			break;
@@ -182,8 +224,8 @@ public class SDDistributionHistogram {
 	 */
 	public static double[] getAreaDistribution(SDShape shape, int numSectors) {
 		double sweep = 2.0 * Math.PI / (double) numSectors;
-		double w = shape.getBoundaries().getWidth();
-		double h = shape.getBoundaries().getHeight();
+		double w = shape.getBounds().getWidth();
+		double h = shape.getBounds().getHeight();
 		/*
 		 * The shape will always fit inside the circle if the radius is
 		 * calculated from the center (and not the center of mass).
@@ -192,7 +234,7 @@ public class SDDistributionHistogram {
 		double sectorArea = radius * radius * Math.sin(sweep / 2.0)
 				* Math.cos(sweep / 2.0);
 
-		Area pathShape = shape.getPath().getAreaPolygon();
+		Area pathShape = shape.getAreaPolygon();
 
 		double[] symmetryHistogram = new double[numSectors];
 
@@ -220,5 +262,89 @@ public class SDDistributionHistogram {
 			// (i))) + ", sector area: " + Math.round(projectionArea));
 		}
 		return symmetryHistogram;
+	}
+
+	/**
+	 * Returns a polygon with n vertices/sides that is based on the given data.
+	 * 
+	 * @return Polygon with n sides.
+	 * */
+	public static Shape getPolygon(SDShape shape, int n) {
+		/* Gets the distribution histogram. */
+		int comparisonType = SDDistributionHistogram.RADIAL_DISTANCE_DISTRIBUTION;
+
+		// int comparisonType =
+		// SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION;
+		double[] distributionData = SDDistributionHistogram
+				.getGradientDistribution(shape, comparisonType);
+
+		/* Normalizes data and filters noise. Noise filtering is NB */
+		int resolution = distributionData.length;
+		// DiscreteFunction.medianFilter(distributionData, 5);
+		DiscreteFunction.meanFilter(distributionData, 5);
+		distributionData = DiscreteFunction.fit(distributionData, 100);
+		// int p = (int) Math.floor((double) distributionData.length / (double)
+		// n / 4.0);
+		// DiscreteFunction.bandPass(distributionData, p, p + 1);
+
+		/* Debugging chart */
+		// double[] f = distributionData.clone();
+		// DiscreteFunction.dataset.removeAllSeries();
+		// DiscreteFunction.dataset.addSeries(DiscreteFunction.distributionChart
+		// .getSeries(f, "f(x)"));
+		//
+		// DiscreteFunction.differentiate(f);
+		// DiscreteFunction.dataset.addSeries(DiscreteFunction.distributionChart
+		// .getSeries(f, "d/dx f(x)"));
+		//
+		// DiscreteFunction.differentiate(f);
+		// DiscreteFunction.dataset.addSeries(DiscreteFunction.distributionChart
+		// .getSeries(f, "d/dx 2 f(x)"));
+
+		// if (DiscreteFunction.distributionChart.isFocusable()) {
+		// DiscreteFunction.distributionChart.setVisible(true);
+		// }
+
+		/* Gets a list of local maxima. */
+		Map<Integer, Double> maxima = DiscreteFunction.maxima(distributionData);
+
+		if (maxima.size() < n) {
+			return null;
+		}
+
+		Iterator<Entry<Integer, Double>> iterator = maxima.entrySet()
+				.iterator();
+
+		double[][] outline = shape.getOutline();
+		Integer vertex = iterator.next().getKey();
+		vertex = (int) Math.floor((double) vertex
+				/ (double) distributionData.length * (double) resolution);
+
+		double x = outline[vertex][0];
+		double y = outline[vertex][1];
+
+		Path2D path = new Path2D.Double();
+		path.moveTo(x, y);
+
+		for (int i = 1; i < n; i++) {
+			if (!iterator.hasNext()) {
+				return null;
+			}
+			vertex = iterator.next().getKey();
+			vertex = (int) Math.floor((double) vertex
+					/ (double) distributionData.length * (double) resolution);
+			x = outline[vertex][0];
+			y = outline[vertex][1];
+			path.lineTo(x, y);
+		}
+
+		iterator = maxima.entrySet().iterator();
+		vertex = iterator.next().getKey();
+		x = outline[vertex][0];
+		y = outline[vertex][1];
+		path.lineTo(x, y);
+		path.closePath();
+
+		return path;
 	}
 }

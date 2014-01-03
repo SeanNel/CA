@@ -2,14 +2,18 @@ package math;
 
 import graphics.LineChart;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
-
 public class DiscreteFunction {
 	/* Keeps a chart handy to display distribution data. */
-	protected static final XYIntervalSeriesCollection dataset = new XYIntervalSeriesCollection();
+	public static final XYIntervalSeriesCollection dataset = new XYIntervalSeriesCollection();
 	public static final LineChart distributionChart = new LineChart(dataset);
 
 	public static void normalize(double[] f) {
@@ -29,14 +33,17 @@ public class DiscreteFunction {
 		// DiscreteFunction.normalizeTo(f, 1.0);
 		// DiscreteFunction.normalizeTo(g, 1.0);
 
-		double h[] = DiscreteFunction.difference(f, g);
+		double h[] = DiscreteFunction.add(f, g);
+		double max = maximum(h);
+
+		h = DiscreteFunction.difference(f, g);
 		DiscreteFunction.absoluteValue(h);
 
 		// dataset.removeAllSeries();
 		// dataset.addSeries(distributionChart.getSeries(h, "|f(x)-g(x)|"));
-//		distributionChart.setVisible(true);
+		// distributionChart.setVisible(true);
 
-		return 1.0 - (DiscreteFunction.integrate(h) / h.length);
+		return 1.0 - (DiscreteFunction.integrate(h) / h.length / max);
 	}
 
 	/* Assumes that the functions have already been normalized as necessary. */
@@ -175,6 +182,15 @@ public class DiscreteFunction {
 		for (int x = 0; x < f.length; x++) {
 			f[x] = getMean(f1, x - delta1, delta);
 		}
+	}
+
+	public static double getMean(double[] f) {
+		double mean = 0.0;
+		for (int i = 0; i < f.length; i++) {
+			mean += f[i];
+		}
+
+		return mean / (double) f.length;
 	}
 
 	/**
@@ -477,7 +493,7 @@ public class DiscreteFunction {
 		return f;
 	}
 
-	private static void pow(double[] f, double c) {
+	public static void pow(double[] f, double c) {
 		for (int x = 0; x < f.length; x++) {
 			f[x] = Math.pow(f[x], c);
 		}
@@ -599,4 +615,118 @@ public class DiscreteFunction {
 		}
 		return minimum;
 	}
+
+	public static Integer[] criticalPoints(double[] f) {
+		if (f.length < 3) {
+			throw new RuntimeException();
+		}
+
+		double[] f2 = f.clone();
+		differentiate(f2);
+
+		List<Integer> criticalPoints = new ArrayList<Integer>();
+
+		double last = f2[f2.length - 1];
+		double next = f2[1];
+
+		for (int x = 0; x < f2.length; x++) {
+			if ((last < 0.0 && next >= 0.0) || (last > 0.0 && next <= 0.0)) {
+				criticalPoints.add(x);
+			}
+			last = f2[x];
+			if (x < f2.length - 1) {
+				next = f2[x + 1];
+			} else {
+				next = f2[0];
+			}
+		}
+		Integer[] critPoints = criticalPoints
+				.toArray(new Integer[criticalPoints.size()]);
+
+		return critPoints;
+	}
+
+	/**
+	 * Gets the coordinates of a function's local maxima.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static Map<Integer, Double> maxima(double[] f) {
+		// double mean = getMean(f);
+		Integer[] criticalPoints = criticalPoints(f);
+		Map<Integer, Double> maxima = new TreeMap<Integer, Double>();
+		for (int i = 0; i < criticalPoints.length - 1; i++) {
+			int x = criticalPoints[i];
+//			double df1 = differentiateAt(f, criticalPoints[i]);
+			double df2 = differentiateAt(f, criticalPoints[i] + 1);
+//			double ddf = df2 - df1;
+			/* Should in theory be < 0 */
+			if (df2 <= 0.0) {
+				maxima.put(x, f[x]);
+			}
+		}
+
+		// int x = criticalPoints[criticalPoints.length - 1];
+		// double df = differentiateAt(f, 0);
+		// if (df < 0.0) {
+		// maxima.put(x, f[x]);
+		// }
+
+		return maxima;
+	}
+
+	/**
+	 * Differentiates the discrete function.
+	 * <p>
+	 * f'(x) = [f(x + dx) - f(x)] / dx
+	 * 
+	 * @param f
+	 */
+	public static void differentiate(double[] f) {
+		double f0 = f[0];
+
+		for (int x = 0; x < f.length - 1; x++) {
+			f[x] = f[x + 1] - f[x];
+		}
+		int x = f.length - 1;
+		f[x] = f0 - f[x];
+	}
+
+	/**
+	 * Gets f'(a)
+	 * 
+	 * @param f
+	 * @param a
+	 */
+	public static double differentiateAt(double[] f, int a) {
+		double df = 0.0;
+
+		if (a < f.length - 1) {
+			df = f[a + 1] - f[a];
+		} else {
+			df = f[0] - f[a];
+		}
+		return df;
+	}
+
+	/**
+	 * Differentiates the specified number of times.
+	 * 
+	 * @param f
+	 * @param n
+	 */
+	public static void differentiate(double[] f, int n) {
+		for (int i = 0; i < n; i++) {
+			differentiate(f);
+		}
+	}
+	// dataset.removeAllSeries();
+	// dataset.addSeries(distributionChart.getSeries(f, "f(x)"));
+	// differentiate(f2);
+	// dataset.addSeries(distributionChart.getSeries(f2, "d/dx f(x)"));
+	// differentiate(f2);
+	// dataset.addSeries(distributionChart.getSeries(f2, "d^2/dx^2 f(x)"));
+	// distributionChart.setVisible(true);
+
 }

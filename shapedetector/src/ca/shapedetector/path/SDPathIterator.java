@@ -36,10 +36,6 @@ public class SDPathIterator implements Iterator<double[]> {
 	public double[] next() {
 		currentPosition = nextStep();
 
-		if (getSegmentType() == PathIterator.SEG_CLOSE) {
-			hasNext = false;
-		}
-
 		return currentPosition;
 	}
 
@@ -58,6 +54,10 @@ public class SDPathIterator implements Iterator<double[]> {
 		} else {
 			pathIterator.next();
 			hasNext = !pathIterator.isDone();
+
+			if (getSegmentType() == PathIterator.SEG_CLOSE) {
+				hasNext = false;
+			}
 		}
 
 		return nextPosition;

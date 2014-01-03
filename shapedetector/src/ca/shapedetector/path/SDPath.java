@@ -1,5 +1,6 @@
 package ca.shapedetector.path;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
@@ -14,7 +15,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import std.Picture;
-
 import ca.CACell;
 import ca.shapedetector.CAProtoShape;
 
@@ -46,8 +46,8 @@ public class SDPath implements Iterable<double[]> {
 		// stopwatch.start();
 
 		/*
-		 * TODO: Should fill the gaps in the path until the outline finder works in
-		 * all cases.
+		 * TODO: Should fill the gaps in the path until the outline finder works
+		 * in all cases.
 		 */
 
 	}
@@ -236,8 +236,8 @@ public class SDPath implements Iterable<double[]> {
 	 * @param y
 	 */
 	public void move(int x, int y) {
-		 double x0 = path.getBounds2D().getCenterX();
-		 double y0 = path.getBounds2D().getCenterY();
+		double x0 = path.getBounds2D().getCenterX();
+		double y0 = path.getBounds2D().getCenterY();
 
 		path.transform(AffineTransform.getTranslateInstance(x - x0, y - y0));
 	}
@@ -250,8 +250,8 @@ public class SDPath implements Iterable<double[]> {
 	 */
 	public void rotate(double theta) {
 		/* Better to use the centre of gravity for this? */
-		 double x = path.getBounds2D().getCenterX();
-		 double y = path.getBounds2D().getCenterY();
+		double x = path.getBounds2D().getCenterX();
+		double y = path.getBounds2D().getCenterY();
 
 		path.transform(AffineTransform.getTranslateInstance(-x, -y));
 		path.transform(AffineTransform.getRotateInstance(theta));
@@ -271,12 +271,13 @@ public class SDPath implements Iterable<double[]> {
 		return new SDPathIterator(path);
 	}
 
-//	public SDPathIterator reverseIterator() {
-//		return new SDPathIterator(path, true);
-//	}
+	// public SDPathIterator reverseIterator() {
+	// return new SDPathIterator(path, true);
+	// }
 
 	public void draw(Picture picture, Color outlineColour, Color fillColour) {
 		Graphics2D graphics = picture.getImage().createGraphics();
+		// setPenRadius(graphics, 1);
 		graphics.setColor(fillColour);
 		graphics.fill(path);
 
@@ -284,7 +285,43 @@ public class SDPath implements Iterable<double[]> {
 		graphics.draw(path);
 	}
 
+	public static void setPenRadius(Graphics2D graphics, double r) {
+		if (r < 0) {
+			throw new RuntimeException("pen radius must be positive");
+		}
+		BasicStroke stroke = new BasicStroke((float) r, BasicStroke.CAP_ROUND,
+				BasicStroke.JOIN_ROUND);
+		// BasicStroke stroke = new BasicStroke((float) penRadius);
+		graphics.setStroke(stroke);
+	}
+
 	public Area getAreaPolygon() {
 		return new Area(path);
+	}
+
+	/**
+	 * Gets an array of points on the outline of the shape.
+	 * <p>
+	 * Should work on a custom Path2D implementation that can give this
+	 * directly, without iteration.
+	 * 
+	 * @return
+	 */
+	public double[][] getOutline() {
+		SDPathIterator iterator = iterator();
+		int i = 0;
+		while (iterator.hasNext()) {
+			iterator.next();
+			i++;
+		}
+
+		double[][] outline = new double[i][2];
+		i = 0;
+		iterator = iterator();
+		while (iterator.hasNext()) {
+			outline[i++] = iterator.next();
+		}
+
+		return outline;
 	}
 }

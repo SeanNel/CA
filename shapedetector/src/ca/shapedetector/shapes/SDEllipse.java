@@ -42,15 +42,15 @@ public class SDEllipse extends SDShape {
 	}
 
 	protected void loadRelatedShapes() {
-		relatedShapes.add(new SDCircle(picture));
+//		relatedShapes.add(new SDCircle(picture));
 	}
 
 	protected SDShape identify(SDShape shape) {
 		double match = compare(shape);
 
 		if (1.0 - match < tolerance) {
-			SDRectangle rectangle = new SDRectangle(getPath(), picture);
-			shape = SDSquare.identify(rectangle);
+			SDEllipse ellipse = new SDEllipse(shape);
+			shape = SDCircle.identify(ellipse);
 			return shape;
 		} else {
 			return null;
@@ -58,7 +58,7 @@ public class SDEllipse extends SDShape {
 	}
 
 	protected void getProperties() {
-		Rectangle2D rectangle = getPath().getBounds();
+		Rectangle2D rectangle = getBounds();
 
 		length = rectangle.getWidth();
 		width = rectangle.getHeight();
