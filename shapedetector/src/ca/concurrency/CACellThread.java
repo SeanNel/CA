@@ -21,13 +21,15 @@ public class CACellThread extends Thread {
 		this.server = server;
 	}
 
+	@Override
 	public void run() {
+//		 this.setPriority(MAX_PRIORITY);
 		CACell cell;
 		while ((cell = server.dequeue()) != null) {
 			server.updateCell(cell);
 		}
 		server.clockOut(this);
-		/* Frees allocated memory. */
+		/* Frees some allocated memory. */
 		server = null;
 	}
 }

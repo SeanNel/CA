@@ -143,7 +143,7 @@ public class CA implements ActionListener {
 	protected void loadLattice() {
 		switch (neighbourhoodModel) {
 		case MOORE_NEIGHBOURHOOD:
-			neighbourhoodSize = 4 * r * r;
+			neighbourhoodSize = (2 * r + 1) * (2 * r + 1);
 			break;
 		case VANNEUMANN_NEIGHBOURHOOD:
 			neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
@@ -169,10 +169,11 @@ public class CA implements ActionListener {
 	 * @return Array of cells in the neighbourhood.
 	 */
 	protected List<CACell> gatherNeighboursMoore(CACell cell, int r) {
-		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
+		 List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
+
 		int[] coordinates = cell.getCoordinates();
-		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
-			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
+		for (int i = coordinates[0] - r; i <= coordinates[0] + r; i++) {
+			for (int j = coordinates[1] - r; j <= coordinates[1] + r; j++) {
 				neighbourhood.add(getCell(i, j));
 			}
 		}
@@ -197,6 +198,7 @@ public class CA implements ActionListener {
 	 */
 	protected List<CACell> gatherNeighboursVanNeumann(CACell cell, int r) {
 		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
+		
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
 			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
@@ -373,7 +375,7 @@ public class CA implements ActionListener {
 	}
 
 	/**
-	 * Gets the number of times this CA has processed its cells.
+	 * Gets the number of times this CA has updated its cells.
 	 * 
 	 * @return The number of passes.
 	 */
@@ -382,14 +384,18 @@ public class CA implements ActionListener {
 	}
 
 	/**
+	 * Gets the epsilon value of the CA.
+	 * 
 	 * @return The epsilon value.
 	 */
 	public float getEpsilon() {
 		return epsilon;
 	}
 
+	/**
+	 * Creates the GUI for the CA if it has not done so already.
+	 */
 	protected void createGUI() {
-		// create the GUI for viewing the image if needed
 		if (frame == null) {
 			frame = new JFrame();
 
@@ -409,13 +415,15 @@ public class CA implements ActionListener {
 			frame.setTitle("CA");
 			frame.setResizable(false);
 			frame.pack();
-//			frame.setVisible(true);
+			// frame.setVisible(true);
 		}
 	}
 
 	/**
 	 * Return a JLabel containing this Picture, for embedding in a JPanel,
 	 * JFrame or other GUI widget.
+	 * 
+	 * @return The JLabel.
 	 */
 	public JLabel getJLabel() {
 		if (pictureAfter == null || pictureAfter.getImage() == null) {
@@ -432,8 +440,6 @@ public class CA implements ActionListener {
 		frame.setContentPane(getJLabel());
 		frame.pack();
 		frame.setVisible(true);
-		
-		frame.repaint();
 	}
 
 	/**

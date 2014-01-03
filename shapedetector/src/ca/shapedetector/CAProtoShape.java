@@ -3,8 +3,8 @@ package ca.shapedetector;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Area;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import std.Picture;
@@ -38,11 +38,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 */
 	protected int[][] boundaries;
 
-	/** Average colour of shape's area cells. */
-	protected Color colour;
-	/** Signals that shape should update its averageColour. */
-	protected boolean validate;
-
 	/**
 	 * Singleton constructor.
 	 */
@@ -58,11 +53,8 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 *            A cell that is to belong to the shape.
 	 */
 	public CAProtoShape(CACell cell) {
-		colour = Color.white;
-		validate = true;
-
-		areaCells = Collections.synchronizedList(new ArrayList<CACell>());
-		outlineCells = Collections.synchronizedList(new ArrayList<CACell>());
+		areaCells = Collections.synchronizedList(new LinkedList<CACell>()); //new ArrayList<CACell>()
+		outlineCells = Collections.synchronizedList(new LinkedList<CACell>());
 		areaCells.add(cell);
 
 		int[] coordinates = cell.getCoordinates();
@@ -83,8 +75,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 *            protoShape to merge with.
 	 */
 	public void merge(CAProtoShape protoShape) {
-		validate = true;
-
 		for (int i = 0; i < boundaries.length; i++) {
 			if (protoShape.boundaries[0][i] < boundaries[0][i]) {
 				boundaries[0][i] = protoShape.boundaries[0][i];
@@ -156,36 +146,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		}
 	}
 
-	/**
-	 * Gets this shape's average colour.
-	 * 
-	 * @return Shape's average colour.
-	 */
-	public Color getColour() {
-		return colour;
-	}
-
-	/**
-	 * Sets this shape's average colour.
-	 * 
-	 * @param colour
-	 *            Colour to set to.
-	 */
-	public void setColour(Color colour) {
-		validate = false;
-		this.colour = colour;
-	}
-
-	/**
-	 * Gets this shape's average colour.
-	 * 
-	 * @return Boolean value indicating whether shape should revalidate, that is
-	 *         whether its average colour should be recalculated.
-	 */
-	public boolean getValidate() {
-		return validate;
-	}
-
 	public String toString() {
 		return "(" + this.getClass().getSimpleName() + ") ["
 				+ arrayToString(boundaries[0]) + ":"
@@ -206,6 +166,8 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 
 	/** Attempt to free memory allocated to this shape. */
 	public void destroy() {
+		areaCells.clear();
+		outlineCells.clear();
 		areaCells = null;
 		outlineCells = null;
 	}
@@ -310,130 +272,3 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		return centroid;
 	}
 }
-
-// /**
-// * A sequence of numbers that describe the angles of tangent lines to the
-// * outline of the shape, relative to the x-axis, in degrees. (This way we
-// * avoid the added complication of vertical asymptotes). Degrees may be more
-// * useful in this case due to rounding errors when computing in radians.
-// * Since the tangents will only be multiples of 45deg, we can store them as
-// * integers. Integers also require less storage space and are faster to
-// * compute.
-// */
-// protected List<Integer> tangentLines;
-
-// /**
-// * Gets the collection of integers describing tangent lines to the shape
-// * outline.
-// *
-// * @return Collection of outline cells.
-// */
-// public List<Integer> getTangentLines() {
-// return tangentLines;
-// }
-//
-// /**
-// * Calculates the gradient for each of this shape's outline cells.
-// */
-// public void calculateTangents() {
-// tangentLines = new ArrayList<Integer>(outlineCells.size());
-//
-// Iterator<CACell> previousIterator = outlineCells.iterator();
-// Iterator<CACell> currentIterator = outlineCells.iterator();
-//
-// CACell previous = previousIterator.next();
-// currentIterator.next();
-// CACell current = currentIterator.next();
-//
-// int tangent = getTangent(outlineCells.get(outlineCells.size() - 1),
-// previous);
-// tangentLines.add(tangent);
-//
-// while (currentIterator.hasNext()) {
-// tangent = getTangent(previous, current);
-// tangentLines.add(tangent);
-//
-// previous = previousIterator.next();
-// current = currentIterator.next();
-// }
-// }
-//
-// /**
-// * Gets the angle formed between two adjacent cells.
-// *
-// * @param previous
-// * @param current
-// * @return
-// */
-// protected int getTangent(CACell previous, CACell current) {
-// int[] previousCoordinates = previous.getCoordinates();
-// int[] currentCoordinates = current.getCoordinates();
-//
-// int deltaX = currentCoordinates[0] - previousCoordinates[0];
-// int deltaY = currentCoordinates[1] - previousCoordinates[1];
-//
-// switch (deltaX) {
-// case -1:
-// switch (deltaY) {
-// case -1:
-// return 225;
-// case 0:
-// return 180;
-// case 1:
-// return 135;
-// }
-// break;
-// case 0:
-// switch (deltaY) {
-// case -1:
-// return 90;
-// case 0:
-// throw new RuntimeException(
-// "Error computing tangent to outline cell.");
-// case 1:
-// return 270;
-// }
-// break;
-// case 1:
-// switch (deltaY) {
-// case -1:
-// return 315;
-// case 0:
-// return 0;
-// case 1:
-// return 45;
-// }
-// break;
-// }
-// /*
-// * If this point is reached, the current cell is not adjacent to the
-// * previous one...
-// */
-// return -1;
-// }
-
-// /**
-// * Gets the dimensions of this protoShape, for example its width and height.
-// *
-// * @return The dimensions of this protoShape.
-// */
-// public int[] getDimensions() {
-// int[] dimensions = new int[boundaries[0].length];
-// for (int i = 0; i < dimensions.length; i++) {
-// dimensions[i] = boundaries[1][i] - boundaries[0][i] + 1;
-// }
-// return dimensions;
-// }
-//
-// /**
-// * Gets this protoShape's centroid.
-// *
-// * @return The centroid's coordinates.
-// */
-// public int[] getCentroid() {
-// int[] centroid = new int[boundaries[0].length];
-// for (int i = 0; i < centroid.length; i++) {
-// centroid[i] = (boundaries[1][i] + boundaries[0][i]) / 2;
-// }
-// return centroid;
-// }

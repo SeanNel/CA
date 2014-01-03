@@ -45,7 +45,7 @@ import ca.shapedetector.shapes.SDShape;
 public class CAShapeDetector extends CA {
 	/** Table mapping cells to protoShapes. */
 	protected CAProtoShape[][] shapeAssociations;
-	/** List of unique protoShapes. */
+	/** Set of unique protoShapes. */
 	protected Set<CAProtoShape> protoShapes;
 	/** List of detected shapes. */
 	protected List<SDShape> shapes;
@@ -96,7 +96,7 @@ public class CAShapeDetector extends CA {
 	 */
 	public static void main(String[] args) {
 		String path;
-		float epsilon = 0.04f;
+		float epsilon = 0.05f;
 		int r = 1;
 
 		if (args.length == 0) {
@@ -154,9 +154,11 @@ public class CAShapeDetector extends CA {
 		// drawOnCellUpdate = true;
 
 		cellRules = new LinkedList<CACellRule>();
-		// cellRules.add(new CADummyRule(this));
+//		cellRules.add(new CADummyRule(this));
+		// cellRules.add(new CAGatherNeighboursRule(this));
 		cellRules.add(new CANoiseRemoverRule(this));
 		cellRules.add(new CAEdgeFinderRule(this));
+		cellRules.add(new CAProtoShapeAssociationRule(this));
 		cellRules.add(new CAShapeFinderRule(this));
 		// cellRules.add(new CAShapeAssimilatorRule(this));
 		cellRules.add(new CAOutlineFinderRule(this));
@@ -166,26 +168,8 @@ public class CAShapeDetector extends CA {
 	public void setPicture(Picture picture) {
 		super.setPicture(picture);
 		shapeAssociations = new CAProtoShape[picture.width()][picture.height()];
-		/*
-		 * HashSet performs better with the remove method than LinkedList, which
-		 * performs better than ArrayList.
-		 */
-		// protoShapes = new HashSet<CAProtoShape>(lattice.length
-		// * lattice[0].length);
-		// for (int x = 0; x < lattice.length; x++) {
-		// for (int y = 0; y < lattice[0].length; y++) {
-		// CAProtoShape shape = new CAProtoShape(getCell(x, y));
-		// shapeAssociations[x][y] = shape;
-		// protoShapes.add(shape);
-		// }
-		// }
-
-		/*
-		 * Creates these shapeAssociations in parallel...
-		 */
 		protoShapes = Collections.synchronizedSet(new HashSet<CAProtoShape>(
 				lattice.length * lattice[0].length));
-		cellRules.add(0, new CAProtoShapeAssociationRule(this));
 	}
 
 	@Override
@@ -194,8 +178,8 @@ public class CAShapeDetector extends CA {
 		shapes = new LinkedList<SDShape>();
 
 		/*
-		 * To ease debugging, sort the shapes in the order a human would see
-		 * them.
+		 * To ease debugging, sort the shapes in some kind of order instead of
+		 * at random.
 		 */
 		protoShapes = sortProtoShapes(protoShapes);
 

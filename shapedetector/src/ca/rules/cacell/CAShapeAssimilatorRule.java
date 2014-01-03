@@ -3,8 +3,10 @@ package ca.rules.cacell;
 import graphics.ColourCompare;
 
 import java.awt.Color;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,10 +28,12 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	 */
 	protected int minArea = 100;// 25;
 	public static int I = 0;
+	protected Hashtable<CAProtoShape, Color> shapeColours;
 
 	public CAShapeAssimilatorRule(CAShapeDetector ca) {
 		super(ca);
 		this.ca = ca;
+		shapeColours = new Hashtable<CAProtoShape, Color>();
 	}
 
 	public void update(CACell cell) {
@@ -38,49 +42,24 @@ public class CAShapeAssimilatorRule extends CACellRule {
 
 		// synchronized (protoShape) {
 		if (protoShape.getArea() < minArea) {
-			/*
-			 * May be null if this shape has already been merged from this
-			 * loop...
-			 */
-			if (protoShape.getOutlineCells() != null) {
-				CAProtoShape newProtoShape = assimilate(protoShape);
-				/*
-				 * Recursively merge shapes together until there are no more
-				 * small shapes remaining.
-				 */
-				// if (newProtoShape != null && newProtoShape != protoShape)
-				// {
-				// update(newProtoShape);
-				// }
+			CAProtoShape newProtoShape = assimilate(cell);
+			/* The shape colour has become outdated. */
+			if (newProtoShape != null) {
+				shapeColours.remove(newProtoShape);
 			}
-			// }
+			/*
+			 * instead of calculating average over all cells, only add
+			 * contribution of the new cells..?
+			 */
 		}
-	}
-
-	/**
-	 * Gathers the specified cell's Moore neighbourhood with r=1, not including
-	 * the current cell. Places cells in clockwise order, starting with the cell
-	 * directly above this one. The sequence determines how outline cells will
-	 * be ordered.
-	 * 
-	 * @param cell
-	 *            Cell to get neighbourhood of.
-	 * @return The cell's neighbourhood.
-	 */
-	protected List<CACell> meetOutlineNeighbours(CACell cell) {
-		int[] coordinates = cell.getCoordinates();
-		List<CACell> neighbourhood = new ArrayList<CACell>(8);
-		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
-
-		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] - 1));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1]));
-		neighbourhood.add(ca.getCell(coordinates[0] + 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] + 1));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1]));
-		neighbourhood.add(ca.getCell(coordinates[0] - 1, coordinates[1] - 1));
-		return neighbourhood;
+		/*
+		 * Recursively merge shapes together until there are no more small
+		 * shapes remaining.
+		 */
+		// if (newProtoShape != null && newProtoShape != protoShape)
+		// {
+		// update(newProtoShape);
+		// }
 	}
 
 	/**
@@ -90,34 +69,27 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	 * @param protoShape
 	 * @return The merged protoShape.
 	 */
-	protected CAProtoShape assimilate(CAProtoShape protoShape) {
-		/** A set of all the shapes next to this one. */
-		Set<CAProtoShape> neighbouringShapes = new HashSet<CAProtoShape>();
+	protected CAProtoShape assimilate(CACell repCell) {
+		/** A set of cells representing all the shapes next to this one. */
+		Set<CACell> shapeRepresentatives = new HashSet<CACell>();
 
-		List<CACell> outlineCells = protoShape.getOutlineCells();
-		/*
-		 * There may be no outlineCells if the protoShape consisted of only one
-		 * cell.
-		 */
-		// if (outlineCells == null) {
-		// return;
-		// }
-		if (outlineCells.isEmpty()) {
-			outlineCells.add(protoShape.getAreaCells().get(0));
-		}
+		CAProtoShape protoShape = ca.getProtoShape(repCell);
+		Color colour1 = getColour(protoShape);
+
+		List<CACell> cells = new LinkedList<CACell>(protoShape.getAreaCells());
 		/*
 		 * Gathers all the shapes next to this one. Duplicates would slow down
 		 * the step after this which iterates through all these shapes, which is
 		 * why neighbouringShapes is a set and not a list.
 		 */
-		for (CACell cell : outlineCells) {
+		for (CACell cell : cells) {
 			List<CACell> neighbourhood = cell.getNeighbourhood();
 			for (CACell neighbour : neighbourhood) {
 				if (neighbour != cell && neighbour != CA.paddingCell) {
 					CAProtoShape neighbouringShape = ca
 							.getProtoShape(neighbour);
 					if (neighbouringShape != protoShape) {
-						neighbouringShapes.add(neighbouringShape);
+						shapeRepresentatives.add(neighbour);
 					}
 				}
 			}
@@ -135,21 +107,23 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		 * Finds a representative cell from the shape next to this one that is
 		 * most similar to this shape.
 		 */
-		CACell repCell = protoShape.getAreaCells().get(0);
-		for (CAProtoShape neighbouringShape : neighbouringShapes) {
-			System.out.print(I++ + ".");
-			Color colour1 = getShapeAverageColour(protoShape);
-			Color colour2;
-			CACell repCell2;
-			colour2 = getShapeAverageColour(neighbouringShape);
-			if (neighbouringShape.getAreaCells() == null) {
-				continue;
+		for (CACell neighbour : shapeRepresentatives) {
+			// System.out.print(I++ + ".");
+			CAProtoShape neighbouringShape = ca.getProtoShape(neighbour);
+			float difference = 1f;
+			Color colour2 = null;
+			synchronized (neighbouringShape) {
+				if (neighbouringShape.getAreaCells() != null) {
+					colour2 = getColour(neighbouringShape);
+				}
 			}
-			repCell2 = neighbouringShape.getAreaCells().get(0);
-			float difference = ColourCompare.getDifference(colour1, colour2);
-			if (difference < minDifference) {
-				minDifference = difference;
-				similarCell = repCell2;
+			if (colour2 != null) {
+				difference = ColourCompare.getDifference(colour1, colour2);
+
+				if (difference < minDifference) {
+					minDifference = difference;
+					similarCell = neighbour;
+				}
 			}
 		}
 
@@ -187,7 +161,7 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	}
 
 	/**
-	 * Gets the average colour of the shape.
+	 * Gets the mean (average) colour of the shape.
 	 * <p>
 	 * This is calculated here instead of from CAProtoShape because for that to
 	 * be possible, a reference to the CA has to be stored in each shape. When
@@ -196,16 +170,22 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	 * 
 	 * @return Average colour.
 	 */
-	protected Color getShapeAverageColour(CAProtoShape shape) {
-		synchronized (shape) {
-			if (shape.getValidate()) {
-				Color[] colours = new Color[shape.getAreaCells().size()];
-				for (int i = 0; i < colours.length; i++) {
-					colours[i] = ca.getColour(shape.getAreaCells().get(i));
-				}
-				shape.setColour(ColourCompare.averageColour(colours));
-			}
-			return shape.getColour();
+	protected Color getMeanColour(Collection<CACell> cells) {
+		// Collection<CACell> cells = new LinkedList<CACell>(cells);
+		LinkedList<Color> colours = new LinkedList<Color>();
+		for (CACell cell : cells) {
+			colours.add(ca.getColour(cell));
 		}
+		return ColourCompare.meanColour(colours);
+	}
+
+	protected Color getColour(CAProtoShape shape) {
+		Color colour = shapeColours.get(shape);
+		if (colour == null) {
+			colour = getMeanColour(shape.getAreaCells());
+			shapeColours.put(shape, colour);
+		}
+		return colour;
+
 	}
 }

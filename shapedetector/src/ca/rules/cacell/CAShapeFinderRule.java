@@ -54,7 +54,7 @@ public class CAShapeFinderRule extends CACellRule {
 	 */
 	protected List<CACell> gatherCardinalNeighbours(CACell cell) {
 		int[] coordinates = cell.getCoordinates();
-		List<CACell> neighbourhood = new ArrayList<CACell>(4);
+		List<CACell> neighbourhood = new ArrayList<CACell>();
 		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
 		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] - 1));
 		neighbourhood.add(ca.getCell(coordinates[0], coordinates[1] + 1));

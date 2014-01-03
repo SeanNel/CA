@@ -90,7 +90,7 @@ public class CACell {
 	 * 
 	 * @param cell
 	 *            The cell to get the neighbourhood of.
-	 * @return An list of CACell's from this cell's neighbourhood.
+	 * @return A list of CACell's from this cell's neighbourhood.
 	 */
 	public List<CACell> getNeighbourhood() {
 		return neighbourhood;

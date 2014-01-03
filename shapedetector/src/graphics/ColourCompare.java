@@ -1,6 +1,10 @@
 package graphics;
 
 import java.awt.Color;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.LinkedList;
 
 import std.Picture;
 
@@ -110,36 +114,104 @@ public class ColourCompare {
 	 *            Another colour.
 	 * @return Average colour.
 	 */
-	public static Color averageColour(Color colour1, Color colour2) {
-		Color[] colours = { colour1, colour2 };
-		return averageColour(colours);
+	public static Color meanColour(Color colour1, Color colour2) {
+		LinkedList<Color> colours = new LinkedList<Color>();
+		colours.add(colour1);
+		colours.add(colour2);
+		return meanColour(colours);
 	}
 
 	/**
-	 * Gets the average colour of an array of colours.
+	 * Gets the mean (average) colour of an array of colours.
 	 * 
 	 * @param colours
 	 *            Array of colours to find the average of.
 	 * @return Average colour.
 	 */
-	public static Color averageColour(Color[] colours) {
+	public static Color meanColour(Collection<Color> colours) {
 		int r = 0, g = 0, b = 0, a = 0;
-		int n = 0;
-		for (int i = 0; i < colours.length; i++) {
-			if (colours[i] != null) {
-				r += colours[i].getRed();
-				g += colours[i].getGreen();
-				b += colours[i].getBlue();
-				a += colours[i].getAlpha();
-				n++;
-			}
+		for (Color colour : colours) {
+			r += colour.getRed();
+			g += colour.getGreen();
+			b += colour.getBlue();
+			a += colour.getAlpha();
 		}
 
-		r = (int) Math.round((double) r / (double) n);
-		g = (int) Math.round((double) g / (double) n);
-		b = (int) Math.round((double) b / (double) n);
-		a = (int) Math.round((double) a / (double) n);
+		double n = (double) colours.size();
+		r = (int) Math.round((double) r / n);
+		g = (int) Math.round((double) g / n);
+		b = (int) Math.round((double) b / n);
+		a = (int) Math.round((double) a / n);
 		return new Color(r, g, b, a);
+	}
+
+	/**
+	 * Gets the median colour from an array of colours, relative to the
+	 * reference colour.
+	 * <p>
+	 * O(NlogN) performance.
+	 * 
+	 * @param refColour
+	 *            Reference colour.
+	 * @param colours
+	 *            Array of colours to find the average of.
+	 * @return Median colour.
+	 */
+	public static Color medianColour(Color refColour, Collection<Color> colours) {
+//		if (colours == null || colours.isEmpty()) {
+//			return null;
+//		}
+
+		Hashtable<Float, Color> colourTable = new Hashtable<Float, Color>();
+
+		for (Color colour : colours) {
+			Float difference = getDifference(refColour, colour);
+			colourTable.put(difference, colour);
+		}
+
+		Float[] keys = colourTable.keySet().toArray(
+				new Float[colourTable.size()]);
+		Arrays.sort(keys);
+		int median = (int) Math.floor(keys.length / 2.0);
+
+		return colourTable.get(keys[median]);
+	}
+
+	/**
+	 * Gets the median colour from an array of colours.
+	 * <p>
+	 * O(N^2) performance.
+	 * 
+	 * @param colours
+	 *            Array of colours to find the average of.
+	 * @return Median colour.
+	 */
+	public static Color medianColour(Collection<Color> colours) {
+		if (colours == null || colours.isEmpty()) {
+			return null;
+		}
+
+		Hashtable<Float, Color> colourTable = new Hashtable<Float, Color>();
+
+		for (Color colour1 : colours) {
+			Float maxDifference = Float.MAX_VALUE;
+			for (Color colour2 : colours) {
+				if (colour1 != colour2) {
+					Float difference = getDifference(colour1, colour2);
+					if (difference > maxDifference) {
+						maxDifference = difference;
+					}
+				}
+			}
+			colourTable.put(maxDifference, colour1);
+		}
+
+		Float[] keys = colourTable.keySet().toArray(
+				new Float[colourTable.size()]);
+		Arrays.sort(keys);
+		int median = (int) Math.floor(keys.length / 2.0);
+
+		return colourTable.get(keys[median]);
 	}
 
 	/**

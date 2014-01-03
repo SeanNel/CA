@@ -16,8 +16,6 @@ public class CAThreadServer {
 
 	/** Number of threads to create. */
 	protected int numThreads = 8;
-	/** Array of all the threads created by this server. */
-	protected CACellThread[] threads;
 	/** Queue of cells waiting to be assigned to threads. */
 	protected LinkedList<CACell> pending;
 	protected int clockedInThreads = 0;
@@ -47,17 +45,24 @@ public class CAThreadServer {
 	 * @param cell
 	 *            Cell to be processed.
 	 */
-	public synchronized void enqueue(CACell cell) {
+	public void enqueue(CACell cell) {
 		if (cell.getState() == CACell.ACTIVE) {
 			pending.add(cell);
 		}
 	}
 
-	public synchronized CACell dequeue() {
-		if (!pending.isEmpty()) {
-			return pending.pop();
-		} else {
-			return null;
+	/**
+	 * Gets a cell for processing.
+	 * 
+	 * @return A cell from the queue or null if the queue is empty.
+	 */
+	public CACell dequeue() {
+		synchronized (pending) {
+			if (!pending.isEmpty()) {
+				return pending.pop();
+			} else {
+				return null;
+			}
 		}
 	}
 
@@ -71,43 +76,29 @@ public class CAThreadServer {
 		ca.updateCell(cell);
 	}
 
+	/**
+	 * Updates the queued cells.
+	 */
 	public void run() {
-		threads = new CACellThread[numThreads];
-
-		/*
-		 * Setting the server priority high while setting cell threads to low
-		 * improves performance a little (in the order of a few dozen ms).
-		 */
 		for (int i = 0; i < numThreads; i++) {
 			CACellThread thread = new CACellThread(this);
 			thread.start();
-			threads[i] = thread;
 		}
-		// this.setPriority(MAX_PRIORITY);
 
-		try {
-			Object lock = new Object();
-
-			synchronized (lock) {
+		synchronized (this) {
+			try {
 				while (clockedInThreads < numThreads) {
-					/* TODO: improve waiting mechanism based on notify() */
-					lock.wait(10);
+					wait();
 				}
+			} catch (InterruptedException e) {
+				interrupted(e);
 			}
-
-		} catch (InterruptedException e) {
-			interrupted(e);
 		}
-		/* Free allocated memory for garbage collection. */
-		threads = null;
 	}
 
 	public synchronized void clockOut(CACellThread caCellThread) {
 		clockedInThreads++;
-	}
-
-	public boolean hasPending() {
-		return !pending.isEmpty();
+		notify();
 	}
 
 	/**
