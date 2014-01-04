@@ -12,7 +12,7 @@ import java.util.Set;
 
 import ca.CA;
 import ca.CACell;
-import ca.shapedetector.CAProtoShape;
+import ca.shapedetector.CABlob;
 import ca.shapedetector.CAShapeDetector;
 
 /**
@@ -28,24 +28,24 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	 */
 	protected int minArea = 100;// 25;
 	public static int I = 0;
-	protected Hashtable<CAProtoShape, Color> shapeColours;
+	protected Hashtable<CABlob, Color> shapeColours;
 
 	public CAShapeAssimilatorRule(CAShapeDetector ca) {
 		super(ca);
 		this.ca = ca;
-		shapeColours = new Hashtable<CAProtoShape, Color>();
+		shapeColours = new Hashtable<CABlob, Color>();
 	}
 
 	public void update(CACell cell) {
 		/* Assumes that cell has a Van Neumann neighbourhood, with r=1 */
-		CAProtoShape protoShape = ca.getProtoShape(cell);
+		CABlob blob = ca.getBlob(cell);
 
-		// synchronized (protoShape) {
-		if (protoShape.getArea() < minArea) {
-			CAProtoShape newProtoShape = assimilate(cell);
+		// synchronized (blob) {
+		if (blob.getArea() < minArea) {
+			CABlob newblob = assimilate(cell);
 			/* The shape colour has become outdated. */
-			if (newProtoShape != null) {
-				shapeColours.remove(newProtoShape);
+			if (newblob != null) {
+				shapeColours.remove(newblob);
 			}
 			/*
 			 * instead of calculating average over all cells, only add
@@ -56,27 +56,27 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		 * Recursively merge shapes together until there are no more small
 		 * shapes remaining.
 		 */
-		// if (newProtoShape != null && newProtoShape != protoShape)
+		// if (newblob != null && newblob != blob)
 		// {
-		// update(newProtoShape);
+		// update(newblob);
 		// }
 	}
 
 	/**
-	 * Assimilates the specified protoShape into a neighbouring protoShape and
-	 * returns the resulting protoShape.
+	 * Assimilates the specified blob into a neighbouring blob and
+	 * returns the resulting blob.
 	 * 
-	 * @param protoShape
-	 * @return The merged protoShape.
+	 * @param blob
+	 * @return The merged blob.
 	 */
-	protected CAProtoShape assimilate(CACell repCell) {
+	protected CABlob assimilate(CACell repCell) {
 		/** A set of cells representing all the shapes next to this one. */
 		Set<CACell> shapeRepresentatives = new HashSet<CACell>();
 
-		CAProtoShape protoShape = ca.getProtoShape(repCell);
-		Color colour1 = getColour(protoShape);
+		CABlob blob = ca.getBlob(repCell);
+		Color colour1 = getColour(blob);
 
-		List<CACell> cells = new LinkedList<CACell>(protoShape.getAreaCells());
+		List<CACell> cells = new LinkedList<CACell>(blob.getAreaCells());
 		/*
 		 * Gathers all the shapes next to this one. Duplicates would slow down
 		 * the step after this which iterates through all these shapes, which is
@@ -86,9 +86,9 @@ public class CAShapeAssimilatorRule extends CACellRule {
 			List<CACell> neighbourhood = cell.getNeighbourhood();
 			for (CACell neighbour : neighbourhood) {
 				if (neighbour != cell && neighbour != CA.paddingCell) {
-					CAProtoShape neighbouringShape = ca
-							.getProtoShape(neighbour);
-					if (neighbouringShape != protoShape) {
+					CABlob neighbouringShape = ca
+							.getBlob(neighbour);
+					if (neighbouringShape != blob) {
 						shapeRepresentatives.add(neighbour);
 					}
 				}
@@ -109,7 +109,7 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		 */
 		for (CACell neighbour : shapeRepresentatives) {
 			// System.out.print(I++ + ".");
-			CAProtoShape neighbouringShape = ca.getProtoShape(neighbour);
+			CABlob neighbouringShape = ca.getBlob(neighbour);
 			float difference = 1f;
 			Color colour2 = null;
 			synchronized (neighbouringShape) {
@@ -134,8 +134,8 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		 * choice of representative cell is arbitrary and changes every time the
 		 * program is run (even on the same image).
 		 */
-		// CACell repCell = protoShape.getAreaCells().get(0);
-		// for (CAProtoShape neighbouringShape : neighbouringShapes) {
+		// CACell repCell = blob.getAreaCells().get(0);
+		// for (CAblob neighbouringShape : neighbouringShapes) {
 		// Color colour1 = getColour(repCell);
 		// Color colour2;
 		// // synchronized (neighbouringShape) {
@@ -154,7 +154,7 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		 * themselves helps avoid synchronization issues.
 		 */
 		if (similarCell == null) {
-			return protoShape;
+			return blob;
 		} else {
 			return ca.mergeCells(repCell, similarCell);
 		}
@@ -163,7 +163,7 @@ public class CAShapeAssimilatorRule extends CACellRule {
 	/**
 	 * Gets the mean (average) colour of the shape.
 	 * <p>
-	 * This is calculated here instead of from CAProtoShape because for that to
+	 * This is calculated here instead of from CAblob because for that to
 	 * be possible, a reference to the CA has to be stored in each shape. When
 	 * there are thousands of shapes, this extra memory use can become
 	 * significant.
@@ -179,7 +179,7 @@ public class CAShapeAssimilatorRule extends CACellRule {
 		return ColourCompare.meanColour(colours);
 	}
 
-	protected Color getColour(CAProtoShape shape) {
+	protected Color getColour(CABlob shape) {
 		Color colour = shapeColours.get(shape);
 		if (colour == null) {
 			colour = getMeanColour(shape.getAreaCells());

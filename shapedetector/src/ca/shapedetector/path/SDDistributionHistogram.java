@@ -8,9 +8,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import math.CartesianVector;
 import math.DiscreteFunction;
+import math.fit.FitPoly;
 import ca.shapedetector.shapes.SDShape;
 
 public class SDDistributionHistogram {
@@ -173,6 +175,7 @@ public class SDDistributionHistogram {
 	 * @param spacingData
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private static List<Double> balanceGradientDistribution(
 			List<Double> gradientData, List<Double> spacingData) {
 		double minSpacing = Double.MAX_VALUE;
@@ -271,18 +274,32 @@ public class SDDistributionHistogram {
 	 * */
 	public static Shape getPolygon(SDShape shape, int n) {
 		/* Gets the distribution histogram. */
+		/*
+		 * Smooth at most distances, but accuracy becomes bad for long, thin
+		 * shapes.
+		 */
 		int comparisonType = SDDistributionHistogram.RADIAL_DISTANCE_DISTRIBUTION;
 
 		// int comparisonType =
 		// SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION;
 		double[] distributionData = SDDistributionHistogram
 				.getGradientDistribution(shape, comparisonType);
-
 		/* Normalizes data and filters noise. Noise filtering is NB */
 		int resolution = distributionData.length;
-		// DiscreteFunction.medianFilter(distributionData, 5);
-		DiscreteFunction.meanFilter(distributionData, 5);
 		distributionData = DiscreteFunction.fit(distributionData, 100);
+
+		/* Use with RADIAL_GRADIENT_DISTRIBUTION to reduce nooise. */
+//		DiscreteFunction.meanFilter(distributionData, 5);
+
+		/*
+		 * Use with RADIAL_DISTANCE_DISTRIBUTION. Fit to n'th polynomial to
+		 * eliminate noise. Creates problems with periodicity, because the start
+		 * of the graph is detected as a local maximum when it is really part of
+		 * a crest at the end of the graph.
+		 */
+		distributionData = DiscreteFunction.regress(distributionData,
+				distributionData.length / n * 3); // n * 2 + 1 // n * 16
+
 		// int p = (int) Math.floor((double) distributionData.length / (double)
 		// n / 4.0);
 		// DiscreteFunction.bandPass(distributionData, p, p + 1);
@@ -300,7 +317,7 @@ public class SDDistributionHistogram {
 		// DiscreteFunction.differentiate(f);
 		// DiscreteFunction.dataset.addSeries(DiscreteFunction.distributionChart
 		// .getSeries(f, "d/dx 2 f(x)"));
-
+		//
 		// if (DiscreteFunction.distributionChart.isFocusable()) {
 		// DiscreteFunction.distributionChart.setVisible(true);
 		// }
@@ -308,6 +325,12 @@ public class SDDistributionHistogram {
 		/* Gets a list of local maxima. */
 		Map<Integer, Double> maxima = DiscreteFunction.maxima(distributionData);
 
+		Set<Entry<Integer, Double>> entrySet = maxima.entrySet();
+		System.out.println("***");
+		for (Entry<Integer, Double> entry : entrySet) {
+			System.out.println("x=" + entry.getKey() + ", y="
+					+ entry.getValue());
+		}
 		if (maxima.size() < n) {
 			return null;
 		}

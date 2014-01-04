@@ -1,40 +1,39 @@
-package ca.rules.protoshape;
+package ca.rules.blob;
 
 import ca.Stopwatch;
-import ca.shapedetector.CAProtoShape;
+import ca.shapedetector.CABlob;
 import ca.shapedetector.CAShapeDetector;
 import ca.shapedetector.shapes.SDRootShape;
 
 /**
- * Identifies ProtoShapes as CAShapes.
+ * Identifies blobs as CAShapes.
  */
-public class CAProtoShapeIdentifierRule extends CAProtoShapeRule {
-	SDRootShape shapeDetector;
+public class CABlobIdentifierRule extends CABlobRule {
+	static final SDRootShape shapeDetector = new SDRootShape();
 	Stopwatch stopwatch;
 	long[] timers;
 
-	public CAProtoShapeIdentifierRule(CAShapeDetector ca) {
+	public CABlobIdentifierRule(CAShapeDetector ca) {
 		super(ca);
-		shapeDetector = new SDRootShape(ca.getPicture());
 		stopwatch = new Stopwatch();
 		timers = new long[3];
 	}
 
-	public void update(CAProtoShape protoShape) {
-		if (protoShape.getArea() < 16) {
+	public void update(CABlob blob) {
+		if (blob.getArea() < 16) {
 			return;
 		}
 
 		stopwatch.start();
-		protoShape.arrangeOutlineCells();
+		blob.arrangeOutlineCells();
 		timers[0] += stopwatch.time();
 
-		if (protoShape.getOutlineCells().size() < 16) {
+		if (blob.getOutlineCells().size() < 16) {
 			return;
 		}
 
 		stopwatch.start();
-		ca.addShape(shapeDetector.identifyShape(protoShape, ca));
+		ca.addShape(shapeDetector.identifyShape(blob, ca));
 		// Input.waitForSpace();
 		timers[2] += stopwatch.time();
 	}

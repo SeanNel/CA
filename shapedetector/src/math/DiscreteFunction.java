@@ -4,11 +4,16 @@ import graphics.LineChart;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.math3.fitting.PolynomialFitter;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.apache.commons.math3.optim.PointVectorValuePair;
+import org.apache.commons.math3.optim.SimpleVectorValueChecker;
+import org.apache.commons.math3.optim.nonlinear.vector.MultivariateVectorOptimizer;
+import org.apache.commons.math3.optim.nonlinear.vector.jacobian.GaussNewtonOptimizer;
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
 public class DiscreteFunction {
@@ -27,11 +32,43 @@ public class DiscreteFunction {
 	}
 
 	public static double getCorrelation(double[] f, double g[]) {
-		// f = f.clone();
-		// g = g.clone();
+		return getPearsonCorrelation(f, g);
+	}
+
+	public static double getPearsonCorrelation(double[] scores1,
+			double[] scores2) {
+		double result = 0;
+		double sum_sq_x = 0;
+		double sum_sq_y = 0;
+		double sum_coproduct = 0;
+		double mean_x = scores1[0];
+		double mean_y = scores2[0];
+		for (int i = 2; i < scores1.length + 1; i += 1) {
+			double sweep = Double.valueOf(i - 1) / i;
+			double delta_x = scores1[i - 1] - mean_x;
+			double delta_y = scores2[i - 1] - mean_y;
+			sum_sq_x += delta_x * delta_x * sweep;
+			sum_sq_y += delta_y * delta_y * sweep;
+			sum_coproduct += delta_x * delta_y * sweep;
+			mean_x += delta_x / i;
+			mean_y += delta_y / i;
+		}
+		double pop_sd_x = (double) Math.sqrt(sum_sq_x / scores1.length);
+		double pop_sd_y = (double) Math.sqrt(sum_sq_y / scores1.length);
+		double cov_x_y = sum_coproduct / scores1.length;
+		result = cov_x_y / (pop_sd_x * pop_sd_y);
+		return result;
+	}
+
+	public static double getCorrelationA(double[] f, double g[]) {
+		f = f.clone();
+		g = g.clone();
 		//
 		// DiscreteFunction.normalizeTo(f, 1.0);
 		// DiscreteFunction.normalizeTo(g, 1.0);
+
+		f = DiscreteFunction.fit(f, 100);
+		g = DiscreteFunction.fit(g, 100);
 
 		double h[] = DiscreteFunction.add(f, g);
 		double max = maximum(h);
@@ -627,18 +664,18 @@ public class DiscreteFunction {
 		List<Integer> criticalPoints = new ArrayList<Integer>();
 
 		double last = f2[f2.length - 1];
-		double next = f2[1];
+		// double next = f2[1];
 
 		for (int x = 0; x < f2.length; x++) {
-			if ((last < 0.0 && next >= 0.0) || (last > 0.0 && next <= 0.0)) {
+			// if (x < f2.length - 1) {
+			// next = f2[x + 1];
+			// } else {
+			// next = f2[0];
+			// }
+			if ((last < 0.0 && f2[x] >= 0.0) || (last > 0.0 && f2[x] <= 0.0)) {
 				criticalPoints.add(x);
 			}
 			last = f2[x];
-			if (x < f2.length - 1) {
-				next = f2[x + 1];
-			} else {
-				next = f2[0];
-			}
 		}
 		Integer[] critPoints = criticalPoints
 				.toArray(new Integer[criticalPoints.size()]);
@@ -653,17 +690,44 @@ public class DiscreteFunction {
 	 * @return
 	 */
 	public static Map<Integer, Double> maxima(double[] f) {
-		// double mean = getMean(f);
 		Integer[] criticalPoints = criticalPoints(f);
 		Map<Integer, Double> maxima = new TreeMap<Integer, Double>();
-		for (int i = 0; i < criticalPoints.length - 1; i++) {
+		/* Prevents multiple maxima being picked up at eccentric turning points. */
+		int lastCrit = Integer.MIN_VALUE;
+		int r = 1;
+
+		double[] df = f.clone();
+		differentiate(df);
+		differentiate(df);
+
+		dataset.removeAllSeries();
+		dataset.addSeries(distributionChart.getSeries(f, "f(x)"));
+		// dataset.addSeries(distributionChart.getSeries(df, "d/dx f(x)"));
+		// double[] ddf = df.clone();
+		// differentiate(ddf);
+		dataset.addSeries(distributionChart.getSeries(df, "d2/dx2 f(x)"));
+		distributionChart.setVisible(true);
+
+		/*
+		 * Skip first one until we can guarantee that the graph is truly
+		 * periodic.
+		 */
+		for (int i = 1; i < criticalPoints.length; i++) {
 			int x = criticalPoints[i];
-//			double df1 = differentiateAt(f, criticalPoints[i]);
-			double df2 = differentiateAt(f, criticalPoints[i] + 1);
-//			double ddf = df2 - df1;
-			/* Should in theory be < 0 */
-			if (df2 <= 0.0) {
+			double ddfx = df[x];
+
+			// double dfx1 = df[x];
+			// double dfx2;
+			// if (x + 1 < df.length) {
+			// dfx2 = df[x + 1];
+			// } else {
+			// dfx2 = df[0];
+			// }
+			// double ddfx = dfx2 - dfx1;
+
+			if (ddfx < 0.0 && lastCrit + r < x) {
 				maxima.put(x, f[x]);
+				lastCrit = x;
 			}
 		}
 
@@ -691,6 +755,15 @@ public class DiscreteFunction {
 		}
 		int x = f.length - 1;
 		f[x] = f0 - f[x];
+
+		// dataset.removeAllSeries();
+		// dataset.addSeries(distributionChart.getSeries(f, "f(x)"));
+		// double [] f2 = f.clone();
+		// differentiate(f2);
+		// dataset.addSeries(distributionChart.getSeries(f2, "d/dx f(x)"));
+		// differentiate(f2);
+		// dataset.addSeries(distributionChart.getSeries(f2, "d^2/dx^2 f(x)"));
+		// distributionChart.setVisible(true);
 	}
 
 	/**
@@ -700,14 +773,11 @@ public class DiscreteFunction {
 	 * @param a
 	 */
 	public static double differentiateAt(double[] f, int a) {
-		double df = 0.0;
-
 		if (a < f.length - 1) {
-			df = f[a + 1] - f[a];
+			return f[a + 1] - f[a];
 		} else {
-			df = f[0] - f[a];
+			return f[0] - f[a];
 		}
-		return df;
 	}
 
 	/**
@@ -721,12 +791,104 @@ public class DiscreteFunction {
 			differentiate(f);
 		}
 	}
-	// dataset.removeAllSeries();
-	// dataset.addSeries(distributionChart.getSeries(f, "f(x)"));
-	// differentiate(f2);
-	// dataset.addSeries(distributionChart.getSeries(f2, "d/dx f(x)"));
-	// differentiate(f2);
-	// dataset.addSeries(distributionChart.getSeries(f2, "d^2/dx^2 f(x)"));
-	// distributionChart.setVisible(true);
 
+	public static double[] plotPolynomial(double[] parameters, int n) {
+		double[] f = new double[n];
+		int p = parameters.length;
+		for (int x = 0; x < n; x++) {
+			double y = 0.0;
+			for (int a = 0; a < p; a++) {
+				y += parameters[a] * Math.pow(x, a);
+			}
+			f[x] = y;
+		}
+		return f;
+	}
+
+	/**
+	 * TODO: loop graph, then regress, then crop graph to solve periodicity
+	 * problem.
+	 * 
+	 * @param f
+	 * @param n
+	 * @return
+	 */
+	public static double[] regress(double[] f, int n) {
+		double[] parameters = new double[n];
+		int numPoints = f.length;
+
+		ConvergenceChecker<PointVectorValuePair> checker = new SimpleVectorValueChecker(
+				1.0, -1);
+		MultivariateVectorOptimizer optimizer = new GaussNewtonOptimizer(
+				checker);
+		PolynomialFitter fitter = new PolynomialFitter(optimizer);
+		for (int x = 0; x < numPoints; x++) {
+			fitter.addObservedPoint(x, f[x]);
+		}
+		/* loop through some more ... */
+		int loopX;
+		for (loopX = 0; loopX < numPoints; loopX++) {
+			fitter.addObservedPoint(loopX, f[loopX]);
+		}
+
+		double[] guess = new double[n];
+		parameters = fitter.fit(guess);
+		double[] g = plotPolynomial(parameters, numPoints);
+		// g = crop(g, g.length - loopX);
+
+		// dataset.removeAllSeries();
+		// dataset.addSeries(distributionChart.getSeries(g, "g(x)"));
+		// dataset.addSeries(distributionChart.getSeries(f, "f(x)"));
+		// distributionChart.setVisible(true);
+
+		return g;
+	}
+
+	// public void t2() {
+	// double[] y = new double[numPoints];
+	// double[] x = new double[numPoints];
+	// double[] sigmaX = new double[numPoints];
+	// double[] sigmaY = new double[numPoints];
+	// for (int i = 0; i < numPoints; i++) {
+	// y[i] = f[i];
+	// x[i] = i;
+	// sigmaX[i] = 1.0;
+	// sigmaY[i] = 1.0;
+	// }
+
+	// double[][] x = new double[numPoints][numPoints];
+	// for (int i = 0; i < numPoints; i++) {
+	// x[i][i] = i;
+	// }
+
+	// FitPoly.fit(parameters, x, y, sigmaX, sigmaY, numPoints);
+	// double[] g = DiscreteFunction.plotPolynomial(parameters, numPoints);
+	// }
+
+	// public void t() {
+	// double[][] y = new double[numPoints][1];
+	// double[] x = new double[numPoints];
+	// // double[] sigmaX = new double[numPoints];
+	// // double[] sigmaY = new double[numPoints];
+	// for (int i = 0; i < numPoints; i++) {
+	// y[i][0] = f[i];
+	// x[i] = i;
+	// // sigmaX[i] = 1.0;
+	// // sigmaY[i] = 1.0;
+	// }
+	//
+	// // double[][] x = new double[numPoints][numPoints];
+	// // for (int i = 0; i < numPoints; i++) {
+	// // x[i][i] = i;
+	// // }
+	//
+	// // FitPoly.fit(parameters, x, y, sigmaX, sigmaY, numPoints);
+	// // double[] g = DiscreteFunction.plotPolynomial(parameters, numPoints);
+	//
+	// OLSMultipleLinearRegression regression2 = new
+	// OLSMultipleLinearRegression();
+	// regression2.newSampleData(x, y);
+	// regression2.setNoIntercept(true);
+	// double[] g = regression2.estimateRegressionParameters();
+	// }
 }

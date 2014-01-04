@@ -34,12 +34,25 @@ public class CAShapeFinderRule extends CACellRule {
 		List<CACell> neighbourhood = cell.getNeighbourhood();
 		for (CACell neighbour : neighbourhood) {
 			if (neighbour != cell && neighbour != CA.paddingCell
-					&& ca.getProtoShape(neighbour) != ca.getProtoShape(cell)) {
+					&& ca.getBlob(neighbour) != ca.getBlob(cell)) {
+				/*
+				 * This comparison method enables the rule to act without an
+				 * edge finder step.
+				 */
 				float difference = ColourCompare.getDifference(
 						ca.getColour(cell), ca.getColour(neighbour));
 				if (difference < ca.getEpsilon()) {
 					ca.mergeCells(cell, neighbour);
 				}
+
+				/*
+				 * In conjunction with the edge finder, this works a little
+				 * faster.
+				 */
+				// if (ca.getColour(cell)
+				// .equals(CAEdgeFinderRule.QUIESCENT_COLOUR)) {
+				// ca.mergeCells(cell, neighbour);
+				// }
 			}
 		}
 	}

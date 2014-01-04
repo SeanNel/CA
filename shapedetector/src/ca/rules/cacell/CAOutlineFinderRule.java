@@ -5,7 +5,7 @@ import java.util.List;
 
 import ca.CA;
 import ca.CACell;
-import ca.shapedetector.CAProtoShape;
+import ca.shapedetector.CABlob;
 import ca.shapedetector.CAShapeDetector;
 
 /**
@@ -28,12 +28,12 @@ public class CAOutlineFinderRule extends CACellRule {
 
 	public void update(CACell cell) {
 		/* Assumes that cell has a Van Neumann neighbourhood, with r=1 */
-		CAProtoShape protoShape = ca.getProtoShape(cell);
+		CABlob blob = ca.getBlob(cell);
 
 		List<CACell> neighbourhood = cell.getNeighbourhood();
 		for (CACell neighbour : neighbourhood) {
 			if (neighbour != cell && neighbour != CA.paddingCell
-					&& protoShape != ca.getProtoShape(neighbour)) {
+					&& blob != ca.getBlob(neighbour)) {
 
 				/*
 				 * May need to make a copy of the cell, so that this CA's cells
@@ -45,7 +45,7 @@ public class CAOutlineFinderRule extends CACellRule {
 				// CACell.INACTIVE, meetOutlineNeighbours(cell));
 				/* Expands the outlineCell's neighbourhood. */
 				cell.setNeighbourhood(meetOutlineNeighbours(cell));
-				protoShape.addOutlineCell(cell);
+				blob.addOutlineCell(cell);
 				return;
 			}
 		}

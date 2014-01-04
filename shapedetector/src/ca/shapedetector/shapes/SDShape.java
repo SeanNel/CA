@@ -1,24 +1,17 @@
 package ca.shapedetector.shapes;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import std.Picture;
-import ca.shapedetector.CAProtoShape;
-import ca.shapedetector.CAShapeDetector;
+import javax.swing.JFrame;
+
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.SDPathIterator;
 
 /**
- * A shape derived from the outlineCells of a ProtoShape found by
- * CAShapeDetector.
+ * A shape derived from the outlineCells of a blob found by CAShapeDetector.
  * 
  * @author Sean
  */
@@ -30,24 +23,13 @@ public class SDShape implements Iterable<double[]> {
 
 	/** A list of shapes that this shape is a supertype of. */
 	protected List<SDShape> relatedShapes;
-	/** Picture to draw on. */
-	protected Picture picture;
-	/** Shape's fill colour. */
-	protected Color fillColour;
-	/** Shape's outline colour. */
-	protected Color outlineColour;
-	/** Shape's centroid colour. */
-	protected Color centroidColour;
-	/** Shape's text label colour. */
-	protected Color labelColour;
-	protected static final Font DEFAULT_FONT = new Font("SansSerif",
-			Font.PLAIN, 10);
-	/** Shape's text label font. */
-	protected Font font;
 
 	/** Draws shapes as they are identified. For debugging. */
 	public static boolean showActiveShape = false;
 	public static boolean showDetectedShape = true;
+
+	/* For debugging. */
+	public static final JFrame displayFrame = new JFrame();
 
 	/**
 	 * Master constructor.
@@ -55,9 +37,7 @@ public class SDShape implements Iterable<double[]> {
 	 * @param canvas
 	 *            A picture to render identified shapes on.
 	 */
-	public SDShape(Picture picture) {
-		this.picture = picture;
-		defaultColours();
+	public SDShape() {
 		relatedShapes = new ArrayList<SDShape>();
 		loadRelatedShapes();
 	}
@@ -70,10 +50,7 @@ public class SDShape implements Iterable<double[]> {
 	 * @param graphics
 	 *            The graphics object to draw to.
 	 */
-	public SDShape(SDPath path, Picture picture) {
-		this.picture = picture;
-		defaultColours();
-
+	public SDShape(SDPath path) {
 		loadPath(path);
 	}
 
@@ -84,17 +61,10 @@ public class SDShape implements Iterable<double[]> {
 	 */
 	public SDShape(SDShape shape) {
 		path = shape.path;
-		picture = shape.picture;
 		// relatedShapes...
 
 		centroid = shape.centroid;
 		area = shape.area;
-
-		fillColour = shape.fillColour;
-		outlineColour = shape.outlineColour;
-		centroidColour = shape.centroidColour;
-		labelColour = shape.labelColour;
-		font = shape.font;
 	}
 
 	protected void loadPath(SDPath path) {
@@ -114,16 +84,8 @@ public class SDShape implements Iterable<double[]> {
 		/* Method stub */
 	}
 
-	protected void defaultColours() {
-		fillColour = new Color(230, 245, 230, 100);
-		outlineColour = Color.red;
-		centroidColour = Color.magenta;
-		labelColour = Color.blue;
-		font = DEFAULT_FONT;
-	}
-
 	/**
-	 * Gets the boundary coordinates of this shape.
+	 * Gets the bounding rectangle of this shape.
 	 * 
 	 * @return A row for each axis, e.g. x and y, with columns for minima and
 	 *         maxima.
@@ -212,110 +174,6 @@ public class SDShape implements Iterable<double[]> {
 	}
 
 	/**
-	 * Draws this shape and additional information to the canvas.
-	 */
-	public void draw() {
-		Graphics2D graphics = picture.getImage().createGraphics();
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
-		drawShape();
-		drawCentroid();
-		drawLabel();
-	}
-
-	/**
-	 * Draws this shape.
-	 * */
-	protected void drawShape() {
-		path.draw(picture, outlineColour, fillColour);
-	}
-
-	/**
-	 * Draws a cross at the centroid of the shape in the specified colour.
-	 */
-	public void drawCentroid() {
-		Graphics2D graphics = picture.getImage().createGraphics();
-		graphics.setColor(centroidColour);
-		int centroidX = (int) centroid[0];
-		int centroidY = (int) centroid[1];
-
-		graphics.drawLine(centroidX - 2, centroidY - 2, centroidX + 2,
-				centroidY + 2);
-		graphics.drawLine(centroidX - 2, centroidY + 2, centroidX + 2,
-				centroidY - 2);
-	}
-
-	/**
-	 * Draws a descriptive label of the shape.
-	 */
-	public void drawLabel() {
-		int centroidX = (int) centroid[0];
-		int centroidY = (int) centroid[1];
-
-		drawString(getClass().getSimpleName(), centroidX, centroidY - 10);
-		// drawString(getDescription(), centroidX, centroidY + 10);
-		drawString("x=" + centroidX + ", y=" + centroidY, centroidX,
-				centroidY + 10);
-	}
-
-	/**
-	 * Draws a string.
-	 */
-	public void drawString(String string, int x, int y) {
-		Graphics2D graphics = picture.getImage().createGraphics();
-		graphics.setColor(labelColour);
-		graphics.setFont(font);
-		FontMetrics metrics = graphics.getFontMetrics();
-
-		int ws = metrics.stringWidth(string);
-		int hs = metrics.getDescent();
-
-		graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
-	}
-
-	/**
-	 * Identifies the shape.
-	 * <p>
-	 * Assumes that the ProtoShape's outline cells have already been arranged in
-	 * sequence.
-	 * 
-	 * @param path
-	 *            A path describing the unidentified shape.
-	 * @return An instance of the detected shape.
-	 */
-	public SDShape identifyShape(CAProtoShape protoShape, CAShapeDetector ca) {
-		SDShape identifiedShape = null;
-		SDShape shape = new SDShape(new SDPath(protoShape), picture);
-
-		if (showActiveShape) {
-			/*
-			 * With this on it can be seen there is some oddly shaped thing
-			 * being picked up...
-			 */
-			shape.outlineColour = Color.green;
-			shape.drawShape();
-			ca.draw();
-		}
-
-		for (SDShape relatedShape : relatedShapes) {
-			identifiedShape = relatedShape.identify(shape);
-			// Input.waitForSpace();
-
-			if (identifiedShape != null) {
-				identifiedShape.picture = picture;
-
-				if (showDetectedShape) {
-					// shape.outlineColour = Color.blue;
-					identifiedShape.drawLabel();
-					ca.draw();
-				}
-				return identifiedShape;
-			}
-		}
-		return new SDUnknownShape(shape);
-	}
-
-	/**
 	 * Returns an instance of the shape described by this polygon.
 	 * <p>
 	 * Subclasses should extend this.
@@ -343,12 +201,16 @@ public class SDShape implements Iterable<double[]> {
 
 	/**
 	 * Gets an Area object based on this shape. Used by SDDistributionHistogram
-	 * to calculate the areas of sectors.
+	 * to calculate the areas of sectors and for graphics display.
 	 * 
 	 * @return
 	 */
 	public Area getAreaPolygon() {
 		return path.getAreaPolygon();
+	}
+
+	public SDPath getPath() {
+		return path;
 	}
 
 	/**

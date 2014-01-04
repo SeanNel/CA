@@ -1,7 +1,6 @@
 package ca.shapedetector;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -9,18 +8,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.JFrame;
+
 import std.Picture;
 import ca.CA;
 import ca.CACell;
 import ca.Stopwatch;
+import ca.rules.blob.CABlobIdentifierRule;
+import ca.rules.blob.CABlobRule;
+import ca.rules.cacell.CABlobAssociationRule;
 import ca.rules.cacell.CACellRule;
 import ca.rules.cacell.CAEdgeFinderRule;
 import ca.rules.cacell.CANoiseRemoverRule;
 import ca.rules.cacell.CAOutlineFinderRule;
-import ca.rules.cacell.CAProtoShapeAssociationRule;
 import ca.rules.cacell.CAShapeFinderRule;
-import ca.rules.protoshape.CAProtoShapeIdentifierRule;
-import ca.shapedetector.shapes.SDRectangle;
+import ca.rules.shape.SDShapeDrawRule;
+import ca.rules.shape.SDShapeRule;
 import ca.shapedetector.shapes.SDShape;
 
 /**
@@ -43,30 +46,35 @@ import ca.shapedetector.shapes.SDShape;
  * @author Sean
  */
 public class CAShapeDetector extends CA {
-	/** Table mapping cells to protoShapes. */
-	protected CAProtoShape[][] shapeAssociations;
-	/** Set of unique protoShapes. */
-	protected Set<CAProtoShape> protoShapes;
+	/** Table mapping cells to blobs. */
+	protected CABlob[][] shapeAssociations;
+	/** Set of unique blobs. */
+	protected Set<CABlob> blobs;
 	/** List of detected shapes. */
 	protected List<SDShape> shapes;
+	/** Processes to apply to each blob in sequence. */
+	public List<CABlobRule> blobRules;
+	/** Processes to apply to each SDShape in sequence. */
+	public List<SDShapeRule> shapeRules;
 
-	private class ProtoShapeSorter implements Comparable<ProtoShapeSorter> {
-		CAProtoShape protoShape;
+	public static final JFrame shapeFrame = new JFrame();
+	public static final JFrame identityFrame = new JFrame(); 
 
-		public ProtoShapeSorter(CAProtoShape protoShape) {
-			this.protoShape = protoShape;
+	private class blobSorter implements Comparable<blobSorter> {
+		CABlob blob;
+
+		public blobSorter(CABlob blob) {
+			this.blob = blob;
 		}
 
 		@Override
-		public int compareTo(ProtoShapeSorter arg0) {
-			double x1 = (protoShape.getBoundaries()[0][1] - protoShape
-					.getBoundaries()[0][0]) / 2.0;
-			double y1 = (protoShape.getBoundaries()[1][1] - protoShape
-					.getBoundaries()[1][0]) / 2.0;
+		public int compareTo(blobSorter arg0) {
+			double x1 = (blob.getBoundaries()[0][1] - blob.getBoundaries()[0][0]) / 2.0;
+			double y1 = (blob.getBoundaries()[1][1] - blob.getBoundaries()[1][0]) / 2.0;
 
-			double x2 = (arg0.protoShape.getBoundaries()[0][1] - arg0.protoShape
+			double x2 = (arg0.blob.getBoundaries()[0][1] - arg0.blob
 					.getBoundaries()[0][0]) / 2.0;
-			double y2 = (arg0.protoShape.getBoundaries()[1][1] - arg0.protoShape
+			double y2 = (arg0.blob.getBoundaries()[1][1] - arg0.blob
 					.getBoundaries()[1][0]) / 2.0;
 
 			if (x1 == x2 && y1 == y2) {
@@ -130,18 +138,21 @@ public class CAShapeDetector extends CA {
 	protected void createGUI() {
 		super.createGUI();
 		frame.setTitle("CA Shape Detector");
+		
+//		shapeFrame.setLocation(0, 0);
+//		identityFrame.setLocation(0, 200);
 	}
 
-	protected Set<CAProtoShape> sortProtoShapes(Set<CAProtoShape> shapes) {
-		ProtoShapeSorter[] shapeSorter = new ProtoShapeSorter[shapes.size()];
-		Iterator<CAProtoShape> iterator = shapes.iterator();
+	protected Set<CABlob> sortBlobs(Set<CABlob> shapes) {
+		blobSorter[] shapeSorter = new blobSorter[shapes.size()];
+		Iterator<CABlob> iterator = shapes.iterator();
 		for (int i = 0; i < shapes.size(); i++) {
-			shapeSorter[i] = new ProtoShapeSorter(iterator.next());
+			shapeSorter[i] = new blobSorter(iterator.next());
 		}
 		Arrays.sort(shapeSorter);
-		Set<CAProtoShape> sortedShapes = new LinkedHashSet<CAProtoShape>();
-		for (ProtoShapeSorter s : shapeSorter) {
-			sortedShapes.add(s.protoShape);
+		Set<CABlob> sortedShapes = new LinkedHashSet<CABlob>();
+		for (blobSorter s : shapeSorter) {
+			sortedShapes.add(s.blob);
 		}
 		return sortedShapes;
 	}
@@ -152,24 +163,37 @@ public class CAShapeDetector extends CA {
 
 		drawOnModelUpdate = true;
 		// drawOnCellUpdate = true;
-
-		cellRules = new LinkedList<CACellRule>();
-//		cellRules.add(new CADummyRule(this));
-		// cellRules.add(new CAGatherNeighboursRule(this));
-		cellRules.add(new CANoiseRemoverRule(this));
-		cellRules.add(new CAEdgeFinderRule(this));
-		cellRules.add(new CAProtoShapeAssociationRule(this));
-		cellRules.add(new CAShapeFinderRule(this));
-		// cellRules.add(new CAShapeAssimilatorRule(this));
-		cellRules.add(new CAOutlineFinderRule(this));
 	}
 
 	@Override
 	public void setPicture(Picture picture) {
 		super.setPicture(picture);
-		shapeAssociations = new CAProtoShape[picture.width()][picture.height()];
-		protoShapes = Collections.synchronizedSet(new HashSet<CAProtoShape>(
-				lattice.length * lattice[0].length));
+		shapeAssociations = new CABlob[picture.width()][picture.height()];
+		// blobs = Collections.synchronizedSet(new HashSet<CAblob>(
+		// lattice.length * lattice[0].length));
+		blobs = new HashSet<CABlob>(lattice.length * lattice[0].length);
+	}
+
+	protected void loadRules() {
+		cellRules = new LinkedList<CACellRule>();
+		// cellRules.add(new CADummyRule(this));
+		// cellRules.add(new CAGatherNeighboursRule(this));
+		cellRules.add(new CANoiseRemoverRule(this));
+		/* Optional step */
+		cellRules.add(new CAEdgeFinderRule(this));
+		cellRules.add(new CABlobAssociationRule(this));
+		cellRules.add(new CAShapeFinderRule(this));
+		// cellRules.add(new CAShapeAssimilatorRule(this));
+		cellRules.add(new CAOutlineFinderRule(this));
+
+		blobRules = new LinkedList<CABlobRule>();
+		blobRules.add(new CABlobIdentifierRule(this));
+		// blobRules.add(new CABlobDisplayRule(this));
+		// blobRules.add(new CABlobDrawRule(this));
+
+		shapeRules = new LinkedList<SDShapeRule>();
+//		shapeRules.add(new SDShapeDisplayRule(this));
+		 shapeRules.add(new SDShapeDrawRule(this));
 	}
 
 	@Override
@@ -177,21 +201,53 @@ public class CAShapeDetector extends CA {
 		super.apply(picture);
 		shapes = new LinkedList<SDShape>();
 
+		updateBlobs();
+		updateShapes();
+
+		return pictureAfter;
+	}
+
+	protected void updateBlobs() {
+		/*
+		 * Attempt to eliminate the blob generated by the background. (Assumes
+		 * the top-left corner is part of the background.)
+		 */
+		blobs.remove(shapeAssociations[0][0]);
+
 		/*
 		 * To ease debugging, sort the shapes in some kind of order instead of
 		 * at random.
 		 */
-		protoShapes = sortProtoShapes(protoShapes);
+		blobs = sortBlobs(blobs);
 
-		CAProtoShapeIdentifierRule protoShapeIdentifier = new CAProtoShapeIdentifierRule(
-				this);
+		CABlobRule currentRule;
+		Iterator<CABlobRule> ruleIterator = blobRules.iterator();
+		while (ruleIterator.hasNext()) {
+			currentRule = ruleIterator.next();
 
-		for (CAProtoShape protoShape : protoShapes) {
-			protoShapeIdentifier.update(protoShape);
+			for (CABlob blob : blobs) {
+				currentRule.update(blob);
+			}
+			System.out.println(currentRule + ", elapsed time: "
+					+ ruleStopwatch.time() + " ms");
 		}
-		protoShapeIdentifier.printTimers();
+	}
 
-		return pointOutShapes(pictureAfter);
+	protected void updateShapes() {
+		System.out.println("Number of shapes: " + shapes.size());
+		// System.out.println("Detected shapes: ");
+
+		SDShapeRule currentRule;
+		Iterator<SDShapeRule> ruleIterator = shapeRules.iterator();
+		while (ruleIterator.hasNext()) {
+			currentRule = ruleIterator.next();
+
+			for (SDShape shape : shapes) {
+				currentRule.update(shape);
+			}
+			System.out.println(currentRule + ", elapsed time: "
+					+ ruleStopwatch.time() + " ms");
+		}
 	}
 
 	/**
@@ -201,24 +257,23 @@ public class CAShapeDetector extends CA {
 	 *            1st cell to merge with.
 	 * @param cell2
 	 *            2nd cell to merge with.
-	 * @return The resulting protoShape.
+	 * @return The resulting blob.
 	 */
-	public synchronized CAProtoShape mergeCells(CACell cell1, CACell cell2) {
-		return mergeProtoShapes(getProtoShape(cell1), getProtoShape(cell2));
+	public synchronized CABlob mergeCells(CACell cell1, CACell cell2) {
+		return mergeBlobs(getBlob(cell1), getBlob(cell2));
 	}
 
 	/**
-	 * Merges 2 protoShapes together.
+	 * Merges 2 blobs together.
 	 * 
-	 * @see CAProtoShapeMergerThread
+	 * @see CAblobMergerThread
 	 * @param shape1
-	 *            1st protoShape to merge with.
+	 *            1st blob to merge with.
 	 * @param shape2
-	 *            2st protoShape to merge with.
-	 * @return The resulting protoShape.
+	 *            2st blob to merge with.
+	 * @return The resulting blob.
 	 */
-	protected CAProtoShape mergeProtoShapes(CAProtoShape shape1,
-			CAProtoShape shape2) {
+	protected CABlob mergeBlobs(CABlob shape1, CABlob shape2) {
 		/* NB */
 		if (shape1 == shape2) {
 			return null;
@@ -229,8 +284,8 @@ public class CAShapeDetector extends CA {
 				 * Improves efficiency by merging the smaller shape into the
 				 * larger shape.
 				 */
-				CAProtoShape newShape;
-				CAProtoShape oldShape;
+				CABlob newShape;
+				CABlob oldShape;
 				if (shape1.getArea() > shape2.getArea()) {
 					newShape = shape1;
 					oldShape = shape2;
@@ -240,10 +295,12 @@ public class CAShapeDetector extends CA {
 				}
 
 				for (CACell cell : oldShape.getAreaCells()) {
-					setProtoShape(cell, newShape);
+					setBlob(cell, newShape);
 				}
 				/* Must be removed before merging. */
-				protoShapes.remove(oldShape);
+				// synchronized (blobs) {
+				blobs.remove(oldShape);
+				// }
 				newShape.merge(oldShape);
 				return newShape;
 			}
@@ -257,7 +314,7 @@ public class CAShapeDetector extends CA {
 	 *            A cell belonging to a shape.
 	 * @return The shape associated with the specified cell.
 	 */
-	public CAProtoShape getProtoShape(CACell cell) {
+	public CABlob getBlob(CACell cell) {
 		int[] coordinates = cell.getCoordinates();
 		return shapeAssociations[coordinates[0]][coordinates[1]];
 	}
@@ -270,37 +327,9 @@ public class CAShapeDetector extends CA {
 	 * @param shape
 	 *            The shape associated with the specified cell.
 	 */
-	public void setProtoShape(CACell cell, CAProtoShape shape) {
+	public void setBlob(CACell cell, CABlob shape) {
 		int[] coordinates = cell.getCoordinates();
 		shapeAssociations[coordinates[0]][coordinates[1]] = shape;
-	}
-
-	/**
-	 * Displays which shapes were found where.
-	 * 
-	 * @param picture
-	 *            Picture to render to.
-	 * @return Rendered picture.
-	 */
-	public Picture pointOutShapes(Picture picture) {
-		System.out.println("Number of shapes: " + shapes.size());
-		System.out.println("Detected shapes: ");
-		int delta = 2;
-		for (SDShape shape : shapes) {
-			/* using instanceof does not seem to work here. */
-			// if (shape.getClass() != SDUnknownShape.class) {
-			/* Ignore the rectangle detected at the image borders. */
-			if (shape instanceof SDRectangle
-					&& shape.getDimensions()[0] + delta > pictureBefore.width()
-					&& shape.getDimensions()[1] + delta > pictureBefore
-							.height()) {
-				continue;
-			}
-			// System.out.println(shape);
-			// shape.draw();
-			// }
-		}
-		return picture;
 	}
 
 	/**
@@ -316,7 +345,9 @@ public class CAShapeDetector extends CA {
 		shapes.add(shape);
 	}
 
-	public void addProtoShape(CAProtoShape protoShape) {
-		protoShapes.add(protoShape);
+	public void addBlob(CABlob blob) {
+		synchronized (blobs) {
+			blobs.add(blob);
+		}
 	}
 }

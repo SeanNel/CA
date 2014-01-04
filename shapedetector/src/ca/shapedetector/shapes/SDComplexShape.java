@@ -11,8 +11,6 @@ import math.DiscreteFunction;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
-import std.Picture;
-
 import ca.shapedetector.path.SDDistributionHistogram;
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.SDPathIterator;
@@ -46,16 +44,16 @@ public class SDComplexShape extends SDShape {
 	private double length;
 	private double width;
 
-	public SDComplexShape(Picture picture) {
-		super(picture);
+	public SDComplexShape() {
+		super();
 
 		// distributionType =
 		// SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION;
 		loadChart();
 	}
 
-	public SDComplexShape(SDPath path, Picture picture) {
-		super(path, picture);
+	public SDComplexShape(SDPath path) {
+		super(path);
 		getProperties();
 	}
 
@@ -189,7 +187,7 @@ public class SDComplexShape extends SDShape {
 		// SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION);
 
 		SDPath path = new SDPath(new Path2D.Double());
-		SDShape identity = new SDComplexShape(path, picture);
+		SDShape identity = new SDComplexShape(path);
 		return identity;
 	}
 

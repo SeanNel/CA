@@ -1,23 +1,18 @@
 package ca.shapedetector;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.geom.Area;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import std.Picture;
-
 import ca.CACell;
-import ca.shapedetector.path.SDPath;
 
 /**
- * A ProtoShape made up of CACells.
+ * A blob made up of CACells. TODO: extend CACell (to take advantage of
+ * CACellThreads etc)
  * 
  * @author Sean
  */
-public class CAProtoShape implements Comparable<CAProtoShape> {
+public class CABlob implements Comparable<CABlob> {
 	/**
 	 * Collection of cells that make up this shape.
 	 * <p>
@@ -41,7 +36,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	/**
 	 * Singleton constructor.
 	 */
-	public CAProtoShape() {
+	public CABlob() {
 	}
 
 	/**
@@ -52,8 +47,9 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
-	public CAProtoShape(CACell cell) {
-		areaCells = Collections.synchronizedList(new LinkedList<CACell>()); //new ArrayList<CACell>()
+	public CABlob(CACell cell) {
+		areaCells = Collections.synchronizedList(new LinkedList<CACell>());
+		// newArrayList<CACell>()
 		outlineCells = Collections.synchronizedList(new LinkedList<CACell>());
 		areaCells.add(cell);
 
@@ -65,36 +61,35 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	}
 
 	/**
-	 * Transfers all cells from the specified protoShape to the current
-	 * protoShape.
+	 * Transfers all cells from the specified blob to the current blob.
 	 * <p>
 	 * Updates the boundaries at the same time, since this takes almost no time
 	 * to do.
 	 * 
-	 * @param protoShape
-	 *            protoShape to merge with.
+	 * @param blob
+	 *            blob to merge with.
 	 */
-	public void merge(CAProtoShape protoShape) {
+	public void merge(CABlob blob) {
 		for (int i = 0; i < boundaries.length; i++) {
-			if (protoShape.boundaries[0][i] < boundaries[0][i]) {
-				boundaries[0][i] = protoShape.boundaries[0][i];
+			if (blob.boundaries[0][i] < boundaries[0][i]) {
+				boundaries[0][i] = blob.boundaries[0][i];
 			}
-			if (protoShape.boundaries[1][i] > boundaries[1][i]) {
-				boundaries[1][i] = protoShape.boundaries[1][i];
+			if (blob.boundaries[1][i] > boundaries[1][i]) {
+				boundaries[1][i] = blob.boundaries[1][i];
 			}
 		}
 
-		areaCells.addAll(protoShape.getAreaCells());
+		areaCells.addAll(blob.getAreaCells());
 		/*
 		 * It is necessary to free up memory or there will soon be no space left
 		 * on the heap.
 		 */
-		protoShape.destroy();
+		blob.destroy();
 	}
 
 	/**
 	 * Add a cell to the collection of cells that make up the outline of this
-	 * protoShape.
+	 * blob.
 	 * 
 	 * @param cell
 	 *            Cell to add.
@@ -104,7 +99,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	}
 
 	/**
-	 * Gets the boundary coordinates of this protoShape.
+	 * Gets the boundary coordinates of this blob.
 	 * 
 	 * @return A row for each axis, e.g. x and y, with columns for minima and
 	 *         maxima.
@@ -168,6 +163,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	public void destroy() {
 		areaCells.clear();
 		outlineCells.clear();
+		boundaries = null;
 		areaCells = null;
 		outlineCells = null;
 	}
@@ -221,7 +217,7 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 	 * size can coexist in a set of unique shapes.
 	 */
 	@Override
-	public int compareTo(CAProtoShape arg0) {
+	public int compareTo(CABlob arg0) {
 		if (this == arg0) {
 			return 0;
 		} else if (getArea() >= arg0.getArea()) {
@@ -236,23 +232,6 @@ public class CAProtoShape implements Comparable<CAProtoShape> {
 		int height = boundaries[1][1] - boundaries[0][1];
 		return outlineCells == null || outlineCells.size() < 18 || width < 4
 				|| height < 4;
-	}
-
-	public static final Picture debugPicture = new Picture(600, 600);
-
-	public static void clearDebugPicture() {
-		Graphics2D graphics = debugPicture.getImage().createGraphics();
-		graphics.setColor(Color.white);
-		graphics.fillRect(0, 0, debugPicture.width(), debugPicture.height());
-	}
-
-	public void display() {
-		Area area = SDPath.makeArea(areaCells);
-		// area = SDPath.fillGaps(area);
-
-		SDPath path = new SDPath(area);
-		path.draw(debugPicture, Color.blue, new Color(255, 255, 0, 20));
-		debugPicture.show();
 	}
 
 	public double[] calculateCentroid() {

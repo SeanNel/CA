@@ -1,11 +1,8 @@
 package ca.shapedetector.shapes;
 
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 
 import ca.shapedetector.path.SDPath;
-
-import std.Picture;
 
 public class SDEllipse extends SDShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
@@ -14,26 +11,12 @@ public class SDEllipse extends SDShape {
 	private double length;
 	private double width;
 
-	/**
-	 * Identity constructor.
-	 * 
-	 * @param picture
-	 */
-	public SDEllipse(Picture picture) {
-		super(picture);
-
-		/*
-		 * The size of the identity shape is arbitrary, but large values may
-		 * give better results.
-		 */
-		Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 100, 100);
-		loadPath(new SDPath(ellipse));
-		// identity.calculateOrientation();
-		// identity.rotate(identity.getOrientation());
+	public SDEllipse() {
+		super();
 	}
 
-	public SDEllipse(SDPath path, Picture picture) {
-		super(path, picture);
+	public SDEllipse(SDPath path) {
+		super(path);
 		getProperties();
 	}
 

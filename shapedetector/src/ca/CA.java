@@ -2,6 +2,7 @@ package ca;
 
 import java.awt.Color;
 import java.awt.FileDialog;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -128,6 +129,11 @@ public class CA implements ActionListener {
 		pictureBefore = picture;
 		pictureAfter = new Picture(picture); /* Creates copy of picture. */
 		loadLattice();
+		loadRules();
+	}
+
+	protected void loadRules() {
+		/* Method stub. */
 	}
 
 	/**
@@ -169,7 +175,7 @@ public class CA implements ActionListener {
 	 * @return Array of cells in the neighbourhood.
 	 */
 	protected List<CACell> gatherNeighboursMoore(CACell cell, int r) {
-		 List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
+		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
 
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i <= coordinates[0] + r; i++) {
@@ -198,7 +204,7 @@ public class CA implements ActionListener {
 	 */
 	protected List<CACell> gatherNeighboursVanNeumann(CACell cell, int r) {
 		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
-		
+
 		int[] coordinates = cell.getCoordinates();
 		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
 			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
@@ -232,12 +238,11 @@ public class CA implements ActionListener {
 		ruleStopwatch.print("Loading complete, elapsed time: ");
 		ruleStopwatch.start();
 
-		Iterator<CACellRule> ruleIterator = cellRules.iterator();
-		if (ruleIterator.hasNext()) {
-			currentCellRule = ruleIterator.next();
-		} else {
+		if (cellRules == null || cellRules.isEmpty()) {
 			throw new RuntimeException("No cell rules defined...");
 		}
+		Iterator<CACellRule> ruleIterator = cellRules.iterator();
+		currentCellRule = ruleIterator.next();
 
 		active = true;
 		while (active) {
@@ -358,7 +363,11 @@ public class CA implements ActionListener {
 	 */
 	public void setColour(CACell cell, Color colour) {
 		int[] coordinates = cell.getCoordinates();
-		pictureAfter.set(coordinates[0], coordinates[1], colour);
+		// pictureAfter.set(coordinates[0], coordinates[1], colour);
+
+		Graphics graphics = pictureAfter.getImage().createGraphics();
+		graphics.setColor(colour);
+		graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
 		cell.validate = true;
 	}
 
@@ -372,6 +381,7 @@ public class CA implements ActionListener {
 	public Color getColour(CACell cell) {
 		int[] coordinates = cell.getCoordinates();
 		return pictureBefore.get(coordinates[0], coordinates[1]);
+
 	}
 
 	/**
@@ -410,8 +420,8 @@ public class CA implements ActionListener {
 			frame.setJMenuBar(menuBar);
 
 			frame.setContentPane(getJLabel());
-			// f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			frame.setTitle("CA");
 			frame.setResizable(false);
 			frame.pack();

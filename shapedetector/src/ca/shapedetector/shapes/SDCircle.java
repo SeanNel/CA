@@ -2,16 +2,14 @@ package ca.shapedetector.shapes;
 
 import java.awt.geom.Rectangle2D;
 
-import std.Picture;
-
 public class SDCircle extends SDEllipse {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	protected static double tolerance = 3.0E-4;
 
 	private double width;
 
-	public SDCircle(Picture picture) {
-		super(picture);
+	public SDCircle() {
+		super();
 	}
 
 	public SDCircle(SDEllipse shape) {
