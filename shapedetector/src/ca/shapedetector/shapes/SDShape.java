@@ -5,17 +5,17 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JFrame;
-
+import ca.concurrency.Updatable;
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.SDPathIterator;
+import exceptions.MethodNotImplementedException;
 
 /**
  * A shape derived from the outlineCells of a blob found by CAShapeDetector.
  * 
  * @author Sean
  */
-public class SDShape implements Iterable<double[]> {
+public class SDShape implements Iterable<double[]>, Updatable {
 	/** Path that defines this shape as a polygon. */
 	protected SDPath path;
 	protected double[] centroid;
@@ -23,13 +23,6 @@ public class SDShape implements Iterable<double[]> {
 
 	/** A list of shapes that this shape is a supertype of. */
 	protected List<SDShape> relatedShapes;
-
-	/** Draws shapes as they are identified. For debugging. */
-	public static boolean showActiveShape = false;
-	public static boolean showDetectedShape = true;
-
-	/* For debugging. */
-	public static final JFrame displayFrame = new JFrame();
 
 	/**
 	 * Master constructor.
@@ -179,9 +172,10 @@ public class SDShape implements Iterable<double[]> {
 	 * Subclasses should extend this.
 	 * 
 	 * @return An instance of the detected shape if detected or null otherwise.
+	 * @throws MethodNotImplementedException 
 	 */
-	protected SDShape identify(SDShape shape) {
-		return null;
+	protected SDShape identify(SDShape shape) throws MethodNotImplementedException {
+		throw new MethodNotImplementedException();
 	}
 
 	/**
@@ -193,10 +187,10 @@ public class SDShape implements Iterable<double[]> {
 	 * @param shape
 	 *            The shape to compare this shape to.
 	 * @return The difference ratio.
+	 * @throws MethodNotImplementedException 
 	 */
-	public double compare(SDShape shape) {
-		/* Method stub. */
-		return 0.0;
+	public double compare(SDShape shape) throws MethodNotImplementedException {
+		throw new MethodNotImplementedException();
 	}
 
 	/**

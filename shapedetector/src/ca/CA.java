@@ -1,100 +1,32 @@
 package ca;
 
-import java.awt.Color;
-import java.awt.FileDialog;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
+import exceptions.CAException;
+import graphics.PictureFrame;
+import graphics.PicturePanel;
+import helpers.Stopwatch;
+
 import java.util.List;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
-
 import std.Picture;
-import ca.concurrency.CAThreadServer;
-import ca.rules.cacell.CACellRule;
+import ca.concurrency.ThreadServer;
+import ca.lattice.Lattice2D;
+import ca.rules.cell.CellRule;
 
 /**
  * Cellular automaton for processing an image.
  * 
  * @author Sean
  */
-public class CA implements ActionListener {
-	/** Two dimensional array of CACells. */
-	protected CACell[][] lattice;
+public class CA {
+	protected Lattice2D lattice;
 	/** Processes to apply to each cell in sequence. */
-	public List<CACellRule> cellRules;
+	public List<CellRule> cellRules;
 	/** Currently active cell rule. */
-	CACellRule currentCellRule;
-	/**
-	 * Picture first given to this CAModel to process or in the event that the
-	 * CAModel did not finish after its first pass, this is the output of the
-	 * previous pass.
-	 * <p>
-	 * No changes are made to this picture.
-	 */
-	protected Picture pictureBefore;
-	/**
-	 * Starts off as a copy of the source image, but is subject to change as
-	 * cells update.
-	 */
-	protected Picture pictureAfter;
-	/**
-	 * The difference threshold expressed as a fraction. Determines how
-	 * neighbourhood cells affect this cell's state. Low values mean that small
-	 * differences between cells are ignored.
-	 * 
-	 * @see graphics.ColourCompare
-	 */
-	protected float epsilon;
-	/** Search radius. Determines the size of the neighbourhood. */
-	protected int r;
-	/** Signals whether there are cells that are still due to update. */
-	protected boolean active;
-	/** Coordinates threads to update cells. */
-	protected CAThreadServer threadServer;
-	/** Number of times this CAModel has processed its cells. */
-	protected int passes;
-	/** Dead padding cell. */
-	public final static CACell paddingCell = new CACell();
-	/* Stopwatches useful for determining the performance of this program. */
-	/** Keeps time of how long it takes to complete a pass. */
-	protected Stopwatch passStopwatch;
-	/** Keeps time of how long it takes to complete a rule. */
-	protected Stopwatch ruleStopwatch;
-
-	/** Moore neighbourhood (a square). */
-	public final static int MOORE_NEIGHBOURHOOD = 0;
-	/** Van Neuman neighbourhood (a circle). */
-	public final static int VANNEUMANN_NEIGHBOURHOOD = 1;
-	/**
-	 * The model used to represent the cell's neighbourhood, either
-	 * MOORE_NEIGHBOURHOOD (a square) or VANNEUMANN_NEIGHBOURHOOD (a circle).
-	 */
-	protected int neighbourhoodModel = MOORE_NEIGHBOURHOOD;
-	/** Stores the calculated size of the neighbourhood. */
-	protected int neighbourhoodSize;
-	/**
-	 * Signals that the image should be image should be drawn after each update.
-	 */
-	protected boolean drawOnModelUpdate;
-	/**
-	 * Signals that the image should be image should be drawn after each update.
-	 */
-	protected boolean drawOnCellUpdate;
-
-	protected JFrame frame;
+	protected CellRule currentCellRule;
+	/** Signals that the CA should display its results in a window. */
+	protected boolean visible;
+	/** A frame for displaying the output image. */
+	protected PictureFrame pictureFrame;
 
 	/**
 	 * Constructor.
@@ -106,17 +38,10 @@ public class CA implements ActionListener {
 	 * @param r
 	 *            Search radius. Determines the size of the neighbourhood.
 	 */
-	public CA(float epsilon, int r) {
-		/*
-		 * Might instead want to set epsilon dynamically according to the colour
-		 * range in the image.
-		 */
-		this.epsilon = epsilon;
-		this.r = r;
-		passStopwatch = new Stopwatch();
-		ruleStopwatch = new Stopwatch();
-
-		createGUI();
+	public CA() {
+		lattice = new Lattice2D();
+		PicturePanel panel = new PicturePanel();
+		pictureFrame = new PictureFrame(panel);
 	}
 
 	/**
@@ -126,342 +51,70 @@ public class CA implements ActionListener {
 	 *            Picture to process.
 	 */
 	public void setPicture(Picture picture) {
-		pictureBefore = picture;
-		pictureAfter = new Picture(picture); /* Creates copy of picture. */
-		loadLattice();
-		loadRules();
-	}
-
-	protected void loadRules() {
-		/* Method stub. */
+		lattice.load(picture);
+		pictureFrame.setImage(lattice.getResult().getImage());
 	}
 
 	/**
-	 * Gets the output image.
-	 */
-	public Picture getPicture() {
-		return pictureAfter;
-	}
-
-	/**
-	 * Initializes the lattice of cells.
-	 */
-	protected void loadLattice() {
-		switch (neighbourhoodModel) {
-		case MOORE_NEIGHBOURHOOD:
-			neighbourhoodSize = (2 * r + 1) * (2 * r + 1);
-			break;
-		case VANNEUMANN_NEIGHBOURHOOD:
-			neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
-			break;
-		}
-
-		lattice = new CACell[pictureBefore.width()][pictureBefore.height()];
-
-		for (int x = 0; x < lattice.length; x++) {
-			for (int y = 0; y < lattice[0].length; y++) {
-				int[] coordinates = { x, y };
-				lattice[x][y] = new CACell(coordinates);
-			}
-		}
-	}
-
-	/**
-	 * Gathers all neighbouring cells within the square 3r*3r centered on (x,y),
-	 * that is its Moore neighbourhood.
-	 * 
-	 * @param cell
-	 *            Cell to find the neighbourhood of.
-	 * @return Array of cells in the neighbourhood.
-	 */
-	protected List<CACell> gatherNeighboursMoore(CACell cell, int r) {
-		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
-
-		int[] coordinates = cell.getCoordinates();
-		for (int i = coordinates[0] - r; i <= coordinates[0] + r; i++) {
-			for (int j = coordinates[1] - r; j <= coordinates[1] + r; j++) {
-				neighbourhood.add(getCell(i, j));
-			}
-		}
-		return neighbourhood;
-	}
-
-	/**
-	 * Gathers all neighbouring cells within the given radius.
-	 * <p>
-	 * Begin by assuming all cells are in the square 3r*3r centered on (x,y).
-	 * Then exclude the cells that are not inside the circle.
-	 * <p>
-	 * This method may give slightly better memory performance than the Moore
-	 * neighbourhood.
-	 * <p>
-	 * Another way to find these cells may be to iterate row for row and adjust
-	 * the y coordinate as a function of x.
-	 * 
-	 * @param cell
-	 *            Cell to find the neighbourhood of.
-	 * @return Array of cells in the neighbourhood.
-	 */
-	protected List<CACell> gatherNeighboursVanNeumann(CACell cell, int r) {
-		List<CACell> neighbourhood = new ArrayList<CACell>(neighbourhoodSize);
-
-		int[] coordinates = cell.getCoordinates();
-		for (int i = coordinates[0] - r; i < coordinates[0] + r; i++) {
-			for (int j = coordinates[1] - r; j < coordinates[1] + r; j++) {
-				if (((i - coordinates[0]) * (i - coordinates[0]))
-						+ ((j - coordinates[1]) * (j - coordinates[1])) <= r
-						* r) {
-					neighbourhood.add(getCell(i, j));
-				}
-			}
-		}
-		return neighbourhood;
-	}
-
-	/**
-	 * Sets the picture to process and processes it by updating cells until they
-	 * are all done (that is, until they all become inactive).
+	 * Sets the picture to process and does so by updating cells until they are
+	 * all done (that is, until they all become inactive).
 	 * 
 	 * @param picture
 	 *            Picture to process.
 	 * @return Processed picture.
 	 */
 	public Picture apply(Picture picture) {
-		System.out.println(this.getClass().getSimpleName() + " started.");
-		ruleStopwatch.start();
+		try {
+			System.out.println(this.getClass().getSimpleName() + " started.");
+			Stopwatch stopwatch = new Stopwatch();
 
-		setPicture(picture);
-		if (drawOnModelUpdate || drawOnCellUpdate) {
-			draw();
-		}
+			setPicture(picture);
+			pictureFrame.setVisible(visible);
 
-		ruleStopwatch.print("Loading complete, elapsed time: ");
-		ruleStopwatch.start();
+			stopwatch.print("Loading complete, elapsed time: ");
 
-		if (cellRules == null || cellRules.isEmpty()) {
-			throw new RuntimeException("No cell rules defined...");
-		}
-		Iterator<CACellRule> ruleIterator = cellRules.iterator();
-		currentCellRule = ruleIterator.next();
-
-		active = true;
-		while (active) {
-			passStopwatch.start();
-			updateModel();
-
-			passes++;
-			pictureBefore = new Picture(pictureAfter);
-			if (drawOnModelUpdate) {
-				draw();
-			}
-			if (!active) {
-				System.out.println(currentCellRule + ", elapsed time: "
-						+ ruleStopwatch.time() + " ms");
-				if (ruleIterator.hasNext()) {
-					passes = 0;
-					currentCellRule = ruleIterator.next();
-					ruleStopwatch.start();
-					active = true;
+			for (CellRule rule : cellRules) {
+				rule.start();
+				boolean active = true;
+				// int passes = 0;
+				while (active) {
+					// stopwatch.start();
+					ThreadServer<Cell> threadServer = new ThreadServer<Cell>(rule, lattice, 8);
+					active = threadServer.run();
+					lattice.complete();
+					// passes++;
+					// if (active || passes > 0) {
+					// System.out.println(" pass #" + passes +
+					// ", elapsed time: "
+					// + stopwatch.time() + " ms");
+					// }
 				}
-			} else {
-				System.out.println(" pass #" + passes + ", elapsed time: "
-						+ passStopwatch.time() + " ms");
+				rule.end();
 			}
+		} catch (CAException e) {
+			handleException(e);
 		}
-		return pictureAfter;
+
+		return lattice.getResult();
+	}
+
+	protected void handleException(CAException e) {
+		e.printStackTrace();
+		System.exit(0);
 	}
 
 	/**
-	 * Hands cells to the thread server for them to process as a number of
-	 * separate threads.
-	 * <p>
-	 * Redraws the picture on screen after each pass and sets pictureBefore to
-	 * the updated image.
+	 * Gets the output image.
 	 */
-	protected void updateModel() {
-		active = false;
-		threadServer = new CAThreadServer(this);
-		for (int x = 0; x < lattice.length; x++) {
-			for (int y = 0; y < lattice[0].length; y++) {
-				threadServer.enqueue(lattice[x][y]);
-			}
-		}
-		threadServer.run();
+	public Picture getResult() {
+		return lattice.getResult();
 	}
 
-	/**
-	 * Applies subsequent changes to the CA that do not relate to individual
-	 * cells. Subclasses should extend this.
-	 */
-	protected void postProcess() {
-		/* Method stub */
+	public PicturePanel getPicturePanel() {
+		return pictureFrame.getPicturePanel();
 	}
 
-	/**
-	 * Applies the current process to the cell.
-	 * 
-	 * @param cell
-	 *            The cell to update.
-	 */
-	public void updateCell(CACell cell) {
-		currentCellRule.update(cell);
-
-		if (drawOnCellUpdate && cell.validate) {
-			int[] coordinates = cell.getCoordinates();
-			Graphics2D graphics = pictureAfter.getImage().createGraphics();
-			graphics.setColor(pictureAfter.get(coordinates[0], coordinates[1]));
-			graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
-			cell.validate = false;
-		}
-	}
-
-	/**
-	 * Caches the neighbouring cells of the specified cell.
-	 * 
-	 * @param cell
-	 *            The cell to initialize.
-	 */
-	public List<CACell> gatherNeighbours(CACell cell) {
-		List<CACell> neighbourhood = null;
-		switch (neighbourhoodModel) {
-		case MOORE_NEIGHBOURHOOD:
-			neighbourhood = gatherNeighboursMoore(cell, r);
-			break;
-		case VANNEUMANN_NEIGHBOURHOOD:
-			neighbourhood = gatherNeighboursVanNeumann(cell, r);
-			break;
-		}
-		return neighbourhood;
-	}
-
-	/**
-	 * Gets the cell corresponding to (x,y) in the source image.
-	 * <p>
-	 * Returns the paddingCell when coordinates are out of bounds.
-	 * 
-	 * @param x
-	 *            Cell's x-coordinate.
-	 * @param y
-	 *            Cell's y-coordinate.
-	 * @return Cell at the specified position.
-	 */
-	public CACell getCell(int x, int y) {
-		if (x >= 0 && y >= 0 && x < lattice.length && y < lattice[0].length) {
-			return lattice[x][y];
-		} else {
-			return paddingCell;
-		}
-	}
-
-	/**
-	 * Sets the colour of the pixel corresponding to the cell.
-	 * 
-	 * @param cell
-	 *            The cell to set the colour of.
-	 * @param colour
-	 *            The colour to set the cell to.
-	 */
-	public void setColour(CACell cell, Color colour) {
-		int[] coordinates = cell.getCoordinates();
-		// pictureAfter.set(coordinates[0], coordinates[1], colour);
-
-		Graphics graphics = pictureAfter.getImage().createGraphics();
-		graphics.setColor(colour);
-		graphics.fillRect(coordinates[0], coordinates[1], 1, 1);
-		cell.validate = true;
-	}
-
-	/**
-	 * Gets the colour of the pixel corresponding to the cell.
-	 * 
-	 * @param cell
-	 *            The cell to get the colour of.
-	 * @return Colour of the pixel at specified position.
-	 */
-	public Color getColour(CACell cell) {
-		int[] coordinates = cell.getCoordinates();
-		return pictureBefore.get(coordinates[0], coordinates[1]);
-
-	}
-
-	/**
-	 * Gets the number of times this CA has updated its cells.
-	 * 
-	 * @return The number of passes.
-	 */
-	public int getPasses() {
-		return passes;
-	}
-
-	/**
-	 * Gets the epsilon value of the CA.
-	 * 
-	 * @return The epsilon value.
-	 */
-	public float getEpsilon() {
-		return epsilon;
-	}
-
-	/**
-	 * Creates the GUI for the CA if it has not done so already.
-	 */
-	protected void createGUI() {
-		if (frame == null) {
-			frame = new JFrame();
-
-			JMenuBar menuBar = new JMenuBar();
-			JMenu menu = new JMenu("File");
-			menuBar.add(menu);
-			JMenuItem menuItem1 = new JMenuItem(" Save...   ");
-			menuItem1.addActionListener(this);
-			menuItem1.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-					Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-			menu.add(menuItem1);
-			frame.setJMenuBar(menuBar);
-
-			frame.setContentPane(getJLabel());
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			frame.setTitle("CA");
-			frame.setResizable(false);
-			frame.pack();
-			// frame.setVisible(true);
-		}
-	}
-
-	/**
-	 * Return a JLabel containing this Picture, for embedding in a JPanel,
-	 * JFrame or other GUI widget.
-	 * 
-	 * @return The JLabel.
-	 */
-	public JLabel getJLabel() {
-		if (pictureAfter == null || pictureAfter.getImage() == null) {
-			return new JLabel(new ImageIcon());
-		} // no image available
-		ImageIcon icon = new ImageIcon(pictureAfter.getImage());
-		return new JLabel(icon);
-	}
-
-	/**
-	 * Displays the modified image on screen.
-	 */
-	public void draw() {
-		frame.setContentPane(getJLabel());
-		frame.pack();
-		frame.setVisible(true);
-	}
-
-	/**
-	 * Opens a save dialog box when the user selects "Save As" from the menu.
-	 */
-	public void actionPerformed(ActionEvent e) {
-		FileDialog chooser = new FileDialog(frame,
-				"Use a .png or .jpg extension", FileDialog.SAVE);
-		chooser.setVisible(true);
-		if (chooser.getFile() != null) {
-			pictureAfter.save(chooser.getDirectory() + File.separator
-					+ chooser.getFile());
-		}
+	public Lattice2D getLattice() {
+		return lattice;
 	}
 }

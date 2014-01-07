@@ -1,10 +1,7 @@
 package ca.shapedetector.path;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -16,11 +13,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.JFrame;
-
-import std.Picture;
-import ca.CACell;
-import ca.shapedetector.CABlob;
+import ca.Cell;
+import ca.shapedetector.blob.Blob;
 
 /**
  * An abstraction layer for working with paths that describe shapes.
@@ -31,7 +25,7 @@ public class SDPath implements Iterable<double[]> {
 	/** The internal representation of this path. */
 	protected Path2D.Double path;
 
-	public SDPath(CABlob blob) {
+	public SDPath(Blob blob) {
 		path = makePath(blob.getOutlineCells());
 
 		/*
@@ -118,8 +112,8 @@ public class SDPath implements Iterable<double[]> {
 	 * @param cells
 	 * @return
 	 */
-	protected static Path2D.Double makePath(List<CACell> cells) {
-		Iterator<CACell> cellIterator = cells.iterator();
+	protected static Path2D.Double makePath(List<Cell> cells) {
+		Iterator<Cell> cellIterator = cells.iterator();
 		int[] coordinates = cellIterator.next().getCoordinates();
 		Path2D.Double path = new Path2D.Double();
 		path.moveTo(coordinates[0], coordinates[1]);
@@ -137,11 +131,11 @@ public class SDPath implements Iterable<double[]> {
 	 * @param cells
 	 * @return
 	 */
-	public static Area makeArea(List<CACell> cells) {
+	public static Area makeArea(List<Cell> cells) {
 		Area area = new Area();
-		Iterator<CACell> cellIterator = cells.iterator();
+		Iterator<Cell> cellIterator = cells.iterator();
 		while (cellIterator.hasNext()) {
-			CACell cell = cellIterator.next();
+			Cell cell = cellIterator.next();
 			int[] coordinates = cell.getCoordinates();
 			Rectangle2D rectangle = new Rectangle2D.Double(coordinates[0],
 					coordinates[1], 1, 1);
@@ -310,49 +304,10 @@ public class SDPath implements Iterable<double[]> {
 	}
 
 	public void draw(Graphics2D graphics, Color outlineColour, Color fillColour) {
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
-		
-		// setPenRadius(graphics, 1);
 		graphics.setColor(fillColour);
 		graphics.fill(path);
 
 		graphics.setColor(outlineColour);
 		graphics.draw(path);
-	}
-
-	public static void setPenRadius(Graphics2D graphics, double r) {
-		if (r < 0) {
-			throw new RuntimeException("pen radius must be positive");
-		}
-		BasicStroke stroke = new BasicStroke((float) r, BasicStroke.CAP_ROUND,
-				BasicStroke.JOIN_ROUND);
-		// BasicStroke stroke = new BasicStroke((float) penRadius);
-		graphics.setStroke(stroke);
-	}
-
-	public void display(JFrame frame) {
-		SDPath path = new SDPath(this);
-
-		Rectangle bounds = path.path.getBounds();
-		int w = bounds.width + 10;
-		int h = bounds.height + 10;
-		Picture picture = new Picture(w, h);
-		Graphics2D graphics = picture.getImage().createGraphics();
-		graphics.setColor(Color.white);
-		graphics.fillRect(0, 0, w, h);
-
-		path.move(w / 2, h / 2);
-		path.draw(graphics, Color.blue, new Color(255, 255, 0, 40));
-
-		System.out.println("x=" + bounds.x + ", y=" + bounds.y + ", w="
-				+ bounds.width + ", h=" + bounds.height);
-		frame.setContentPane(picture.getJLabel());
-		// displayFrame.validate();
-		frame.setSize(bounds.width, bounds.height);
-		// displayFrame.setPreferredSize(new Dimension(w, h));
-		frame.pack();
-		frame.setVisible(true);
-		return;
 	}
 }
