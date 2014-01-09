@@ -38,7 +38,7 @@ public class ShapeFinderRule extends CellRule {
 		 * No need to save this specialized neighbourhood, it won't be used
 		 * again.
 		 */
-		// cell.setNeighbourhood(neighbourhood);
+		 cell.setNeighbourhood(neighbourhood);
 
 		for (Cell neighbour : neighbourhood) {
 			if (neighbour != cell

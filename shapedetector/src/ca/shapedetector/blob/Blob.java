@@ -1,11 +1,16 @@
 package ca.shapedetector.blob;
 
+import graphics.SDPanel;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import ca.Cell;
 import ca.concurrency.Updatable;
+import ca.shapedetector.ShapeDetector;
+import ca.shapedetector.path.SDPath;
+import ca.shapedetector.shapes.SDShape;
 
 /**
  * A blob made up of CACells. TODO: extend CACell (to take advantage of
@@ -180,13 +185,32 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 * enveloping them.
 	 */
 	public void arrangeOutlineCells() {
+		/* For debugging */
+//		if (ShapeDetector.debug) {
+//			display(outlineCells);
+//		}
+
 		Cell first = firstOutlineCell();
 		if (first == null) {
 			return;
 		} else {
 			LoopFinder loopFinder = new LoopFinder(outlineCells);
 			outlineCells = loopFinder.getLoop(first);
+
+			/* For debugging */
+//			if (ShapeDetector.debug) {
+//				display(outlineCells);
+//			}
 		}
+	}
+
+	/* For debugging */
+	public static void display(List<Cell> cells) {
+		graphics.ShapeFrame.setTheme(SDPanel.DEFAULT_THEME);
+		SDPath path = new SDPath(SDPath.makeArea(cells));
+		SDShape shape = new SDShape(path);
+		graphics.ShapeFrame.reset(shape);
+		graphics.ShapeFrame.display(shape);
 	}
 
 	/**

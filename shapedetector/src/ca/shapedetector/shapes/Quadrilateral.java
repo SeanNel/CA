@@ -63,7 +63,8 @@ public class Quadrilateral extends SDShape {
 	}
 
 	protected void displayUnidentifiedShape(SDShape shape) {
-		graphics.ShapeFrame.setTheme(SDPanel.SIMPLE_THEME);
+//		graphics.ShapeFrame.setTheme(SDPanel.SIMPLE_THEME);
+		graphics.ShapeFrame.setTheme(SDPanel.DEFAULT_THEME);
 		graphics.ShapeFrame.reset(shape);
 		graphics.ShapeFrame.display(shape);
 	}

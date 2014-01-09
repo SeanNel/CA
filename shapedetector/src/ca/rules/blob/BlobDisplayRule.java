@@ -38,6 +38,6 @@ public class BlobDisplayRule extends BlobRule {
 		panel.reset((int) dimensions[0], (int) dimensions[1]);
 		panel.display(shape);
 
-		// Input.waitForSpace();
+//		helpers.Input.waitForSpace();
 	}
 }

@@ -12,11 +12,11 @@ import ca.Cell;
  * Assumes that the cells have Moore neighbourhoods with r=1.
  */
 public class LoopFinder {
-	protected List<Cell> loopCells;
-	protected List<Cell> loop;
+	protected List<Cell> unorderedCells;
+	protected List<Cell> orderedCells;
 
-	public LoopFinder(List<Cell> loopCells) {
-		this.loopCells = loopCells;
+	public LoopFinder(List<Cell> unorderedCells) {
+		this.unorderedCells = unorderedCells;
 	}
 
 	/**
@@ -29,7 +29,7 @@ public class LoopFinder {
 	 *            The first cell in the loop.
 	 */
 	public List<Cell> getLoop(Cell first) {
-		if (loopCells == null || loopCells.size() < 4) {
+		if (unorderedCells == null || unorderedCells.size() < 4) {
 			return null;
 		}
 
@@ -37,15 +37,18 @@ public class LoopFinder {
 		 * TODO: May get better performance with loop as a HashMap or BST,
 		 * because we check whether a cell is contained in it very often.
 		 */
-		loop = new ArrayList<Cell>(loopCells.size());
+		orderedCells = new ArrayList<Cell>(unorderedCells.size());
 		Cell next = first;
 
 		do {
-			loop.add(next);
+			orderedCells.add(next);
+			/* For debugging */
+			// graphics.ShapeFrame.setTheme(SDPanel.HIGHLIGHT_THEME);
+			// Blob.display(orderedCells);
 			next = nextOutlineCell();
 		} while (next != first);
 
-		return loop;
+		return orderedCells;
 	}
 
 	/**
@@ -63,8 +66,9 @@ public class LoopFinder {
 	protected Cell nextOutlineCell() {
 		int stepsBack = 0;
 		Cell next = null;
-		while (next == null && stepsBack < loop.size()) {
-			Cell currentCell = loop.get(loop.size() - stepsBack - 1);
+		while (next == null && stepsBack < orderedCells.size()) {
+			int n = orderedCells.size() - stepsBack - 1;
+			Cell currentCell = orderedCells.get(n);
 			next = nextOutlineCell(currentCell);
 			stepsBack++;
 		}
@@ -81,8 +85,9 @@ public class LoopFinder {
 		List<Cell> neighbourhood = currentCell.getNeighbourhood();
 
 		for (Cell neighbour : neighbourhood) {
-			if ((!loop.contains(neighbour) || neighbour == loop.get(0))
-					&& loopCells.contains(neighbour)) {
+			if ((!orderedCells.contains(neighbour) || neighbour == orderedCells
+					.get(0)) && unorderedCells.contains(neighbour)) {
+				// && unorderedCells.contains(neighbour)
 				return neighbour;
 			}
 		}

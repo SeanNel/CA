@@ -31,7 +31,7 @@ public class BlobMap {
 	protected void loadRules(ShapeDetector ca) {
 		blobRules = new LinkedList<BlobRule>();
 		blobRules.add(new BlobIdentifierRule(this, ca.getShapeList()));
-		// blobRules.add(new BlobDisplayRule(this, ShapeFrame.frame));
+//		blobRules.add(new BlobDisplayRule(this, graphics.ShapeFrame.panel));
 		// blobRules.add(new BlobDrawRule((SDPictureFrame) ca.getPictureFrame(),
 		// this));
 	}
@@ -56,11 +56,11 @@ public class BlobMap {
 			for (Blob blob : blobs) {
 				rule.update(blob);
 			}
-			
+
 			/* Multithreaded method. For improved performance. */
-//			ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
-//					blobs);
-//			threadServer.run();
+			// ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
+			// blobs);
+			// threadServer.run();
 
 			rule.end();
 			System.out.println(rule + ", elapsed time: " + ruleStopwatch.time()

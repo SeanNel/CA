@@ -28,7 +28,7 @@ public class OutlineFinderRule extends CellRule {
 			BlobMap blobMap) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
-		outlineNeighbourhood = new MooreOutline(lattice);
+		outlineNeighbourhood = new MooreOutline(lattice, blobMap);
 	}
 
 	public void update(Cell cell) {

@@ -148,18 +148,13 @@ public abstract class DiscreteFunction<V extends Number> implements
 			}
 			break;
 		case RESIZE_LOOP:
-			// todo
-			// int n = (int) ((double) f.length * factor);
-			// double[] f1 = new double[n];
-			//
-			// int x = 0;
-			// for (int i = 0; i < n; i++) {
-			// x++;
-			// if (x >= f.length) {
-			// x = 0;
-			// }
-			// f1[i] = f[x];
-			// }
+			int xx = 0;
+			for (int x = 0; x < n; x++) {
+				if (xx >= f.size()) {
+					xx = 0;
+				}
+				real.add(f.get(xx++));
+			}
 			break;
 		}
 	}

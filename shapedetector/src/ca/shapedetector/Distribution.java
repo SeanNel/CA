@@ -1,7 +1,5 @@
 package ca.shapedetector;
 
-import helpers.Stopwatch;
-
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
@@ -15,7 +13,6 @@ import math.vector.CartesianVector;
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.SDPathIterator;
 import ca.shapedetector.shapes.SDShape;
-import exceptions.CAException;
 
 public class Distribution {
 	/* Enumerates the distribution types. */
@@ -247,7 +244,7 @@ public class Distribution {
 		DiscreteFunctionDoublePeriodic f = getGradientDistribution(shape,
 				distributionType);
 		int resolution = f.size();
-		// Stopwatch stopwatch = new Stopwatch();
+		// helpers.Stopwatch stopwatch = new helpers.Stopwatch();
 		f = filterNoise(f, distributionType);
 		// stopwatch.print("filterNoise>");
 
@@ -265,12 +262,12 @@ public class Distribution {
 			f.printValues(maxima);
 		}
 
-		 if (maxima.size() < s) {
-		 return null;
-		 }
-//		if (maxima.size() == 0) {
-//			return null;
-//		}
+		if (maxima.size() < s) {
+			return null;
+		}
+		// if (maxima.size() == 0) {
+		// return null;
+		// }
 
 		Iterator<Integer> iterator = maxima.iterator();
 
@@ -334,7 +331,16 @@ public class Distribution {
 			// (double) n / 4.0);
 			// Filter.bandPass(distributionData, p, p + 1);
 
+			/* Mean filter */
 			int n = f.size();
+			double[] fData = f.toArray();
+			Filter.meanFilter(fData, 5);
+			f = new DiscreteFunctionDoublePeriodic(fData);
+
+			/*
+			 * Regress to a polynomial. The order used (n/5) is kind of
+			 * arbitrary.
+			 */
 			double[] coefficients = f.regress(n / 5);
 			f = new DiscreteFunctionDoublePeriodic(coefficients, n);
 			break;

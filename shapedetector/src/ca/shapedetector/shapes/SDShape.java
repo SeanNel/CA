@@ -196,33 +196,40 @@ public class SDShape implements Updatable {
 	 * @return The difference ratio.
 	 */
 	public double compare(SDShape shape) {
-		DiscreteFunctionDoublePeriodic f1 = Distribution
-				.getGradientDistribution(this, comparisonType);
 		DiscreteFunctionDoublePeriodic f2 = Distribution
+				.getGradientDistribution(this, comparisonType);
+		DiscreteFunctionDoublePeriodic f1 = Distribution
 				.getGradientDistribution(shape, comparisonType);
 
 		f1.resize(100, DiscreteFunction.RESIZE_STRETCH);
 		f2.resize(100, DiscreteFunction.RESIZE_STRETCH);
 
-		DiscreteFunctionDoublePeriodic g = f1.crossCorrelation(f2);
-		/* Assumes the max correlation is a relative measure. */
-		// double correlation = g.maximum();
+		int theta = f1.phaseDifference(f2);
+		f2.rotate(theta);
+		double similarity = f1.similarity(f2);
 
 		/*
-		 * Assumes the max correlation is an absolute measure, so it finds a
-		 * relative measure.
+		 * This method doesn't work (always returns 1.0). Cross-correlation does
+		 * not seem to be an accurate measure of similarity between functions.
 		 */
-		int peak = g.maximumX();
-		f2.rotate(peak);
-		double correlation = f1.correlation(f2);
+		/* TODO: fix problem: crossCorrelation always peaks at 0 */
+		// DiscreteFunctionDoublePeriodic g = f1.crossCorrelation(f2);
+		// double correlation = g.maximum();
+		//
+		// /* Gets the autocorrelation. */
+		// DiscreteFunctionDoublePeriodic h = f1.crossCorrelation(f1);
+		// /* The 1st value of an autocorrelation is always the maximum. */
+		// double norm = h.value(0);
+		//
+		// /* Normalizes the correlation. */
+		// double similarity = correlation / norm;
 
 		if (ShapeDetector.debug) {
-			System.out.println(correlation);
+			System.out.println(similarity);
 			graphics.LineChartFrame.frame.setTitle("Correlation");
-			graphics.LineChartFrame.displayData(f1, f2, g);
+			graphics.LineChartFrame.displayData(f1, f2);
 		}
-
-		return correlation;
+		return similarity;
 	}
 
 	/**

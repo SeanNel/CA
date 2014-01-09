@@ -30,6 +30,7 @@ public class SDPanel extends PicturePanel {
 	public static final int UNRECOGNIZED_THEME = 2;
 	public static final int SIMPLE_THEME = 3;
 	public static final int IDENTITY_THEME = 4;
+	public static final int HIGHLIGHT_THEME = 5;
 
 	protected boolean reset = true;
 	protected double[] drawCursor;
@@ -148,11 +149,15 @@ public class SDPanel extends PicturePanel {
 		case IDENTITY_THEME:
 			outlineColour = Color.magenta;
 			labelColour = new Color(0, 0, 0, 0);
+			fillColour = new Color(230, 245, 230, 50);
 			break;
 		case SIMPLE_THEME:
 			outlineColour = Color.blue;
 			labelColour = new Color(0, 0, 0, 0);
 			break;
+		case HIGHLIGHT_THEME:
+			outlineColour = Color.red;
+			fillColour = new Color(255, 245, 230, 100);
 		default:
 			fillColour = new Color(230, 245, 230, 100);
 			outlineColour = Color.red;

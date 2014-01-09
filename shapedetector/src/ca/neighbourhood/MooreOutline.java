@@ -5,6 +5,9 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
+import ca.lattice.Lattice2D;
+import ca.shapedetector.BlobMap;
+import ca.shapedetector.ShapeList;
 import exceptions.NullParameterException;
 
 /**
@@ -17,9 +20,12 @@ import exceptions.NullParameterException;
  * PathIterators has been resolved.
  */
 public class MooreOutline extends Neighbourhood2D {
+	protected BlobMap blobMap;
 
-	public MooreOutline(Lattice lattice) throws NullParameterException {
+	public MooreOutline(Lattice lattice, BlobMap blobMap)
+			throws NullParameterException {
 		super(lattice);
+		this.blobMap = blobMap;
 	}
 
 	public List<Cell> gatherNeighbours(Cell cell) {
@@ -38,15 +44,29 @@ public class MooreOutline extends Neighbourhood2D {
 		// add(neighbourhood, ca.getCell(x + 1, y - 1));
 		// add(neighbourhood, ca.getCell(x, y - 1));
 
-		add(neighbourhood, lattice.getCell(x, y - 1));
-		add(neighbourhood, lattice.getCell(x + 1, y - 1));
-		add(neighbourhood, lattice.getCell(x + 1, y));
-		add(neighbourhood, lattice.getCell(x + 1, y + 1));
-		add(neighbourhood, lattice.getCell(x, y + 1));
-		add(neighbourhood, lattice.getCell(x - 1, y + 1));
-		add(neighbourhood, lattice.getCell(x - 1, y));
-		add(neighbourhood, lattice.getCell(x - 1, y - 1));
+		add(neighbourhood, cell, lattice.getCell(x, y - 1));
+		add(neighbourhood, cell, lattice.getCell(x + 1, y - 1));
+		add(neighbourhood, cell, lattice.getCell(x + 1, y));
+		add(neighbourhood, cell, lattice.getCell(x + 1, y + 1));
+		add(neighbourhood, cell, lattice.getCell(x, y + 1));
+		add(neighbourhood, cell, lattice.getCell(x - 1, y + 1));
+		add(neighbourhood, cell, lattice.getCell(x - 1, y));
+		add(neighbourhood, cell, lattice.getCell(x - 1, y - 1));
 
 		return neighbourhood;
+	}
+
+	/**
+	 * Only adds the neighbour if it belongs to the same blob.
+	 * 
+	 * @param neighbourhood
+	 * @param cell
+	 * @param neighbour
+	 */
+	protected void add(List<Cell> neighbourhood, Cell cell, Cell neighbour) {
+		if (cell != null && cell != Lattice2D.paddingCell
+				&& blobMap.getBlob(cell) == blobMap.getBlob(neighbour)) {
+			neighbourhood.add(neighbour);
+		}
 	}
 }

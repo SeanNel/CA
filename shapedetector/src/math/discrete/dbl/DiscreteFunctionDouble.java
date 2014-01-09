@@ -81,15 +81,35 @@ public class DiscreteFunctionDouble extends DiscreteFunction<Double> {
 	}
 
 	/**
-	 * Takes the difference of the functions.
+	 * Subtracts a constant.
+	 */
+	public void subtract(double c) {
+		for (int x = 0; x < real.size(); x++) {
+			real.set(x, real.get(x) - c);
+		}
+	}
+
+	/**
+	 * Takes the difference between the functions.
 	 * 
 	 * @param f
 	 */
-	public void subtract(DiscreteFunctionDoublePeriodic f) {
+	public void subtract(UnivariateFunction f) {
 		for (int x = 0; x < real.size(); x++) {
 			real.set(x, real.get(x) - f.value(x));
 		}
 	}
+
+//	/**
+//	 * Takes the difference between the functions.
+//	 * 
+//	 * @param f
+//	 */
+//	public void subtract(DiscreteFunctionDoublePeriodic f) {
+//		for (int x = 0; x < real.size(); x++) {
+//			real.set(x, real.get(x) - f.value(x));
+//		}
+//	}
 
 	/**
 	 * Multiplies by a constant.
@@ -120,7 +140,7 @@ public class DiscreteFunctionDouble extends DiscreteFunction<Double> {
 	 */
 	public void absoluteValue() {
 		for (int x = 0; x < real.size(); x++) {
-			real.set(x, Math.abs(real.get(x) ));
+			real.set(x, Math.abs(real.get(x)));
 		}
 	}
 

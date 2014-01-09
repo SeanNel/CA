@@ -23,9 +23,9 @@ public abstract class Neighbourhood2D implements Neighbourhood {
 	 * @param neighbourhood
 	 * @param cell
 	 */
-	protected void add(List<Cell> neighbourhood, Cell cell) {
-		if (cell != null && cell != Lattice2D.paddingCell) {
-			neighbourhood.add(cell);
+	protected void add(List<Cell> neighbourhood, Cell neighbour) {
+		if (neighbour != null && neighbour != Lattice2D.paddingCell) {
+			neighbourhood.add(neighbour);
 		}
 	}
 }
