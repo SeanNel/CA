@@ -33,6 +33,9 @@ public class BlobDisplayRule extends BlobRule {
 		// area = SDPath.fillGaps(area);
 		SDPath path = new SDPath(area);
 		SDShape shape = new SDShape(path);
+
+		double[] dimensions = shape.getDimensions();
+		panel.reset((int) dimensions[0], (int) dimensions[1]);
 		panel.display(shape);
 
 		// Input.waitForSpace();

@@ -15,13 +15,13 @@ import ca.concurrency.Updatable;
  */
 public class Blob implements Comparable<Blob>, Updatable {
 	/**
-	 * Collection of cells that make up this shape.
+	 * Collection of cells that make up this blob.
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
 	protected List<Cell> areaCells;
 	/**
-	 * Collection of cells on the perimeter of this shape. This is a subset of
+	 * Collection of cells on the perimeter of this blob. This is a subset of
 	 * areaCells.
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
@@ -29,7 +29,7 @@ public class Blob implements Comparable<Blob>, Updatable {
 	protected List<Cell> outlineCells;
 
 	/**
-	 * The boundary coordinates of this shape (a row each for minima and maxima,
+	 * The boundary coordinates of this blob (a row each for minima and maxima,
 	 * a column for each axis, e.g. x and y).
 	 */
 	protected int[][] boundaries;
@@ -178,10 +178,6 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 * automatically disregards any other enveloped shapes. This does not
 	 * however, do anything to add those shapes' areaCells to the shape
 	 * enveloping them.
-	 * <p>
-	 * If areas are to be used for comparison, we should also add those
-	 * areaCells where appropriate. This also means that each cell would now
-	 * possibly be mapped to more than one shape.
 	 */
 	public void arrangeOutlineCells() {
 		Cell first = firstOutlineCell();
@@ -228,6 +224,12 @@ public class Blob implements Comparable<Blob>, Updatable {
 		}
 	}
 
+	/**
+	 * Gets a boolean signifying whether this blob should attempt to identify
+	 * itself.
+	 * 
+	 * @return
+	 */
 	public boolean isInsignificant() {
 		int width = boundaries[1][0] - boundaries[0][0];
 		int height = boundaries[1][1] - boundaries[0][1];
@@ -235,6 +237,12 @@ public class Blob implements Comparable<Blob>, Updatable {
 				|| height < 4;
 	}
 
+	/**
+	 * Calculate the center of gravity of this blob. This does not work to find
+	 * the centroid of shapes that surround other shapes.
+	 * 
+	 * @return
+	 */
 	public double[] calculateCentroid() {
 		List<Cell> cells = getAreaCells();
 		double left = boundaries[0][0];

@@ -9,19 +9,21 @@ import ca.shapedetector.shapes.SDShape;
  * Displays all the found shapes on the screen, in turn.
  */
 public class ShapeDisplayRule extends ShapeRule {
-	SDPanel sdPanel;
+	SDPanel panel;
 
-	public ShapeDisplayRule(ShapeList shapeList, SDPanel sdPanel) {
+	public ShapeDisplayRule(ShapeList shapeList, SDPanel panel) {
 		super(shapeList);
-		this.sdPanel = sdPanel;
+		this.panel = panel;
 	}
 
 	public void start() {
-		sdPanel.setVisible(true);
+		panel.setVisible(true);
 	}
 
 	public void update(SDShape shape) {
-		sdPanel.display(shape);
+		double[] dimensions = shape.getDimensions();
+		panel.reset((int) dimensions[0], (int) dimensions[1]);
+		panel.display(shape);
 		Input.waitForSpace();
 	}
 }

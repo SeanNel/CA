@@ -1,8 +1,10 @@
 package graphics;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
@@ -13,6 +15,10 @@ public class PicturePanel extends JPanel {
 	protected BufferedImage image;
 	protected Graphics2D graphics;
 
+	public PicturePanel() {
+		setImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
+	}
+
 	@Override
 	public void paintComponent(Graphics graphics) {
 		super.paintComponent(graphics);
@@ -21,11 +27,19 @@ public class PicturePanel extends JPanel {
 		graphics2D.drawImage(image, 0, 0, this);
 	}
 
+	@Override
+	public Rectangle getBounds() {
+		return new Rectangle(image.getWidth(), image.getHeight());
+	}
+
 	public void setImage(BufferedImage image) {
 		this.image = image;
 		graphics = image.createGraphics();
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON);
+		setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+		setSize(new Dimension(image.getWidth(), image.getHeight()));
+
 		/* invalidate() does not seem to do anything, so just repaint() */
 		repaint();
 	}

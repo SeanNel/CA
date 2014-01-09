@@ -1,19 +1,16 @@
 package ca.shapedetector.shapes;
 
-import graphics.LineChartPanel;
-
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 
-import math.discrete.Correlation;
-import math.discrete.DiscreteFunction;
-
 import ca.shapedetector.Distribution;
+import ca.shapedetector.ShapeDetector;
 import ca.shapedetector.path.SDPath;
+import graphics.SDPanel;
 
 public class Quadrilateral extends SDShape {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
-	protected static double tolerance = 0.2;
+	protected static double tolerance = 0.3;
 
 	private double length;
 	private double width;
@@ -25,10 +22,12 @@ public class Quadrilateral extends SDShape {
 	public Quadrilateral(SDPath path) {
 		super(path);
 		getProperties();
+		comparisonType = Distribution.RADIAL_DISTANCE_DISTRIBUTION;
 	}
 
 	public Quadrilateral(SDShape shape) {
 		super(shape);
+		comparisonType = Distribution.RADIAL_DISTANCE_DISTRIBUTION;
 	}
 
 	protected void loadRelatedShapes() {
@@ -37,7 +36,9 @@ public class Quadrilateral extends SDShape {
 
 	protected SDShape identify(SDShape shape) {
 		/* For debugging */
-		// ShapeFrame.frame.display(shape);
+		if (ShapeDetector.debug) {
+			displayUnidentifiedShape(shape);
+		}
 
 		Quadrilateral identity = getIdentity(shape);
 		if (identity == null) {
@@ -45,9 +46,13 @@ public class Quadrilateral extends SDShape {
 		}
 
 		/* For debugging */
-		// IdentityFrame.frame.display(identity);
+		if (ShapeDetector.debug) {
+			displayIdentityShape(shape, identity);
+		}
 
 		double match = identity.compare(shape);
+		/* Input.waitforSpace() */
+
 		if (1.0 - match < tolerance) {
 			Quadrilateral quad = new Quadrilateral(shape);
 			shape = Rectangle.identify(quad);
@@ -57,25 +62,22 @@ public class Quadrilateral extends SDShape {
 		}
 	}
 
-	public double compare(SDShape shape) {
-		int comparisonType = Distribution.RADIAL_DISTANCE_DISTRIBUTION;
-		// int comparisonType =
-		// SDDistributionHistogram.RADIAL_GRADIENT_DISTRIBUTION;
+	protected void displayUnidentifiedShape(SDShape shape) {
+		graphics.ShapeFrame.setTheme(SDPanel.SIMPLE_THEME);
+		graphics.ShapeFrame.reset(shape);
+		graphics.ShapeFrame.display(shape);
+	}
 
-		double[] f = Distribution.getGradientDistribution(this, comparisonType);
-		double[] g = Distribution
-				.getGradientDistribution(shape, comparisonType);
-
-		f = DiscreteFunction.fit(f, 100);
-		g = DiscreteFunction.fit(g, 100);
-
-		double correlation = Correlation.getCorrelation(f, g);
-
-		System.out.println(correlation);
-		LineChartPanel
-				.displayData(f, "Identity shape", g, "Unidentified shape");
-
-		return correlation;
+	protected void displayIdentityShape(SDShape shape, SDShape identity) {
+		graphics.ShapeFrame.setTheme(SDPanel.IDENTITY_THEME);
+		double[] cursor = graphics.ShapeFrame.getDrawCursor();
+		double[] centre1 = shape.getCentre();
+		double[] centre2 = identity.getCentre();
+		double x = centre2[0] - centre1[0] + cursor[0];
+		double y = centre2[1] - centre1[1] + cursor[1];
+		graphics.ShapeFrame.moveDrawCursor(x, y);
+		graphics.ShapeFrame.display(identity);
+		// graphics.IdentityFrame.display(identity);
 	}
 
 	protected Quadrilateral getIdentity(SDShape shape) {

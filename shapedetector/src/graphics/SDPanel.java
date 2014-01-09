@@ -3,7 +3,7 @@ package graphics;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.shapes.SDShape;
@@ -28,30 +28,51 @@ public class SDPanel extends PicturePanel {
 	public static final int DEFAULT_THEME = 0;
 	public static final int RECOGNIZED_THEME = 1;
 	public static final int UNRECOGNIZED_THEME = 2;
+	public static final int SIMPLE_THEME = 3;
+	public static final int IDENTITY_THEME = 4;
+
+	protected boolean reset = true;
+	protected double[] drawCursor;
 
 	public SDPanel() {
 		setTheme(DEFAULT_THEME);
+		drawCursor = new double[2];
 	}
 
 	/**
 	 * Clears the image and draws the shape in the centre.
 	 * 
 	 * @param shape
+	 * @return the position where the shape was drawn.
 	 */
 	public void display(SDShape shape) {
 		shape = new SDShape(shape);
-		Rectangle2D bounds = shape.getBounds();
-		int w = (int) bounds.getWidth() + padding;
-		int h = (int) bounds.getHeight() + padding;
-		shape.getPath().move(w / 2, h / 2);
+		shape.move(drawCursor[0], drawCursor[1]);
 
-		clear();
 		draw(shape);
 	}
 
-	// public void display(SDPath path) {
-	// path.draw(graphics, outlineColour, fillColour);
-	// }
+	public void reset(int w, int h) {
+		w += padding;
+		h += padding;
+		setImage(new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB));
+		clear();
+		drawCursor[0] = w / 2;
+		drawCursor[1] = h / 2;
+	}
+
+	public void moveDrawCursor(double[] drawCursor) {
+		this.drawCursor = drawCursor;
+	}
+
+	public void moveDrawCursor(double x, double y) {
+		drawCursor[0] = x;
+		drawCursor[1] = y;
+	}
+
+	public double[] getDrawCursor() {
+		return drawCursor;
+	}
 
 	/**
 	 * Draws the shape in place without clearing the image.
@@ -124,6 +145,14 @@ public class SDPanel extends PicturePanel {
 			outlineColour = new Color(255, 255, 0, 40);
 			centroidColour = new Color(200, 50, 0, 40);
 			break;
+		case IDENTITY_THEME:
+			outlineColour = Color.magenta;
+			labelColour = new Color(0, 0, 0, 0);
+			break;
+		case SIMPLE_THEME:
+			outlineColour = Color.blue;
+			labelColour = new Color(0, 0, 0, 0);
+			break;
 		default:
 			fillColour = new Color(230, 245, 230, 100);
 			outlineColour = Color.red;
@@ -132,4 +161,5 @@ public class SDPanel extends PicturePanel {
 			font = DEFAULT_FONT;
 		}
 	}
+
 }

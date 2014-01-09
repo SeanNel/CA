@@ -6,11 +6,10 @@ import java.util.Iterator;
 
 /**
  * Iterates through the path, assuming that the path is a polygonal closed loop.
- * Adds vertices along each step, but does not guarantee that all vertices will
- * be equally spaced (due to corner vertices).
+ * Adds interpolated points along each step, but does not guarantee that all
+ * vertices will be equally spaced (due to corner vertices).
  * 
  * @author Sean
- * 
  */
 public class SDPathIterator implements Iterator<double[]> {
 	protected PathIterator pathIterator;
@@ -18,8 +17,6 @@ public class SDPathIterator implements Iterator<double[]> {
 	protected double step = 1.0;
 	protected double[] currentPosition;
 	protected int currentSegment;
-
-	// protected boolean strict = false;
 
 	public SDPathIterator(Path2D path) {
 		pathIterator = path.getPathIterator(null);
@@ -35,7 +32,6 @@ public class SDPathIterator implements Iterator<double[]> {
 	@Override
 	public double[] next() {
 		currentPosition = nextStep();
-
 		return currentPosition;
 	}
 
@@ -47,10 +43,8 @@ public class SDPathIterator implements Iterator<double[]> {
 				nextPosition[1] - currentPosition[1] };
 		double modulus = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
 		if (modulus > step) {
-			nextPosition[0] = currentPosition[0]
-					+ (v[0] / modulus * step);
-			nextPosition[1] = currentPosition[1]
-					+ (v[1] / modulus * step);
+			nextPosition[0] = currentPosition[0] + (v[0] / modulus * step);
+			nextPosition[1] = currentPosition[1] + (v[1] / modulus * step);
 		} else {
 			pathIterator.next();
 			hasNext = !pathIterator.isDone();

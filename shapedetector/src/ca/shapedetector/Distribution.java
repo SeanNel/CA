@@ -1,5 +1,7 @@
 package ca.shapedetector;
 
+import helpers.Stopwatch;
+
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
@@ -7,13 +9,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import math.discrete.DiscreteFunction;
 import math.discrete.Filter;
-import math.discrete.Stats;
+import math.discrete.dbl.DiscreteFunctionDoublePeriodic;
 import math.vector.CartesianVector;
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.SDPathIterator;
 import ca.shapedetector.shapes.SDShape;
+import exceptions.CAException;
 
 public class Distribution {
 	/* Enumerates the distribution types. */
@@ -44,7 +46,8 @@ public class Distribution {
 	/** Should give a straight-line graph that wraps around at y=2Pi */
 	public static final int RADIAL_ANGLE = 31;
 
-	public static double[] getGradientDistribution(SDShape shape, int type) {
+	public static DiscreteFunctionDoublePeriodic getGradientDistribution(
+			SDShape shape, int type) {
 		if (type == RADIAL_AREA_DISTRIBUTION) {
 			return getAreaDistribution(shape, 16);
 		}
@@ -52,8 +55,8 @@ public class Distribution {
 		List<Double> gradientHistogram = new ArrayList<Double>();
 		List<Double> spacingData = new ArrayList<Double>();
 
-		SDPathIterator pathIterator1 = shape.iterator();
-		SDPathIterator pathIterator2 = shape.iterator();
+		SDPathIterator pathIterator1 = shape.getPath().iterator();
+		SDPathIterator pathIterator2 = shape.getPath().iterator();
 		pathIterator2.next();
 
 		while (pathIterator2.hasNext()) {
@@ -62,7 +65,7 @@ public class Distribution {
 		}
 
 		/* Includes the last point along the path as well. */
-		pathIterator2 = shape.iterator();
+		pathIterator2 = shape.getPath().iterator();
 		gatherGradientData(type, pathIterator1, pathIterator2,
 				gradientHistogram, spacingData, shape.getCentroid());
 
@@ -70,7 +73,7 @@ public class Distribution {
 		// gradientHistogram = balanceGradientDistribution(gradientHistogram,
 		// spacingData);
 
-		return getArray(gradientHistogram);
+		return new DiscreteFunctionDoublePeriodic(gradientHistogram);
 	}
 
 	private static void gatherGradientData(int type,
@@ -170,15 +173,6 @@ public class Distribution {
 		return gradientHistogram;
 	}
 
-	private static double[] getArray(List<Double> list) {
-		double[] array = new double[list.size()];
-		Iterator<Double> iterator = list.iterator();
-		for (int i = 0; i < array.length; i++) {
-			array[i] = iterator.next();
-		}
-		return array;
-	}
-
 	/**
 	 * Gets the area distribution of the path. Greater precision should be
 	 * achieved with more sectors.
@@ -192,7 +186,8 @@ public class Distribution {
 	 * 
 	 * @return The number of sectors to divide the azimuth into.
 	 */
-	public static double[] getAreaDistribution(SDShape shape, int numSectors) {
+	public static DiscreteFunctionDoublePeriodic getAreaDistribution(
+			SDShape shape, int numSectors) {
 		double sweep = 2.0 * Math.PI / (double) numSectors;
 		double w = shape.getBounds().getWidth();
 		double h = shape.getBounds().getHeight();
@@ -204,7 +199,7 @@ public class Distribution {
 		double sectorArea = radius * radius * Math.sin(sweep / 2.0)
 				* Math.cos(sweep / 2.0);
 
-		Area pathShape = shape.getAreaPolygon();
+		Area pathShape = shape.getPath().getAreaPolygon();
 
 		double[] symmetryHistogram = new double[numSectors];
 
@@ -231,42 +226,58 @@ public class Distribution {
 			// System.out.println("theta: " + Math.round(Math.toDegrees(sweep *
 			// (i))) + ", sector area: " + Math.round(projectionArea));
 		}
-		return symmetryHistogram;
+		return new DiscreteFunctionDoublePeriodic(symmetryHistogram);
 	}
 
 	/**
-	 * Returns a polygon with n vertices/sides that is based on the given data.
+	 * Returns a polygonal shape with n vertices/sides that approximates the
+	 * specified shape.
 	 * 
-	 * @return Polygon with n sides.
+	 * @param shape
+	 * @param s
+	 * @return Polygon with s sides.
 	 * */
-	public static Shape getPolygon(SDShape shape, int n) {
+	public static Shape getPolygon(SDShape shape, int s) {
 		/*
 		 * Smooth at most distances, but accuracy becomes bad for long, thin
 		 * shapes.
 		 */
 		int distributionType = Distribution.RADIAL_DISTANCE_DISTRIBUTION;
 
-		double[] distributionData = getGradientDistribution(shape,
+		DiscreteFunctionDoublePeriodic f = getGradientDistribution(shape,
 				distributionType);
-		int resolution = distributionData.length;
-		distributionData = filterNoise(distributionData, distributionType);
+		int resolution = f.size();
+		// Stopwatch stopwatch = new Stopwatch();
+		f = filterNoise(f, distributionType);
+		// stopwatch.print("filterNoise>");
 
-		/* For debugging, display a chart of the distribution data. */
-		// LineChartPanel.displayDifferentialData(distributionData);
+		/* For debugging, displays a chart of the shape distribution. */
+		if (ShapeDetector.debug) {
+			graphics.LineChartFrame.frame.setTitle("Shape distribution");
+			graphics.LineChartFrame.displayData(f);
+		}
 
 		/* Gets a list of local maxima. */
-		List<Integer> maxima = Stats.maxima(distributionData);
+		List<Integer> maxima = f.maxima();
 
-		if (maxima.size() < n) {
-			return null;
+		/* For debugging, display a list of the found maxima. */
+		if (ShapeDetector.debug) {
+			f.printValues(maxima);
 		}
+
+		 if (maxima.size() < s) {
+		 return null;
+		 }
+//		if (maxima.size() == 0) {
+//			return null;
+//		}
 
 		Iterator<Integer> iterator = maxima.iterator();
 
-		double[][] outline = shape.getOutline();
+		double[][] outline = shape.getPath().getOutline();
 		Integer vertex = iterator.next();
-		vertex = (int) Math.floor((double) vertex
-				/ (double) distributionData.length * (double) resolution);
+		vertex = (int) Math.floor((double) vertex / (double) f.size()
+				* (double) resolution);
 
 		double x = outline[vertex][0];
 		double y = outline[vertex][1];
@@ -274,13 +285,14 @@ public class Distribution {
 		Path2D path = new Path2D.Double();
 		path.moveTo(x, y);
 
-		for (int i = 1; i < n; i++) {
+		/* Only adds the 1st s vertices. */
+		for (int i = 1; i < s; i++) {
 			if (!iterator.hasNext()) {
-				return null;
+				break;
 			}
 			vertex = iterator.next();
-			vertex = (int) Math.floor((double) vertex
-					/ (double) distributionData.length * (double) resolution);
+			vertex = (int) Math.floor((double) vertex / (double) f.size()
+					* (double) resolution);
 			x = outline[vertex][0];
 			y = outline[vertex][1];
 			path.lineTo(x, y);
@@ -297,61 +309,36 @@ public class Distribution {
 	}
 
 	/**
-	 * Filters noise according to the distribution type.
+	 * Filters noise according to the distribution type. TODO: small performance
+	 * hit here due to regression...
 	 * 
 	 * @param f
 	 * @param distributionType
 	 * @return The filtered data.
 	 */
-	public static double[] filterNoise(double[] f, int distributionType) {
+	public static DiscreteFunctionDoublePeriodic filterNoise(
+			DiscreteFunctionDoublePeriodic f, int distributionType) {
 		switch (distributionType) {
 		case Distribution.ABSOLUTE_GRADIENT_DISTRIBUTION:
 		case Distribution.RADIAL_GRADIENT_DISTRIBUTION:
-			Filter.meanFilter(f, 5);
+			double a[] = f.toArray();
+			Filter.meanFilter(a, 5);
+			f = new DiscreteFunctionDoublePeriodic(a);
 			break;
 		case Distribution.RADIAL_AREA_DISTRIBUTION:
 			break;
 		case Distribution.RADIAL_DISTANCE_DISTRIBUTION:
-			// DiscreteFunction.medianFilter(f, 5);
+			// Filter.medianFilter(f, 5);
 
 			// int p = (int) Math.floor((double) distributionData.length /
 			// (double) n / 4.0);
-			// DiscreteFunction.bandPass(distributionData, p, p + 1);
+			// Filter.bandPass(distributionData, p, p + 1);
 
-			f = Stats.regress(f, f.length / 5);
+			int n = f.size();
+			double[] coefficients = f.regress(n / 5);
+			f = new DiscreteFunctionDoublePeriodic(coefficients, n);
 			break;
 		}
 		return f;
-	}
-
-	/**
-	 * Normalizes the data.
-	 * 
-	 * @param distributionData
-	 * @param distributionType
-	 */
-	public static void normalize(double[] distributionData, int distributionType) {
-		double min;
-		double max;
-
-		switch (distributionType) {
-		case Distribution.ABSOLUTE_GRADIENT_DISTRIBUTION:
-		case Distribution.RADIAL_GRADIENT_DISTRIBUTION:
-			min = 0.0;
-			max = Math.PI;
-			break;
-		case Distribution.RADIAL_AREA_DISTRIBUTION:
-		case Distribution.RADIAL_DISTANCE_DISTRIBUTION:
-		default:
-			double f[] = distributionData.clone();
-			DiscreteFunction.absoluteValue(f);
-
-			min = Stats.minimum(f);
-			max = Stats.maximum(f);
-			break;
-		}
-
-		DiscreteFunction.add(distributionData, -min);
-		DiscreteFunction.times(distributionData, 1.0 / (max - min));
 	}
 }

@@ -6,7 +6,7 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import math.discrete.DiscreteFunction;
+import math.discrete.dbl.DiscreteFunctionDouble;
 
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartTheme;
@@ -23,15 +23,16 @@ import org.jfree.chart.urls.XYURLGenerator;
 import org.jfree.data.xy.XYIntervalSeries;
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
-public class LineChartPanel extends JFrame {
+public class LineChartFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
 
 	public static final XYIntervalSeriesCollection dataset = new XYIntervalSeriesCollection();
-	protected final static LineChartPanel panel = new LineChartPanel(dataset);
+	public final static LineChartFrame frame = new LineChartFrame(dataset);
 
 	protected JFreeChart chart;
 
-	protected LineChartPanel(XYIntervalSeriesCollection dataset) {
+	protected LineChartFrame(XYIntervalSeriesCollection dataset) {
+		setTitle("Chart");
 		ValueAxis xAxis = new NumberAxis("X");
 		ValueAxis yAxis = new NumberAxis("Y");
 
@@ -74,6 +75,55 @@ public class LineChartPanel extends JFrame {
 		setLocation(screenSize.width / 5, screenSize.height / 5);
 	}
 
+	public JFreeChart getChart() {
+		return chart;
+	}
+
+	public static void displayData(final double[]... f) {
+		synchronized (dataset) {
+			dataset.removeAllSeries();
+			int i = 0;
+			for (double[] s : f) {
+				dataset.addSeries(frame.getSeries(s, "Series " + i++));
+			}
+		}
+		frame.setVisible(true);
+	}
+
+	public static void displayData(final DiscreteFunctionDouble... f) {
+		synchronized (dataset) {
+			dataset.removeAllSeries();
+			int i = 0;
+			for (DiscreteFunctionDouble s : f) {
+				dataset.addSeries(frame.getSeries(s.toArray(), "f" + i++
+						+ "(x)"));
+			}
+		}
+		frame.setVisible(true);
+	}
+
+	public static void displayDifferentialData(DiscreteFunctionDouble f) {
+		f = f.clone();
+		synchronized (dataset) {
+			dataset.removeAllSeries();
+			dataset.addSeries(frame.getSeries(f, "f(x)"));
+
+			f = f.derivative();
+			dataset.addSeries(frame.getSeries(f, "d/dx f(x)"));
+
+			f = f.derivative();
+			dataset.addSeries(frame.getSeries(f, "d^2/dx^2 f(x)"));
+		}
+		frame.setVisible(true);
+
+		/* for debugging */
+		frame.repaint();
+	}
+
+	public XYIntervalSeries getSeries(DiscreteFunctionDouble f, String label) {
+		return getSeries(f.toArray(), label);
+	}
+
 	public XYIntervalSeries getSeries(double[] f, String label) {
 		XYIntervalSeries f1Series = new XYIntervalSeries(label);
 
@@ -81,42 +131,5 @@ public class LineChartPanel extends JFrame {
 			f1Series.add(i, i, i, f[i], f[i], f[i]);
 		}
 		return f1Series;
-	}
-
-	public JFreeChart getChart() {
-		return chart;
-	}
-
-	public static void displayData(double[] f, String fLabel) {
-		synchronized (dataset) {
-			dataset.removeAllSeries();
-			dataset.addSeries(panel.getSeries(f, fLabel));
-		}
-		panel.setVisible(true);
-	}
-
-	public static void displayData(double[] f, String fLabel, double[] g,
-			String gLabel) {
-		synchronized (dataset) {
-			dataset.removeAllSeries();
-			dataset.addSeries(panel.getSeries(f, fLabel));
-			dataset.addSeries(panel.getSeries(g, gLabel));
-		}
-		panel.setVisible(true);
-	}
-
-	public static void displayDifferentialData(double[] f) {
-		f = f.clone();
-		synchronized (dataset) {
-			dataset.removeAllSeries();
-			dataset.addSeries(panel.getSeries(f, "f(x)"));
-
-			DiscreteFunction.differentiate(f);
-			dataset.addSeries(panel.getSeries(f, "d/dx f(x)"));
-
-			DiscreteFunction.differentiate(f);
-			dataset.addSeries(panel.getSeries(f, "d^2/dx^2 f(x)"));
-		}
-		panel.setVisible(true);
 	}
 }

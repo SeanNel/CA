@@ -7,7 +7,7 @@ import ca.Cell;
 
 /**
  * A basic algorithm for taking a collection of cells that form a loop and
- * places them in order.
+ * placing them in order.
  * <p>
  * Assumes that the cells have Moore neighbourhoods with r=1.
  */
@@ -33,6 +33,10 @@ public class LoopFinder {
 			return null;
 		}
 
+		/*
+		 * TODO: May get better performance with loop as a HashMap or BST,
+		 * because we check whether a cell is contained in it very often.
+		 */
 		loop = new ArrayList<Cell>(loopCells.size());
 		Cell next = first;
 
@@ -67,11 +71,16 @@ public class LoopFinder {
 		return next;
 	}
 
+	/**
+	 * Gets the cell next to the specified cell.
+	 * 
+	 * @param currentCell
+	 * @return
+	 */
 	protected Cell nextOutlineCell(Cell currentCell) {
 		List<Cell> neighbourhood = currentCell.getNeighbourhood();
 
 		for (Cell neighbour : neighbourhood) {
-			/* TODO: outlineCells >> hashSet or bst etc? */
 			if ((!loop.contains(neighbour) || neighbour == loop.get(0))
 					&& loopCells.contains(neighbour)) {
 				return neighbour;

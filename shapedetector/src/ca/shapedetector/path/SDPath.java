@@ -5,8 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
@@ -44,10 +42,9 @@ public class SDPath implements Iterable<double[]> {
 		// stopwatch.start();
 
 		/*
-		 * TODO: Should fill the gaps in the path until the outline finder works
-		 * in all cases.
+		 * TODO: May need to fill the gaps in the path until the outline finder
+		 * works in all cases.
 		 */
-
 	}
 
 	/**
@@ -58,7 +55,10 @@ public class SDPath implements Iterable<double[]> {
 	public SDPath(SDPath original) {
 		path = (Path2D.Double) original.path.clone();
 
-		/* The following may be slightly more efficient by skipping the cast */
+		/*
+		 * The following may or may not be slightly more efficient by avoiding
+		 * the cast.
+		 */
 		// path = new Path2D.Double();
 		// path.append(original.path, true);
 	}
@@ -72,29 +72,6 @@ public class SDPath implements Iterable<double[]> {
 	public SDPath(Shape shape) {
 		path = new Path2D.Double();
 		path.append(shape, true);
-	}
-
-	/**
-	 * Creates a polygonal estimation of the given ellipse.
-	 * 
-	 * @param shape
-	 */
-	public SDPath(Ellipse2D shape) {
-		FlatteningPathIterator pathIterator = new FlatteningPathIterator(
-				shape.getPathIterator(null), 0.2); // 3.0
-		double[] coordinates = new double[6];
-		pathIterator.currentSegment(coordinates);
-
-		path = new Path2D.Double();
-		path.moveTo(coordinates[0], coordinates[1]);
-		pathIterator.next();
-
-		while (!pathIterator.isDone()) {
-			pathIterator.currentSegment(coordinates);
-			path.lineTo(coordinates[0], coordinates[1]);
-			pathIterator.next();
-		}
-		path.closePath();
 	}
 
 	/**
@@ -233,7 +210,7 @@ public class SDPath implements Iterable<double[]> {
 	 * @param x
 	 * @param y
 	 */
-	public void move(int x, int y) {
+	public void move(double x, double y) {
 		double x0 = path.getBounds2D().getCenterX();
 		double y0 = path.getBounds2D().getCenterY();
 

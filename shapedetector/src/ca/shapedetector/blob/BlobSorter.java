@@ -5,7 +5,13 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-
+/**
+ * For debugging. Sorts found blobs in a logical sequence, according to their
+ * positions in the image.
+ * 
+ * @author Sean
+ * 
+ */
 public class BlobSorter implements Comparable<BlobSorter> {
 	public Blob blob;
 

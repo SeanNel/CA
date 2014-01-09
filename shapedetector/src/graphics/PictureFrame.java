@@ -1,12 +1,15 @@
 package graphics;
 
-import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -19,7 +22,7 @@ public class PictureFrame extends JFrame implements ActionListener {
 	protected PicturePanel picturePanel;
 
 	public PictureFrame(PicturePanel picturePanel) {
-		// loadMenuBar();
+		loadMenuBar();
 		this.picturePanel = picturePanel;
 		setContentPane(picturePanel);
 
@@ -27,6 +30,50 @@ public class PictureFrame extends JFrame implements ActionListener {
 		// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setTitle("CA");
 		// setResizable(false);
+	}
+
+	public void setImage(BufferedImage image) {
+//		picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
+//				.getHeight()));
+		picturePanel.setImage(image);
+		pack();
+	}
+
+	/**
+	 * Displays the modified image on screen.
+	 */
+	public void display() {
+		setVisible(true);
+	}
+
+	public PicturePanel getPicturePanel() {
+		return picturePanel;
+	}
+
+	/**
+	 * Save the picture to a file in a standard image format. The filetype must
+	 * be .png or .jpg.
+	 */
+	public void save(String name) {
+		save(new File(name));
+	}
+
+	/**
+	 * Save the picture to a file in a standard image format.
+	 */
+	public void save(File file) {
+		String filename = file.getName();
+		String suffix = filename.substring(filename.lastIndexOf('.') + 1);
+		suffix = suffix.toLowerCase();
+		if (suffix.equals("jpg") || suffix.equals("png")) {
+			try {
+				ImageIO.write(picturePanel.image, suffix, file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("Error: filename must end in .jpg or .png");
+		}
 	}
 
 	protected void loadMenuBar() {
@@ -41,34 +88,15 @@ public class PictureFrame extends JFrame implements ActionListener {
 		setJMenuBar(menuBar);
 	}
 
-	public void setImage(BufferedImage image) {
-		picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
-				.getHeight()));
-		picturePanel.setImage(image);
-		pack();
-	}
-
 	/**
 	 * Opens a save dialog box when the user selects "Save As" from the menu.
 	 */
 	public void actionPerformed(ActionEvent e) {
-		// FileDialog chooser = new FileDialog(this,
-		// "Use a .png or .jpg extension", FileDialog.SAVE);
-		// chooser.setVisible(true);
-		// if (chooser.getFile() != null) {
-		// picture.save(chooser.getDirectory() + File.separator
-		// + chooser.getFile());
-		// }
-	}
-
-	/**
-	 * Displays the modified image on screen.
-	 */
-	public void display() {
-		setVisible(true);
-	}
-
-	public PicturePanel getPicturePanel() {
-		return picturePanel;
+		FileDialog chooser = new FileDialog(this,
+				"Use a .png or .jpg extension", FileDialog.SAVE);
+		chooser.setVisible(true);
+		if (chooser.getFile() != null) {
+			save(chooser.getDirectory() + File.separator + chooser.getFile());
+		}
 	}
 }

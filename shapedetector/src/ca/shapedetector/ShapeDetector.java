@@ -40,6 +40,8 @@ import ca.rules.cell.ShapeFinderRule;
 public class ShapeDetector extends CA {
 	protected BlobMap blobMap;
 	protected ShapeList shapeList;
+	
+	public static boolean debug = true;
 
 	/**
 	 * Applies shape detector to image given as argument on the command line.
@@ -152,6 +154,11 @@ public class ShapeDetector extends CA {
 		} catch (CAException e) {
 			handleException(e);
 		}
+
+		graphics.ShapeFrame.frame.setVisible(false);
+		graphics.IdentityFrame.frame.setVisible(false);
+		graphics.LineChartFrame.frame.setVisible(false);
+
 		return getResult();
 	}
 

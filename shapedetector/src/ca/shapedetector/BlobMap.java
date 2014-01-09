@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import ca.Cell;
-import ca.concurrency.ThreadServer;
 import ca.rules.blob.*;
 import ca.shapedetector.blob.*;
 import exceptions.CAException;
@@ -53,14 +52,15 @@ public class BlobMap {
 
 		for (BlobRule rule : blobRules) {
 			rule.start();
-			/* Linear method */
-			// for (Blob blob : blobs) {
-			// rule.update(blob);
-			// }
-			/* Multithreaded method */
-			ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
-					blobs);
-			threadServer.run();
+			/* Linear method. For easier debugging. */
+			for (Blob blob : blobs) {
+				rule.update(blob);
+			}
+			
+			/* Multithreaded method. For improved performance. */
+//			ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
+//					blobs);
+//			threadServer.run();
 
 			rule.end();
 			System.out.println(rule + ", elapsed time: " + ruleStopwatch.time()

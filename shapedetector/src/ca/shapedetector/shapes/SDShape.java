@@ -1,13 +1,16 @@
 package ca.shapedetector.shapes;
 
-import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import math.discrete.DiscreteFunction;
+import math.discrete.dbl.DiscreteFunctionDoublePeriodic;
+
 import ca.concurrency.Updatable;
+import ca.shapedetector.Distribution;
+import ca.shapedetector.ShapeDetector;
 import ca.shapedetector.path.SDPath;
-import ca.shapedetector.path.SDPathIterator;
 import exceptions.MethodNotImplementedException;
 
 /**
@@ -15,7 +18,7 @@ import exceptions.MethodNotImplementedException;
  * 
  * @author Sean
  */
-public class SDShape implements Iterable<double[]>, Updatable {
+public class SDShape implements Updatable {
 	/** Path that defines this shape as a polygon. */
 	protected SDPath path;
 	protected double[] centroid;
@@ -23,6 +26,7 @@ public class SDShape implements Iterable<double[]>, Updatable {
 
 	/** A list of shapes that this shape is a supertype of. */
 	protected List<SDShape> relatedShapes;
+	protected int comparisonType;
 
 	/**
 	 * Master constructor.
@@ -53,10 +57,10 @@ public class SDShape implements Iterable<double[]>, Updatable {
 	 * @param shape
 	 */
 	public SDShape(SDShape shape) {
-		path = shape.path;
+		path = new SDPath(shape.path);
 		// relatedShapes...
 
-		centroid = shape.centroid;
+		centroid = shape.centroid.clone();
 		area = shape.area;
 	}
 
@@ -65,7 +69,7 @@ public class SDShape implements Iterable<double[]>, Updatable {
 		/*
 		 * Cannot derive the centroid from the areaCells when shapes contain
 		 * nested shapes. So for now, the centre of gravity is the same as the
-		 * geometric centre. This only becomes a problem once we test for
+		 * geometric centre. This only becomes an issue once we test for
 		 * non-symmetrical shapes.
 		 */
 		centroid = new double[2];
@@ -73,6 +77,9 @@ public class SDShape implements Iterable<double[]>, Updatable {
 		centroid[1] = path.getCentreY();
 	}
 
+	/**
+	 * Loads the list of related shapes.
+	 */
 	protected void loadRelatedShapes() {
 		/* Method stub */
 	}
@@ -112,7 +119,8 @@ public class SDShape implements Iterable<double[]>, Updatable {
 	}
 
 	/**
-	 * Gets this CAShape's centroid (center of gravity).
+	 * Gets this CAShape's centroid (center of gravity). This is currently the
+	 * same as the geometric centre.
 	 * 
 	 * @return The centroid's coordinates.
 	 */
@@ -172,50 +180,63 @@ public class SDShape implements Iterable<double[]>, Updatable {
 	 * Subclasses should extend this.
 	 * 
 	 * @return An instance of the detected shape if detected or null otherwise.
-	 * @throws MethodNotImplementedException 
+	 * @throws MethodNotImplementedException
 	 */
-	protected SDShape identify(SDShape shape) throws MethodNotImplementedException {
+	protected SDShape identify(SDShape shape)
+			throws MethodNotImplementedException {
 		throw new MethodNotImplementedException();
 	}
 
 	/**
 	 * Calculates the difference ratio between this shape and the specified
 	 * shape.
-	 * <p>
-	 * Subclasses should extend this method.
 	 * 
 	 * @param shape
 	 *            The shape to compare this shape to.
 	 * @return The difference ratio.
-	 * @throws MethodNotImplementedException 
 	 */
-	public double compare(SDShape shape) throws MethodNotImplementedException {
-		throw new MethodNotImplementedException();
+	public double compare(SDShape shape) {
+		DiscreteFunctionDoublePeriodic f1 = Distribution
+				.getGradientDistribution(this, comparisonType);
+		DiscreteFunctionDoublePeriodic f2 = Distribution
+				.getGradientDistribution(shape, comparisonType);
+
+		f1.resize(100, DiscreteFunction.RESIZE_STRETCH);
+		f2.resize(100, DiscreteFunction.RESIZE_STRETCH);
+
+		DiscreteFunctionDoublePeriodic g = f1.crossCorrelation(f2);
+		/* Assumes the max correlation is a relative measure. */
+		// double correlation = g.maximum();
+
+		/*
+		 * Assumes the max correlation is an absolute measure, so it finds a
+		 * relative measure.
+		 */
+		int peak = g.maximumX();
+		f2.rotate(peak);
+		double correlation = f1.correlation(f2);
+
+		if (ShapeDetector.debug) {
+			System.out.println(correlation);
+			graphics.LineChartFrame.frame.setTitle("Correlation");
+			graphics.LineChartFrame.displayData(f1, f2, g);
+		}
+
+		return correlation;
 	}
 
 	/**
-	 * Gets an Area object based on this shape. Used by SDDistributionHistogram
-	 * to calculate the areas of sectors and for graphics display.
+	 * Gets the path that describes this shape's outline.
 	 * 
 	 * @return
 	 */
-	public Area getAreaPolygon() {
-		return path.getAreaPolygon();
-	}
-
 	public SDPath getPath() {
 		return path;
 	}
 
-	/**
-	 * Iterates along points on the outline of this shape.
-	 */
-	@Override
-	public SDPathIterator iterator() {
-		return path.iterator();
-	}
-
-	public double[][] getOutline() {
-		return path.getOutline();
+	public void move(double x, double y) {
+		path.move(x, y);
+		centroid[0] = x;
+		centroid[1] = y;
 	}
 }
