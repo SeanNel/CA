@@ -19,12 +19,6 @@ public class ShapeList {
 	/** List of detected shapes. */
 	protected final List<AbstractShape> shapes;
 
-	/*
-	 * There is some concurrency issue with processing shapes in parallel. Set
-	 * this to false to enable it anyway.
-	 */
-	private static boolean debug = true;
-
 	public ShapeList(ShapeDetector sd) {
 		this.sd = sd;
 		shapes = new LinkedList<AbstractShape>();
@@ -45,7 +39,7 @@ public class ShapeList {
 
 		for (ShapeRule rule : shapeRules) {
 			rule.start();
-			if (debug || Debug.debug) {
+			if (Debug.debug) {
 				/* Linear method */
 				for (AbstractShape shape : shapes) {
 					rule.update(shape);

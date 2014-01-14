@@ -17,7 +17,7 @@ public class ShapeDrawRule extends ShapeRule {
 		this.sdPanel = sdPanel;
 	}
 
-	public void update(AbstractShape shape) {
+	public synchronized void update(AbstractShape shape) {
 		if (shape.getClass() != UnknownShape.class) {
 			sdPanel.setTheme(SDPanelTheme.RECOGNIZED);
 		} else {

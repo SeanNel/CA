@@ -22,7 +22,7 @@ public class ShapeDisplayRule extends ShapeRule {
 		panel.setVisible(true);
 	}
 
-	public void update(AbstractShape shape) {
+	public synchronized void update(AbstractShape shape) {
 		Rectangle2D bounds = shape.getPath().getBounds();
 		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 		panel.display(shape);

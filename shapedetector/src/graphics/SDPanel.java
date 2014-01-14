@@ -26,8 +26,6 @@ public class SDPanel extends PicturePanel {
 	/** Shape's text label font. */
 	protected Font font;
 	protected int padding = 10;
-
-	protected boolean reset = true;
 	protected double[] drawCursor;
 
 	public SDPanel() {

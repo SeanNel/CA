@@ -133,7 +133,7 @@ public class ShapeDetector {
 					blobMap));
 			// rules.add(new PrintBlobAssociationRule(lattice,
 			// neighbourhoodModel, blobMap));
-			rules.add(new ShapeFinderRule(lattice, blobMap, epsilon));
+			rules.add(new BlobMergeRule(lattice, blobMap, epsilon));
 			// rules.add(new ShapeAssimilatorRule(lattice, neighbourhoodModel,
 			// blobMap));
 			rules.add(new OutlineFinderRule(lattice, neighbourhoodModel,
