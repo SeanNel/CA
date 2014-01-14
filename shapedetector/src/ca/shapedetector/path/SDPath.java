@@ -3,11 +3,11 @@ package ca.shapedetector.path;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -19,32 +19,60 @@ import ca.shapedetector.blob.Blob;
  * 
  * @author Sean
  */
-public class SDPath implements Iterable<double[]> {
+public class SDPath implements Iterable<Point2D> {
 	/** The internal representation of this path. */
-	protected Path2D.Double path;
+	protected List<Point2D> vertices;
+	/** The bounding rectangle. */
+	protected Rectangle2D bounds;
+	/** The centre of gravity. */
+	protected Point2D centroid;
+	/** The surface area. Includes any enveloped shapes. */
+	protected double area;
+	/**
+	 * Maps vertices to their distances from the starting point along the
+	 * oueline.
+	 */
+	protected OutlineMap outlineMap;
+	/** A Path2D instance for drawing graphics. */
+	protected Path2D.Double path2D;
 
 	public SDPath(Blob blob) {
-		path = makePath(blob.getOutlineCells());
+		addCells(blob.getOutlineCells());
+	}
 
-		/*
-		 * Alternatively, build the path from only the areaCells. But this seems
-		 * to take much longer for larger shapes.
-		 */
-		// Stopwatch stopwatch = new Stopwatch();
-		// Area area = makeArea(blob.getAreaCells());
-		// stopwatch.print("makearea time: ");
-		// stopwatch.start();
-		// area = fillGaps(area);
-		// stopwatch.print("fillgaps time: ");
-		// path = new Path2D.Double();
-		// path.append(area, true);
-		// stopwatch.print("append time: ");
-		// stopwatch.start();
+	public SDPath() {
+		vertices = new ArrayList<Point2D>();
+	}
 
-		/*
-		 * TODO: May need to fill the gaps in the path until the outline finder
-		 * works in all cases.
-		 */
+	/**
+	 * Constructs a path from a list of cells describing the outline.
+	 * 
+	 * @param cells
+	 * @return
+	 */
+	public void addCells(List<Cell> cells) {
+		vertices = new ArrayList<Point2D>(cells.size());
+
+		Iterator<Cell> cellIterator = cells.iterator();
+		int[] coordinates = cellIterator.next().getCoordinates();
+		Point2D vertex = new Point2D.Double(coordinates[0], coordinates[1]);
+		vertices.add(vertex);
+
+		while (cellIterator.hasNext()) {
+			coordinates = cellIterator.next().getCoordinates();
+			vertex = new Point2D.Double(coordinates[0], coordinates[1]);
+			vertices.add(vertex);
+		}
+
+		outlineMap = null;
+		area = 0.0;
+	}
+
+	public void addVertices(List<Point2D> vertices) {
+		this.vertices = new ArrayList<Point2D>(vertices);
+
+		outlineMap = null;
+		area = 0.0;
 	}
 
 	/**
@@ -53,14 +81,16 @@ public class SDPath implements Iterable<double[]> {
 	 * @param original
 	 */
 	public SDPath(SDPath original) {
-		path = (Path2D.Double) original.path.clone();
-
-		/*
-		 * The following may or may not be slightly more efficient by avoiding
-		 * the cast.
-		 */
-		// path = new Path2D.Double();
-		// path.append(original.path, true);
+		List<Point2D> originalVertices = original.getVertices();
+		vertices = new ArrayList<Point2D>(originalVertices.size());
+		for (Point2D point : originalVertices) {
+			vertices.add((Point2D) point.clone());
+		}
+		bounds = new Rectangle2D.Double();
+		bounds.setFrame(original.getBounds());
+		centroid = (Point2D) original.getCentroid().clone();
+		area = original.area;
+		outlineMap = original.outlineMap;
 	}
 
 	/**
@@ -70,8 +100,47 @@ public class SDPath implements Iterable<double[]> {
 	 * @param shape
 	 */
 	public SDPath(Shape shape) {
-		path = new Path2D.Double();
+		Path2D.Double path = new Path2D.Double();
 		path.append(shape, true);
+		fromPath2D(path);
+	}
+
+	/**
+	 * Sets the vertices of this SDPath to those of the Path2D instance.
+	 * 
+	 * @param path
+	 */
+	protected void fromPath2D(Path2D path) {
+		SDPathIterator iterator = new SDPathIterator(path);
+		vertices = new ArrayList<Point2D>();
+		while (iterator.hasNext()) {
+			vertices.add(iterator.next());
+		}
+		bounds = path.getBounds2D();
+		centroid = new Point2D.Double(bounds.getCenterX(), bounds.getCenterY());
+	}
+
+	/**
+	 * Gets a Path2D instance from this SDPath.
+	 * 
+	 * @return
+	 */
+	public Path2D.Double getPath2D() {
+		if (path2D == null) {
+			path2D = new Path2D.Double();
+			Iterator<Point2D> iterator = iterator();
+			if (iterator.hasNext()) {
+				Point2D vertex = iterator.next();
+				path2D.moveTo(vertex.getX(), vertex.getY());
+
+				while (iterator.hasNext()) {
+					vertex = iterator.next();
+					path2D.lineTo(vertex.getX(), vertex.getY());
+				}
+				path2D.closePath();
+			}
+		}
+		return path2D;
 	}
 
 	/**
@@ -80,79 +149,101 @@ public class SDPath implements Iterable<double[]> {
 	 * @return Boundary rectangle.
 	 */
 	public Rectangle2D getBounds() {
-		return path.getBounds2D();
-	}
-
-	/**
-	 * Construct a path from a list of cells describing the outline.
-	 * 
-	 * @param cells
-	 * @return
-	 */
-	protected static Path2D.Double makePath(List<Cell> cells) {
-		Iterator<Cell> cellIterator = cells.iterator();
-		int[] coordinates = cellIterator.next().getCoordinates();
-		Path2D.Double path = new Path2D.Double();
-		path.moveTo(coordinates[0], coordinates[1]);
-		while (cellIterator.hasNext()) {
-			coordinates = cellIterator.next().getCoordinates();
-			path.lineTo(coordinates[0], coordinates[1]);
-		}
-		path.closePath();
-		return path;
-	}
-
-	/**
-	 * Construct a path from a list of cells describing the area.
-	 * 
-	 * @param cells
-	 * @return
-	 */
-	public static Area makeArea(List<Cell> cells) {
-		Area area = new Area();
-		Iterator<Cell> cellIterator = cells.iterator();
-		while (cellIterator.hasNext()) {
-			Cell cell = cellIterator.next();
-			int[] coordinates = cell.getCoordinates();
-			Rectangle2D rectangle = new Rectangle2D.Double(coordinates[0],
-					coordinates[1], 1, 1);
-			area.add(new Area(rectangle));
-		}
-
-		return area;
-	}
-
-	/**
-	 * Fills in gaps of an area.
-	 * 
-	 * @param cells
-	 * @return
-	 */
-	public static Area fillGaps(Area area) {
-		area = new Area(area);
-		PathIterator pathIterator = area.getPathIterator(null);
-		double[] coordinates = new double[6];
-		Path2D path = new Path2D.Double();
-		path.moveTo(coordinates[0], coordinates[1]);
-
-		while (!pathIterator.isDone()) {
-			int type = pathIterator.currentSegment(coordinates);
-			switch (type) {
-			case PathIterator.SEG_MOVETO:
-				path.closePath();
-				Area segmentArea = new Area(path);
-				area.add(segmentArea);
-				path = new Path2D.Double();
-				path.moveTo(coordinates[0], coordinates[1]);
-				break;
-			case PathIterator.SEG_LINETO:
-				path.lineTo(coordinates[0], coordinates[1]);
-				break;
+		if (bounds == null) {
+			if (vertices.size() == 0) {
+				return bounds = new Rectangle2D.Double();
 			}
+			Point2D v = vertices.get(0);
+			double minX = v.getX();
+			double maxX = v.getX();
+			double minY = v.getY();
+			double maxY = v.getY();
 
-			pathIterator.next();
+			for (Point2D vertex : vertices) {
+				/* Gets bounding rectangle */
+				if (vertex.getX() < minX) {
+					minX = vertex.getX();
+				} else if (vertex.getX() > maxX) {
+					maxX = vertex.getX();
+				}
+				if (vertex.getY() < minY) {
+					minY = vertex.getY();
+				} else if (vertex.getY() > maxY) {
+					maxY = vertex.getY();
+				}
+			}
+			bounds = new Rectangle2D.Double(minX, minY, maxX - minX, maxY
+					- minY);
 		}
-		return area;
+		return bounds;
+	}
+
+	public double getCentreX() {
+		return bounds.getCenterX();
+	}
+
+	public double getCentreY() {
+		return bounds.getCenterY();
+	}
+
+	/**
+	 * Gets an array of points on the outline of the shape.
+	 * 
+	 * @return
+	 */
+	public List<Point2D> getVertices() {
+		return vertices;
+	}
+
+	/**
+	 * Gets an Area object containing this path.
+	 * 
+	 * @return
+	 */
+	public Area getAreaPolygon() {
+		Path2D path = getPath2D();
+		return new Area(path);
+	}
+
+	/**
+	 * Gets the centroid (centre of gravity).
+	 * 
+	 * @return
+	 */
+	public Point2D getCentroid() {
+		if (centroid == null) {
+			/*
+			 * Cannot derive the centroid from the areaCells when shapes contain
+			 * nested shapes. So for now, the centre of gravity is the same as
+			 * the geometric centre. This only becomes an issue once we test for
+			 * non-symmetrical shapes.
+			 */
+			getBounds();
+			centroid = new Point2D.Double(bounds.getCenterX(),
+					bounds.getCenterY());
+		}
+		return centroid;
+	}
+
+	/**
+	 * Gets the length of the perimeter.
+	 * 
+	 * @return
+	 */
+	public double getPerimeter() {
+		return getOutlineMap().getPerimeter();
+	}
+
+	/**
+	 * Gets the outline map.
+	 * 
+	 * @return
+	 */
+	public OutlineMap getOutlineMap() {
+		if (outlineMap == null) {
+			outlineMap = new OutlineMap(this);
+		}
+		return outlineMap;
 	}
 
 	/**
@@ -161,47 +252,49 @@ public class SDPath implements Iterable<double[]> {
 	 * 
 	 * @return Area in pixels squared.
 	 */
-	public double calculateArea() {
-		PathIterator pathIterator1 = path.getPathIterator(null);
-		PathIterator pathIterator2 = path.getPathIterator(null);
-		pathIterator2.next();
+	public double getArea() {
+		if (area == 0.0) {
+			Iterator<Point2D> iterator = iterator();
+			if (vertices.size() > 0) {
+				Point2D a = vertices.get(vertices.size() - 1);
 
-		double[] coordinates1 = new double[6];
-		double[] coordinates2 = new double[6];
-		double area = 0;
+				while (iterator.hasNext()) {
+					Point2D b = iterator.next();
+					area += (a.getX() + b.getX()) * (a.getY() - b.getY());
+					a = b;
+				}
+				/* Includes the last point along the path as well. */
+				// iterator2 = iterator();
+				//
+				// Point2D a = iterator1.next();
+				// Point2D b = iterator2.next();
+				// area += a.getX() * b.getY() - a.getY() * b.getX();
 
-		while (!pathIterator2.isDone()) {
-			pathIterator1.currentSegment(coordinates1);
-			pathIterator2.currentSegment(coordinates2);
-
-			area += coordinates1[0] * coordinates2[1] - coordinates1[1]
-					* coordinates2[0];
-			pathIterator1.next();
-			pathIterator2.next();
+				area = Math.abs(area / 2.0);
+			}
 		}
-		/* Includes the last point along the path as well. */
-		pathIterator2 = path.getPathIterator(null);
-		pathIterator1.currentSegment(coordinates1);
-		pathIterator2.currentSegment(coordinates2);
+		return area;
+	}
 
-		area += coordinates1[0] * coordinates2[1] - coordinates1[1]
-				* coordinates2[0];
-
-		return Math.abs(area / 2.0);
+	@Override
+	public VertexIterator iterator() {
+		return new VertexIterator(vertices, VertexIterator.FORWARD);
 	}
 
 	/**
-	 * Scales this path to the specified size.
+	 * Draws this path to the graphics object.
 	 * 
-	 * @param bounds
+	 * @param graphics
+	 * @param outlineColour
+	 * @param fillColour
 	 */
-	public void resize(Rectangle2D bounds) {
-		Rectangle2D currentBounds = path.getBounds2D();
-		double x = currentBounds.getWidth();
-		double y = currentBounds.getHeight();
+	public void draw(Graphics2D graphics, Color outlineColour, Color fillColour) {
+		Path2D path = getPath2D();
+		graphics.setColor(fillColour);
+		graphics.fill(path);
 
-		path.transform(AffineTransform.getScaleInstance(bounds.getHeight() / x,
-				bounds.getWidth() / y));
+		graphics.setColor(outlineColour);
+		graphics.draw(path);
 	}
 
 	/**
@@ -211,80 +304,47 @@ public class SDPath implements Iterable<double[]> {
 	 * @param y
 	 */
 	public void move(double x, double y) {
-		double x0 = path.getBounds2D().getCenterX();
-		double y0 = path.getBounds2D().getCenterY();
+		double x0 = bounds.getCenterX();
+		double y0 = bounds.getCenterY();
 
-		path.transform(AffineTransform.getTranslateInstance(x - x0, y - y0));
+		for (Point2D vertex : vertices) {
+			vertex.setLocation(vertex.getX() + x - x0, vertex.getY() + y - y0);
+		}
+		getCentroid();
+		centroid.setLocation(centroid.getX() + x - x0, centroid.getY() + y - y0);
+		// Path2D path = getPath2D();
+		// path.transform(AffineTransform.getTranslateInstance(x - x0, y - y0));
+		// fromPath2D(path);
 	}
 
-	/**
-	 * Rotates the path anti-clockwise around its center by the specified angle
-	 * (in radians).
-	 * 
-	 * @param theta
-	 */
-	public void rotate(double theta) {
-		/* Better to use the centre of gravity for this? */
-		double x = path.getBounds2D().getCenterX();
-		double y = path.getBounds2D().getCenterY();
-
-		path.transform(AffineTransform.getTranslateInstance(-x, -y));
-		path.transform(AffineTransform.getRotateInstance(theta));
-		path.transform(AffineTransform.getTranslateInstance(x, y));
-	}
-
-	public double getCentreX() {
-		return path.getBounds2D().getCenterX();
-	}
-
-	public double getCentreY() {
-		return path.getBounds2D().getCenterY();
-	}
-
-	@Override
-	public SDPathIterator iterator() {
-		return new SDPathIterator(path);
-	}
-
-	// public SDPathIterator reverseIterator() {
-	// return new SDPathIterator(path, true);
+	// /**
+	// * Rotates the path anti-clockwise around its center by the specified
+	// angle
+	// * (in radians).
+	// *
+	// * @param theta
+	// */
+	// public void rotate(double theta) {
+	// /* Better to use the centre of gravity for this? */
+	// double x = path.getBounds2D().getCenterX();
+	// double y = path.getBounds2D().getCenterY();
+	//
+	// path.transform(AffineTransform.getTranslateInstance(-x, -y));
+	// path.transform(AffineTransform.getRotateInstance(theta));
+	// path.transform(AffineTransform.getTranslateInstance(x, y));
+	// }
+	//
+	// /* Scales this path to the specified size.
+	// *
+	// * @param bounds
+	// */
+	// public void resize(Rectangle2D bounds) {
+	// Rectangle2D currentBounds = this.bounds;
+	// double x = currentBounds.getWidth();
+	// double y = currentBounds.getHeight();
+	//
+	// path.transform(AffineTransform.getScaleInstance(bounds.getHeight() / x,
+	// bounds.getWidth() / y));
 	// }
 
-	public Area getAreaPolygon() {
-		return new Area(path);
-	}
-
-	/**
-	 * Gets an array of points on the outline of the shape.
-	 * <p>
-	 * Should work on a custom Path2D implementation that can give this
-	 * directly, without iteration.
-	 * 
-	 * @return
-	 */
-	public double[][] getOutline() {
-		SDPathIterator iterator = iterator();
-		int i = 0;
-		while (iterator.hasNext()) {
-			iterator.next();
-			i++;
-		}
-
-		double[][] outline = new double[i][2];
-		i = 0;
-		iterator = iterator();
-		while (iterator.hasNext()) {
-			outline[i++] = iterator.next();
-		}
-
-		return outline;
-	}
-
-	public void draw(Graphics2D graphics, Color outlineColour, Color fillColour) {
-		graphics.setColor(fillColour);
-		graphics.fill(path);
-
-		graphics.setColor(outlineColour);
-		graphics.draw(path);
-	}
 }

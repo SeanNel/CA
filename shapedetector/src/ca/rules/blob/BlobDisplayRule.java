@@ -3,17 +3,20 @@ package ca.rules.blob;
 import graphics.SDPanel;
 
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 
 import ca.shapedetector.BlobMap;
 import ca.shapedetector.blob.Blob;
+import ca.shapedetector.path.SDArea;
 import ca.shapedetector.path.SDPath;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.shapes.AbstractShape;
+import ca.shapedetector.shapes.UnknownShape;
 
 /**
  * Displays all the found blobs larger than 4x4 cells on the screen, in turn.
  */
 public class BlobDisplayRule extends BlobRule {
-	SDPanel panel;
+	final SDPanel panel;
 
 	public BlobDisplayRule(BlobMap blobMap, SDPanel panel) {
 		super(blobMap);
@@ -29,15 +32,15 @@ public class BlobDisplayRule extends BlobRule {
 			return;
 		}
 
-		Area area = SDPath.makeArea(blob.getAreaCells());
+		Area area = SDArea.makeArea(blob.getAreaCells());
 		// area = SDPath.fillGaps(area);
 		SDPath path = new SDPath(area);
-		SDShape shape = new SDShape(path);
+		AbstractShape shape = new UnknownShape(path);
 
-		double[] dimensions = shape.getDimensions();
-		panel.reset((int) dimensions[0], (int) dimensions[1]);
+		Rectangle2D bounds = shape.getPath().getBounds();
+		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 		panel.display(shape);
 
-//		helpers.Input.waitForSpace();
+		// helpers.Input.waitForSpace();
 	}
 }

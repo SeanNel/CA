@@ -17,9 +17,9 @@ import ca.neighbourhood.Neighbourhood;
  * @author Sean
  */
 public class NoiseRemoverRule extends CellRule {
-	protected float epsilon;
+	protected final float epsilon;
 
-	public NoiseRemoverRule(Lattice lattice, Neighbourhood neighbourhoodModel,
+	public NoiseRemoverRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
 			float epsilon) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.epsilon = epsilon;

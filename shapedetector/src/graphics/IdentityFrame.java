@@ -1,6 +1,8 @@
 package graphics;
 
-import ca.shapedetector.shapes.SDShape;
+import java.awt.geom.Rectangle2D;
+
+import ca.shapedetector.shapes.AbstractShape;
 
 public class IdentityFrame extends ShapeFrame {
 	private static final long serialVersionUID = 1L;
@@ -14,13 +16,13 @@ public class IdentityFrame extends ShapeFrame {
 		setTitle("Identity shape");
 	}
 
-	public static void display(SDShape shape) {
+	public static void display(AbstractShape shape) {
 		int x = shapeFrame.getX();
 		int y = shapeFrame.getY() + shapeFrame.getHeight() + 20;
 		frame.setLocation(x, y);
 
-		double[] dimensions = shape.getDimensions();
-		panel.reset((int) dimensions[0], (int) dimensions[1]);
+		Rectangle2D bounds = shape.getPath().getBounds();
+		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 		panel.display(shape);
 		frame.pack();
 		frame.setVisible(true);

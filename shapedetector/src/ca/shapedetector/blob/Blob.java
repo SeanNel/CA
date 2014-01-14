@@ -1,16 +1,15 @@
 package ca.shapedetector.blob;
 
-import graphics.SDPanel;
+import graphics.SDPanelTheme;
+import helpers.Output;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import ca.Cell;
-import ca.concurrency.Updatable;
-import ca.shapedetector.ShapeDetector;
 import ca.shapedetector.path.SDPath;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.shapes.AbstractShape;
+import ca.shapedetector.shapes.UnknownShape;
 
 /**
  * A blob made up of CACells. TODO: extend CACell (to take advantage of
@@ -18,7 +17,7 @@ import ca.shapedetector.shapes.SDShape;
  * 
  * @author Sean
  */
-public class Blob implements Comparable<Blob>, Updatable {
+public class Blob implements Comparable<Blob> {
 	/**
 	 * Collection of cells that make up this blob.
 	 * <p>
@@ -54,9 +53,8 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 *            A cell that is to belong to the shape.
 	 */
 	public Blob(Cell cell) {
-		areaCells = Collections.synchronizedList(new LinkedList<Cell>());
-		// newArrayList<CACell>()
-		outlineCells = Collections.synchronizedList(new LinkedList<Cell>());
+		areaCells = new LinkedList<Cell>();
+		outlineCells = new LinkedList<Cell>();
 		areaCells.add(cell);
 
 		int[] coordinates = cell.getCoordinates();
@@ -85,7 +83,9 @@ public class Blob implements Comparable<Blob>, Updatable {
 			}
 		}
 
-		areaCells.addAll(blob.getAreaCells());
+		synchronized (areaCells) {
+			areaCells.addAll(blob.getAreaCells());
+		}
 		/*
 		 * It is necessary to free up memory or there will soon be no space left
 		 * on the heap.
@@ -101,7 +101,9 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 *            Cell to add.
 	 */
 	public void addOutlineCell(Cell cell) {
-		outlineCells.add(cell);
+		synchronized (outlineCells) {
+			outlineCells.add(cell);
+		}
 	}
 
 	/**
@@ -143,26 +145,16 @@ public class Blob implements Comparable<Blob>, Updatable {
 		if (areaCells == null) {
 			return 0;
 		} else {
-			return areaCells.size();
+			synchronized (areaCells) {
+				return areaCells.size();
+			}
 		}
 	}
 
 	public String toString() {
 		return "(" + this.getClass().getSimpleName() + ") ["
-				+ arrayToString(boundaries[0]) + ":"
-				+ arrayToString(boundaries[1]) + "]";
-	}
-
-	protected String arrayToString(int[] array) {
-		if (array.length == 0) {
-			return "";
-		}
-
-		String str = "" + array[0];
-		for (int i = 1; i < array.length; i++) {
-			str += ", " + array[i];
-		}
-		return str;
+				+ Output.toString(boundaries[0]) + ":"
+				+ Output.toString(boundaries[1]) + "]";
 	}
 
 	/** Attempt to free memory allocated to this shape. */
@@ -186,29 +178,31 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 */
 	public void arrangeOutlineCells() {
 		/* For debugging */
-//		if (ShapeDetector.debug) {
-//			display(outlineCells);
-//		}
+		// if (ShapeDetector.debug) {
+		// display(outlineCells);
+		// }
 
 		Cell first = firstOutlineCell();
 		if (first == null) {
 			return;
 		} else {
-			LoopFinder loopFinder = new LoopFinder(outlineCells);
-			outlineCells = loopFinder.getLoop(first);
-
+			synchronized (outlineCells) {
+				LoopFinder loopFinder = new LoopFinder(outlineCells);
+				outlineCells = loopFinder.getLoop(first);
+			}
 			/* For debugging */
-//			if (ShapeDetector.debug) {
-//				display(outlineCells);
-//			}
+			// if (ShapeDetector.debug) {
+			// display(outlineCells);
+			// }
 		}
 	}
 
 	/* For debugging */
 	public static void display(List<Cell> cells) {
-		graphics.ShapeFrame.setTheme(SDPanel.DEFAULT_THEME);
-		SDPath path = new SDPath(SDPath.makeArea(cells));
-		SDShape shape = new SDShape(path);
+		graphics.ShapeFrame.setTheme(SDPanelTheme.DEFAULT);
+		SDPath path = new SDPath();
+		path.addCells(cells);
+		AbstractShape shape = new UnknownShape(path);
 		graphics.ShapeFrame.reset(shape);
 		graphics.ShapeFrame.display(shape);
 	}
@@ -223,7 +217,8 @@ public class Blob implements Comparable<Blob>, Updatable {
 	 * @return The '1st' cell to start the loop of outline cells.
 	 */
 	protected Cell firstOutlineCell() {
-		for (Cell cell : outlineCells) {
+		List<Cell> cells = outlineCells;
+		for (Cell cell : cells) {
 			int[] coordinates = cell.getCoordinates();
 			/* Looks at row along top boundary: */
 			if (coordinates[1] == boundaries[0][1]) {
@@ -257,8 +252,11 @@ public class Blob implements Comparable<Blob>, Updatable {
 	public boolean isInsignificant() {
 		int width = boundaries[1][0] - boundaries[0][0];
 		int height = boundaries[1][1] - boundaries[0][1];
-		return outlineCells == null || outlineCells.size() < 18 || width < 4
-				|| height < 4;
+
+		synchronized (outlineCells) {
+			return outlineCells == null || outlineCells.size() < 18
+					|| width < 4 || height < 4;
+		}
 	}
 
 	/**

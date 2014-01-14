@@ -10,9 +10,9 @@ import exceptions.CAException;
  * For debugging. Prints out the blob associations for each cell. 
  */
 public class PrintBlobAssociationRule extends CellRule {
-	protected BlobMap blobMap;
+	protected final BlobMap blobMap;
 
-	public PrintBlobAssociationRule(Lattice lattice,
+	public PrintBlobAssociationRule(Lattice<Cell> lattice,
 			Neighbourhood neighbourhoodModel, BlobMap blobMap)
 			throws CAException {
 		super(lattice, neighbourhoodModel);

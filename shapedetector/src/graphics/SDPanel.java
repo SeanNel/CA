@@ -3,10 +3,12 @@ package graphics;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 
 import ca.shapedetector.path.SDPath;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.shapes.AbstractShape;
+import ca.shapedetector.shapes.UnknownShape;
 
 public class SDPanel extends PicturePanel {
 	private static final long serialVersionUID = 1L;
@@ -25,18 +27,11 @@ public class SDPanel extends PicturePanel {
 	protected Font font;
 	protected int padding = 10;
 
-	public static final int DEFAULT_THEME = 0;
-	public static final int RECOGNIZED_THEME = 1;
-	public static final int UNRECOGNIZED_THEME = 2;
-	public static final int SIMPLE_THEME = 3;
-	public static final int IDENTITY_THEME = 4;
-	public static final int HIGHLIGHT_THEME = 5;
-
 	protected boolean reset = true;
 	protected double[] drawCursor;
 
 	public SDPanel() {
-		setTheme(DEFAULT_THEME);
+		setTheme(SDPanelTheme.DEFAULT);
 		drawCursor = new double[2];
 	}
 
@@ -46,14 +41,14 @@ public class SDPanel extends PicturePanel {
 	 * @param shape
 	 * @return the position where the shape was drawn.
 	 */
-	public void display(SDShape shape) {
-		shape = new SDShape(shape);
-		shape.move(drawCursor[0], drawCursor[1]);
+	public synchronized void display(AbstractShape shape) {
+		shape = new UnknownShape(shape);
+		shape.getPath().move(drawCursor[0], drawCursor[1]);
 
 		draw(shape);
 	}
 
-	public void reset(int w, int h) {
+	public synchronized void reset(int w, int h) {
 		w += padding;
 		h += padding;
 		setImage(new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB));
@@ -62,11 +57,11 @@ public class SDPanel extends PicturePanel {
 		drawCursor[1] = h / 2;
 	}
 
-	public void moveDrawCursor(double[] drawCursor) {
+	public synchronized void moveDrawCursor(double[] drawCursor) {
 		this.drawCursor = drawCursor;
 	}
 
-	public void moveDrawCursor(double x, double y) {
+	public synchronized void moveDrawCursor(double x, double y) {
 		drawCursor[0] = x;
 		drawCursor[1] = y;
 	}
@@ -80,7 +75,7 @@ public class SDPanel extends PicturePanel {
 	 * 
 	 * @param shape
 	 */
-	public void draw(SDShape shape) {
+	public synchronized void draw(AbstractShape shape) {
 		shape.getPath().draw(graphics, outlineColour, fillColour);
 
 		drawCentroid(shape);
@@ -89,7 +84,7 @@ public class SDPanel extends PicturePanel {
 		repaint();
 	}
 
-	public void draw(SDPath path) {
+	public synchronized void draw(SDPath path) {
 		path.draw(graphics, outlineColour, fillColour);
 		repaint();
 	}
@@ -97,11 +92,11 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a cross at the centroid of the shape in the specified colour.
 	 */
-	public void drawCentroid(SDShape shape) {
-		double[] centroid = shape.getCentroid();
+	public synchronized void drawCentroid(AbstractShape shape) {
+		Point2D centroid = shape.getPath().getCentroid();
 		graphics.setColor(centroidColour);
-		int centroidX = (int) centroid[0];
-		int centroidY = (int) centroid[1];
+		int centroidX = (int) centroid.getX();
+		int centroidY = (int) centroid.getY();
 
 		graphics.drawLine(centroidX - 2, centroidY - 2, centroidX + 2,
 				centroidY + 2);
@@ -112,10 +107,10 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a descriptive label of the shape.
 	 */
-	public void drawLabel(SDShape shape) {
-		double[] centroid = shape.getCentroid();
-		int centroidX = (int) centroid[0];
-		int centroidY = (int) centroid[1];
+	public synchronized void drawLabel(AbstractShape shape) {
+		Point2D centroid = shape.getPath().getCentroid();
+		int centroidX = (int) centroid.getX();
+		int centroidY = (int) centroid.getY();
 
 		drawString(shape.getClass().getSimpleName(), centroidX, centroidY - 10);
 		// drawString(getDescription(), centroidX, centroidY + 10);
@@ -126,7 +121,7 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a string.
 	 */
-	public void drawString(String string, int x, int y) {
+	public synchronized void drawString(String string, int x, int y) {
 		graphics.setColor(labelColour);
 		graphics.setFont(font);
 		FontMetrics metrics = graphics.getFontMetrics();
@@ -137,25 +132,23 @@ public class SDPanel extends PicturePanel {
 		graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
 	}
 
-	public void setTheme(int theme) {
+	public synchronized void setTheme(SDPanelTheme theme) {
 		switch (theme) {
-		// case RECOGNIZED_THEME:
-		// break;
-		case UNRECOGNIZED_THEME:
+		case UNRECOGNIZED:
 			labelColour = new Color(0, 0, 0, 40);
 			outlineColour = new Color(255, 255, 0, 40);
 			centroidColour = new Color(200, 50, 0, 40);
 			break;
-		case IDENTITY_THEME:
+		case MASK:
 			outlineColour = Color.magenta;
-			labelColour = new Color(0, 0, 0, 0);
-			fillColour = new Color(230, 245, 230, 50);
+			labelColour = new Color(0, 0, 0, 20);
+			fillColour = new Color(230, 245, 250, 100);
 			break;
-		case SIMPLE_THEME:
+		case SIMPLE:
 			outlineColour = Color.blue;
 			labelColour = new Color(0, 0, 0, 0);
 			break;
-		case HIGHLIGHT_THEME:
+		case HIGHLIGHT:
 			outlineColour = Color.red;
 			fillColour = new Color(255, 245, 230, 100);
 		default:

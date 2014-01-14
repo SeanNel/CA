@@ -1,6 +1,8 @@
 package graphics;
 
-import ca.shapedetector.shapes.SDShape;
+import java.awt.geom.Rectangle2D;
+
+import ca.shapedetector.shapes.AbstractShape;
 
 public class ShapeFrame extends PictureFrame {
 	private static final long serialVersionUID = 1L;
@@ -13,19 +15,19 @@ public class ShapeFrame extends PictureFrame {
 		setTitle("Shape");
 	}
 
-	public static void display(SDShape shape) {
+	public static void display(AbstractShape shape) {
 		panel.display(shape);
 		frame.pack();
 		frame.setVisible(true);
 	}
 
-	public static void setTheme(int theme) {
+	public static void setTheme(SDPanelTheme theme) {
 		panel.setTheme(theme);
 	}
 
-	public static void reset(SDShape shape) {
-		double[] dimensions = shape.getDimensions();
-		panel.reset((int) dimensions[0], (int) dimensions[1]);
+	public static void reset(AbstractShape shape) {
+		Rectangle2D bounds = shape.getPath().getBounds();
+		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 	}
 
 	public static void moveDrawCursor(double x, double y) {

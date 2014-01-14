@@ -1,47 +1,35 @@
 package ca.shapedetector.shapes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ca.shapedetector.blob.Blob;
 import ca.shapedetector.path.SDPath;
 import exceptions.MethodNotImplementedException;
 
-public class RootShape extends SDShape {
+public class RootShape extends AbstractShape {
+	protected final List<AbstractShape> relatedShapes;
 
 	public RootShape() {
-		super();
-	}
-
-	protected void loadRelatedShapes() {
-		super.loadRelatedShapes();
+		relatedShapes = new ArrayList<AbstractShape>();
 		relatedShapes.add(new Quadrilateral());
-		// relatedShapes.add(new SDEllipse());
 	}
 
-	/**
-	 * Identifies the shape.
-	 * <p>
-	 * Assumes that the blob's outline cells have already been arranged in
-	 * sequence.
-	 * 
-	 * @param path
-	 *            A path describing the unidentified shape.
-	 * @return An instance of the detected shape.
-	 * @throws MethodNotImplementedException
-	 *             if a shape in relatedShapes does not implement the identify
-	 *             method.
-	 */
-	public SDShape identifyShape(Blob blob)
+	public AbstractShape identify(Blob blob)
 			throws MethodNotImplementedException {
-		SDShape identifiedShape = null;
-		SDShape shape = new SDShape(new SDPath(blob));
+		AbstractShape shape = new UnknownShape(new SDPath(blob));
 
 		for (SDShape relatedShape : relatedShapes) {
-			identifiedShape = relatedShape.identify(shape);
-			// Input.waitForSpace();
-
-			if (identifiedShape != null) {
-				return identifiedShape;
+			shape = relatedShape.identify(shape);
+			if (!(shape instanceof UnknownShape)) {
+				break;
 			}
 		}
-		return new UnknownShape(shape);
+		return shape;
+	}
+
+	@Override
+	public AbstractShape identify(AbstractShape shape) {
+		return null;
 	}
 }

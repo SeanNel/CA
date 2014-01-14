@@ -8,12 +8,13 @@ import ca.lattice.Lattice;
 import exceptions.NullParameterException;
 
 /**
- * Caches the neighbouring cells of the specified cell. Optimized for VanNeumann
- * neighbourhood, r=1. Does not include the cell in its own neighbourhood.
+ * Gets the neighbouring cells, above, below, left and right of the specified
+ * cell. Optimized for VanNeumann neighbourhood, r=1. Does not include the cell
+ * in its own neighbourhood.
  */
-public class VanNeumannCardinal extends Neighbourhood2D {
+public class VanNeumannCardinal extends CellNeighbourhood2D {
 
-	public VanNeumannCardinal(Lattice lattice) throws NullParameterException {
+	public VanNeumannCardinal(Lattice<Cell> lattice) throws NullParameterException {
 		super(lattice);
 	}
 

@@ -25,9 +25,9 @@ public class EdgeFinderRule extends CellRule {
 	 */
 	public final static Color EDGE_COLOUR = new Color(200, 200, 200);
 
-	protected float epsilon;
+	protected final float epsilon;
 
-	public EdgeFinderRule(Lattice lattice, Neighbourhood neighbourhoodModel,
+	public EdgeFinderRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
 			float epsilon) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.epsilon = epsilon;

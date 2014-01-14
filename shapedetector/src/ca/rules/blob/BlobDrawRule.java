@@ -6,13 +6,14 @@ import java.awt.geom.Area;
 
 import ca.shapedetector.BlobMap;
 import ca.shapedetector.blob.Blob;
+import ca.shapedetector.path.SDArea;
 import ca.shapedetector.path.SDPath;
 
 /**
  * Displays all the found blobs larger than 4x4 cells on the screen, in turn.
  */
 public class BlobDrawRule extends BlobRule {
-	protected SDPanel panel;
+	protected final SDPanel panel;
 
 	public BlobDrawRule(SDPanel panel, BlobMap blobMap) {
 		super(blobMap);
@@ -24,7 +25,7 @@ public class BlobDrawRule extends BlobRule {
 			return;
 		}
 
-		Area area = SDPath.makeArea(blob.getAreaCells());
+		Area area = SDArea.makeArea(blob.getAreaCells());
 		// area = SDPath.fillGaps(area);
 		SDPath path = new SDPath(area);
 

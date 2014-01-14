@@ -2,17 +2,15 @@ package ca;
 
 import java.util.List;
 
-import ca.concurrency.Updatable;
-
 /**
  * The operational unit of a cellular automaton.
  * 
  * @author Sean
  */
-public class Cell implements Updatable {
+public class Cell {
 	/*
-	 * Enumerate possible states. I chose integers instead of a boolean state in
-	 * case it becomes necessary to add more states.
+	 * Enumerates possible states. I chose integers instead of a boolean state
+	 * in case it becomes necessary to add more states.
 	 */
 	/**
 	 * Signals that cell is due to be processed next time process() is called.

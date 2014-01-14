@@ -6,7 +6,7 @@ import ca.shapedetector.blob.Blob;
 import exceptions.CAException;
 
 public abstract class BlobRule implements Rule<Blob> {
-	protected BlobMap blobMap;
+	protected final BlobMap blobMap;
 
 	/**
 	 * Constructor.
@@ -21,9 +21,9 @@ public abstract class BlobRule implements Rule<Blob> {
 		/* Method stub. */
 	}
 
-	public void update(Blob blob) throws CAException {
-		/* Method stub. */
-	}
+	// public void update(Blob blob) throws CAException {
+	// /* Method stub. */
+	// }
 
 	public void end() throws CAException {
 		/* Method stub. */

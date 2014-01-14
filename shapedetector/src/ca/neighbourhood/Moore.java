@@ -11,10 +11,10 @@ import exceptions.NullParameterException;
  * Gathers all neighbouring cells within the square 3r*3r centered on (x,y),
  * that is its Moore neighbourhood.
  */
-public class Moore extends Neighbourhood2D {
-	protected int r;
+public class Moore extends CellNeighbourhood2D {
+	protected final int r;
 
-	public Moore(Lattice lattice, int r) throws NullParameterException {
+	public Moore(Lattice<Cell> lattice, int r) throws NullParameterException {
 		super(lattice);
 		this.r = r;
 	}

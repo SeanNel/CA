@@ -7,10 +7,10 @@ import ca.Cell;
 
 import std.Picture;
 
-public class Lattice2D extends Lattice {
+public class CellLattice2D extends Lattice<Cell> {
 	/** Two dimensional array of CACells. */
 	protected Cell[][] lattice;
-	/** Dead padding cell. */
+	/** Dead padding cell (returned when requesting cells out of bounds). */
 	public final static Cell paddingCell = new Cell();
 
 	private class CACellIterator implements Iterator<Cell> {
@@ -102,7 +102,7 @@ public class Lattice2D extends Lattice {
 		int[] coordinates = cell.getCoordinates();
 		pictureAfter.set(coordinates[0], coordinates[1], colour);
 
-		/* This method supports transparency. */
+		/* This method supports transparency (but is slower). */
 		// Graphics graphics = pictureAfter.getImage().createGraphics();
 		// graphics.setColor(colour);
 		// graphics.fillRect(coordinates[0], coordinates[1], 1, 1);

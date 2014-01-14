@@ -13,7 +13,7 @@ import exceptions.CAException;
  */
 public class GatherNeighboursRule extends CellRule {
 
-	public GatherNeighboursRule(Lattice lattice,
+	public GatherNeighboursRule(Lattice<Cell> lattice,
 			Neighbourhood neighbourhoodModel) throws CAException {
 		super(lattice, neighbourhoodModel);
 	}

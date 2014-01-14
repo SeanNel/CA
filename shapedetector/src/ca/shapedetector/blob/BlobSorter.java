@@ -13,7 +13,7 @@ import java.util.Set;
  * 
  */
 public class BlobSorter implements Comparable<BlobSorter> {
-	public Blob blob;
+	public final Blob blob;
 
 	public BlobSorter(Blob blob) {
 		this.blob = blob;

@@ -12,11 +12,16 @@ import ca.Cell;
  * Assumes that the cells have Moore neighbourhoods with r=1.
  */
 public class LoopFinder {
-	protected List<Cell> unorderedCells;
-	protected List<Cell> orderedCells;
+	protected final List<Cell> unorderedCells;
+	protected final List<Cell> orderedCells;
 
 	public LoopFinder(List<Cell> unorderedCells) {
 		this.unorderedCells = unorderedCells;
+		/*
+		 * TODO: May get better performance with loop as a HashMap or BST,
+		 * because we check whether a cell is contained in it very often.
+		 */
+		orderedCells = new ArrayList<Cell>(unorderedCells.size());
 	}
 
 	/**
@@ -33,11 +38,6 @@ public class LoopFinder {
 			return null;
 		}
 
-		/*
-		 * TODO: May get better performance with loop as a HashMap or BST,
-		 * because we check whether a cell is contained in it very often.
-		 */
-		orderedCells = new ArrayList<Cell>(unorderedCells.size());
 		Cell next = first;
 
 		do {
@@ -87,7 +87,6 @@ public class LoopFinder {
 		for (Cell neighbour : neighbourhood) {
 			if ((!orderedCells.contains(neighbour) || neighbour == orderedCells
 					.get(0)) && unorderedCells.contains(neighbour)) {
-				// && unorderedCells.contains(neighbour)
 				return neighbour;
 			}
 		}

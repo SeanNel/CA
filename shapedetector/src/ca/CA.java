@@ -1,32 +1,30 @@
 package ca;
 
-import exceptions.CAException;
-import graphics.PictureFrame;
-import graphics.PicturePanel;
 import helpers.Stopwatch;
 
 import java.util.List;
 
 import std.Picture;
 import ca.concurrency.ThreadServer;
-import ca.lattice.Lattice2D;
-import ca.rules.cell.CellRule;
+import ca.lattice.Lattice;
+import ca.rules.Rule;
+import exceptions.CAException;
 
 /**
  * Cellular automaton for processing an image.
  * 
  * @author Sean
  */
-public class CA {
-	protected Lattice2D lattice;
-	/** Processes to apply to each cell in sequence. */
-	public List<CellRule> cellRules;
-	/** Currently active cell rule. */
-	protected CellRule currentCellRule;
-	/** Signals that the CA should display its results in a window. */
-	protected boolean visible;
-	/** A frame for displaying the output image. */
-	protected PictureFrame pictureFrame;
+public class CA<V> {
+	public final static int DEFAULT_NUMTHREADS = 8;
+	/** The cell lattice. */
+	protected Lattice<V> lattice;
+	/** Rules to apply to each cell in sequence. */
+	public final List<Rule<V>> rules;
+	/**
+	 * Number of additional threads to run in parallel.
+	 */
+	protected int numThreads;
 
 	/**
 	 * Constructor.
@@ -38,26 +36,19 @@ public class CA {
 	 * @param r
 	 *            Search radius. Determines the size of the neighbourhood.
 	 */
-	public CA() {
-		lattice = new Lattice2D();
-		PicturePanel panel = new PicturePanel();
-		pictureFrame = new PictureFrame(panel);
+	public CA(Lattice<V> lattice, List<Rule<V>> rules, int numThreads) {
+		this.lattice = lattice;
+		this.rules = rules;
+		this.numThreads = numThreads;
+	}
+
+	public CA(Lattice<V> lattice, List<Rule<V>> rules) {
+		this(lattice, rules, DEFAULT_NUMTHREADS);
 	}
 
 	/**
-	 * Sets picture to process and initializes cell lattice.
-	 * 
-	 * @param picture
-	 *            Picture to process.
-	 */
-	public void setPicture(Picture picture) {
-		lattice.load(picture);
-		pictureFrame.setImage(lattice.getResult().getImage());
-	}
-
-	/**
-	 * Sets the picture to process and does so by updating cells until they are
-	 * all done (that is, until they all become inactive).
+	 * Updates cells until they are all done (that is, until they all become
+	 * inactive).
 	 * 
 	 * @param picture
 	 *            Picture to process.
@@ -68,19 +59,25 @@ public class CA {
 			System.out.println(this.getClass().getSimpleName() + " started.");
 			Stopwatch stopwatch = new Stopwatch();
 
-			setPicture(picture);
-			pictureFrame.setVisible(visible);
-
 			stopwatch.print("Loading complete, elapsed time: ");
 
-			for (CellRule rule : cellRules) {
+			for (Rule<V> rule : rules) {
 				rule.start();
 				boolean active = true;
 				// int passes = 0;
 				while (active) {
 					// stopwatch.start();
-					ThreadServer<Cell> threadServer = new ThreadServer<Cell>(rule, lattice, 8);
+					// if (debug) {
+					// /* Linear method */
+					// for (Cell cell : lattice) {
+					// rule.update(cell);
+					// }
+					// } else {
+					/* Multithreaded method */
+					ThreadServer<V> threadServer = new ThreadServer<V>(rule,
+							lattice, numThreads);
 					active = threadServer.run();
+					// }
 					lattice.complete();
 					// passes++;
 					// if (active || passes > 0) {
@@ -98,6 +95,11 @@ public class CA {
 		return lattice.getResult();
 	}
 
+	/**
+	 * Handles exceptions.
+	 * 
+	 * @param e
+	 */
 	protected void handleException(CAException e) {
 		e.printStackTrace();
 		System.exit(0);
@@ -110,11 +112,22 @@ public class CA {
 		return lattice.getResult();
 	}
 
-	public PicturePanel getPicturePanel() {
-		return pictureFrame.getPicturePanel();
-	}
-
-	public Lattice2D getLattice() {
+	/**
+	 * Gets the cell lattice.
+	 * 
+	 * @return
+	 */
+	public Lattice<V> getLattice() {
 		return lattice;
 	}
+
+	/**
+	 * Gets the number of threads.
+	 * 
+	 * @return
+	 */
+	public int getNumThreads() {
+		return numThreads;
+	}
+
 }

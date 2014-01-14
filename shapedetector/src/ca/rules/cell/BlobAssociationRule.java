@@ -12,10 +12,11 @@ import exceptions.NullParameterException;
  * Creates a CABlob object for each cell.
  */
 public class BlobAssociationRule extends CellRule {
-	protected BlobMap blobMap;
+	protected final BlobMap blobMap;
 
-	public BlobAssociationRule(Lattice lattice,
-			Neighbourhood neighbourhoodModel, BlobMap blobMap) throws CAException {
+	public BlobAssociationRule(Lattice<Cell> lattice,
+			Neighbourhood neighbourhoodModel, BlobMap blobMap)
+			throws CAException {
 		super(lattice, neighbourhoodModel);
 		if (blobMap == null) {
 			throw new NullParameterException("blobMap");

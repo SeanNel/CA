@@ -21,10 +21,10 @@ import exceptions.CAException;
  * Assumes that cells have Van Neumann neighbourhoods, with r=1.
  */
 public class OutlineFinderRule extends CellRule {
-	protected MooreOutline outlineNeighbourhood;
-	protected BlobMap blobMap;
+	protected final MooreOutline outlineNeighbourhood;
+	protected final BlobMap blobMap;
 
-	public OutlineFinderRule(Lattice lattice, Neighbourhood neighbourhoodModel,
+	public OutlineFinderRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
 			BlobMap blobMap) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;

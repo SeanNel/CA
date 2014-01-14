@@ -8,32 +8,35 @@ import java.util.List;
 import java.util.Set;
 
 import ca.Cell;
+import ca.Debug;
+import ca.concurrency.ThreadServer;
 import ca.rules.blob.*;
 import ca.shapedetector.blob.*;
 import exceptions.CAException;
 
 public class BlobMap {
+	/** The ShapeDetector instance. */
+	protected final ShapeDetector sd;
 	/** Table mapping cells to blobs. */
 	protected Blob[][] cellBlobAssociations;
 	/** Set of unique blobs. */
 	protected Set<Blob> blobs;
 	/** Processes to apply to each blob in sequence. */
-	public List<BlobRule> blobRules;
+	protected final List<BlobRule> blobRules;
 
-	public void load(ShapeDetector ca) {
-		int width = ca.getResult().width();
-		int height = ca.getResult().height();
-		cellBlobAssociations = new Blob[width][height];
-		blobs = new HashSet<Blob>(width * height);
-		loadRules(ca);
+	public BlobMap(ShapeDetector sd, ShapeList shapeList) {
+		this.sd = sd;
+
+		blobRules = new LinkedList<BlobRule>();
+		blobRules.add(new BlobIdentifierRule(this, shapeList));
+		// blobRules.add(new BlobDisplayRule(this, graphics.ShapeFrame.panel));
+		// blobRules.add(new BlobDrawRule((SDPictureFrame) sd.getPictureFrame(),
+		// this));
 	}
 
-	protected void loadRules(ShapeDetector ca) {
-		blobRules = new LinkedList<BlobRule>();
-		blobRules.add(new BlobIdentifierRule(this, ca.getShapeList()));
-//		blobRules.add(new BlobDisplayRule(this, graphics.ShapeFrame.panel));
-		// blobRules.add(new BlobDrawRule((SDPictureFrame) ca.getPictureFrame(),
-		// this));
+	public void clear(int w, int h) {
+		cellBlobAssociations = new Blob[w][h];
+		blobs = new HashSet<Blob>(w * h);
 	}
 
 	protected void update() throws CAException {
@@ -45,23 +48,24 @@ public class BlobMap {
 		blobs.remove(cellBlobAssociations[0][0]);
 
 		/*
-		 * To ease debugging, sort the shapes in some kind of order instead of
+		 * To ease debugging, sorts the shapes in some kind of order instead of
 		 * at random.
 		 */
-		blobs = BlobSorter.sortBlobs(blobs);
+		// blobs = BlobSorter.sortBlobs(blobs);
 
 		for (BlobRule rule : blobRules) {
 			rule.start();
-			/* Linear method. For easier debugging. */
-			for (Blob blob : blobs) {
-				rule.update(blob);
+			if (Debug.debug) {
+				/* Linear method. For easier debugging. */
+				for (Blob blob : blobs) {
+					rule.update(blob);
+				}
+			} else {
+				/* Multithreaded method. For improved performance. */
+				ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
+						blobs, sd.getCA().getNumThreads());
+				threadServer.run();
 			}
-
-			/* Multithreaded method. For improved performance. */
-			// ThreadServer<Blob> threadServer = new ThreadServer<Blob>(rule,
-			// blobs);
-			// threadServer.run();
-
 			rule.end();
 			System.out.println(rule + ", elapsed time: " + ruleStopwatch.time()
 					+ " ms");
@@ -116,8 +120,8 @@ public class BlobMap {
 					setBlob(cell, newBlob);
 				}
 				/*
-				 * oldBlob must be removed *before* merging. No need for
-				 * synchronizing on blobs!
+				 * oldBlob must be removed *before* merging. (No need for
+				 * synchronizing on blobs.)
 				 */
 				blobs.remove(oldBlob);
 				newBlob.merge(oldBlob);

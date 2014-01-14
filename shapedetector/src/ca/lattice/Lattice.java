@@ -2,13 +2,11 @@ package ca.lattice;
 
 import java.awt.Color;
 
-import javax.swing.JLabel;
-
 import ca.Cell;
 
 import std.Picture;
 
-public abstract class Lattice implements Iterable<Cell> {
+public abstract class Lattice<V> implements Iterable<V> {
 	/**
 	 * Picture first given to the CA to process or in the event that the CA did
 	 * not finish after its first pass, this is the output of the previous pass.
@@ -75,16 +73,6 @@ public abstract class Lattice implements Iterable<Cell> {
 	public Color getColour(Cell cell) {
 		/* Method stub. */
 		throw new RuntimeException();
-	}
-
-	/**
-	 * Gets the output image as a JLabel for embedding in a JFrame.
-	 * 
-	 * @param cell
-	 * @param colour
-	 */
-	public JLabel getJLabel() {
-		return pictureAfter.getJLabel();
 	}
 
 	/**

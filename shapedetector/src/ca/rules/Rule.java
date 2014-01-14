@@ -2,7 +2,7 @@ package ca.rules;
 
 import exceptions.CAException;
 
-public interface Rule<E> {
+public interface Rule<V> {
 
 	/**
 	 * Does what has to be done before the rule starts.
@@ -15,7 +15,7 @@ public interface Rule<E> {
 	 * @param object
 	 * @throws CAException
 	 */
-	public void update(E object) throws CAException;
+	public void update(V object) throws CAException;
 
 	/**
 	 * Does what has to be done after the rule has finished.

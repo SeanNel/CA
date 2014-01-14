@@ -6,8 +6,11 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import math.discrete.dbl.DiscreteFunctionDouble;
+import math.functions.Differential;
 
+import org.apache.commons.math3.analysis.FunctionUtils;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartTheme;
 import org.jfree.chart.JFreeChart;
@@ -90,29 +93,31 @@ public class LineChartFrame extends JFrame {
 		frame.setVisible(true);
 	}
 
-	public static void displayData(final DiscreteFunctionDouble... f) {
+	public static void displayData(double x0, double x1,
+			final UnivariateFunction... f) {
 		synchronized (dataset) {
 			dataset.removeAllSeries();
 			int i = 0;
-			for (DiscreteFunctionDouble s : f) {
-				dataset.addSeries(frame.getSeries(s.toArray(), "f" + i++
-						+ "(x)"));
+			for (UnivariateFunction s : f) {
+				dataset.addSeries(frame.getSeries(s, "f" + i++ + "(x)", x0, x1));
 			}
 		}
 		frame.setVisible(true);
 	}
 
-	public static void displayDifferentialData(DiscreteFunctionDouble f) {
-		f = f.clone();
+	public static void displayDifferentialData(double x0, double x1,
+			UnivariateDifferentiableFunction f) {
+		int n = (int) Math.ceil(x1 - x0);
+		// double n = (x1 - x0) / 100.0;// 1;
+
+		UnivariateDifferentiableFunction df = new Differential(f);
+		UnivariateDifferentiableFunction df2 = new Differential(df, n);
+
 		synchronized (dataset) {
 			dataset.removeAllSeries();
-			dataset.addSeries(frame.getSeries(f, "f(x)"));
-
-			f = f.derivative();
-			dataset.addSeries(frame.getSeries(f, "d/dx f(x)"));
-
-			f = f.derivative();
-			dataset.addSeries(frame.getSeries(f, "d^2/dx^2 f(x)"));
+			dataset.addSeries(frame.getSeries(f, "f(x)", x0, x1));
+			dataset.addSeries(frame.getSeries(df, "d/dx f(x)", x0, x1));
+			dataset.addSeries(frame.getSeries(df2, "d^2/dx^2 f(x)", x0, x1));
 		}
 		frame.setVisible(true);
 
@@ -120,8 +125,15 @@ public class LineChartFrame extends JFrame {
 		frame.repaint();
 	}
 
-	public XYIntervalSeries getSeries(DiscreteFunctionDouble f, String label) {
-		return getSeries(f.toArray(), label);
+	public XYIntervalSeries getSeries(UnivariateFunction f, String label,
+			double x0, double x1) {
+		int n = (int) Math.ceil(x1 - x0);
+
+		if (n < 1) {
+			return new XYIntervalSeries(label);
+		}
+		double[] samples = FunctionUtils.sample(f, x0, x1, n);
+		return getSeries(samples, label);
 	}
 
 	public XYIntervalSeries getSeries(double[] f, String label) {

@@ -1,4 +1,4 @@
-package math.discrete;
+package math;
 
 import java.util.Arrays;
 

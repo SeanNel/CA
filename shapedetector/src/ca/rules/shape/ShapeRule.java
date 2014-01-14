@@ -2,10 +2,11 @@ package ca.rules.shape;
 
 import ca.rules.Rule;
 import ca.shapedetector.ShapeList;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.shapes.AbstractShape;
+import exceptions.CAException;
 
-public abstract class ShapeRule implements Rule<SDShape> {
-	protected ShapeList shapeList;
+public abstract class ShapeRule implements Rule<AbstractShape> {
+	protected final ShapeList shapeList;
 
 	/**
 	 * Constructor.
@@ -16,15 +17,15 @@ public abstract class ShapeRule implements Rule<SDShape> {
 		this.shapeList = shapeList;
 	}
 	
-	public void start() {
+	public void start() throws CAException {
 		/* Method stub. */
 	}
 
-	public void update(SDShape shape) {
-		/* Method stub. */
-	}
+	// public void update(AbstractShape shape) throws CAException {
+	// /* Method stub. */
+	// }
 	
-	public void end() {
+	public void end() throws CAException {
 		/* Method stub. */
 	}
 

@@ -23,7 +23,7 @@ import ca.shapedetector.blob.Blob;
  * TODO: fix sync issues
  */
 public class ShapeAssimilatorRule extends CellRule {
-	protected BlobMap blobMap;
+	protected final BlobMap blobMap;
 	/**
 	 * Shapes with areas smaller than this will be assimilated into larger
 	 * shapes.
@@ -32,7 +32,7 @@ public class ShapeAssimilatorRule extends CellRule {
 	public static int I = 0;
 	protected Hashtable<Blob, Color> shapeColours;
 
-	public ShapeAssimilatorRule(Lattice lattice, Neighbourhood neighbourhoodModel, BlobMap blobMap) throws CAException {
+	public ShapeAssimilatorRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel, BlobMap blobMap) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
 		shapeColours = new Hashtable<Blob, Color>();

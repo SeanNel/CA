@@ -11,13 +11,19 @@ import exceptions.NullParameterException;
  * 
  * @author Sean
  */
-public class ThreadServer<V extends Updatable> {
-	Rule<V> rule;
-	protected Iterable<V> iterable;
+public class ThreadServer<V> {
+	public final static int DEFAULT_NUMTHREADS = 8;
+
+	/** The rule to apply to queued items. */
+	protected final Rule<V> rule;
+	/** The source to queue items from. */
+	protected final Iterable<V> iterable;
+	/** The queue iterator. */
 	protected Iterator<V> iterator;
 
 	/** Number of threads to create. */
-	protected int numThreads = 8;
+	protected final int numThreads;
+	/** The number of finished threads. */
 	protected int clockedInThreads;
 
 	/**
@@ -27,11 +33,7 @@ public class ThreadServer<V extends Updatable> {
 	 */
 	public ThreadServer(Rule<V> rule, Iterable<V> iterable)
 			throws NullParameterException {
-		if (rule == null) {
-			throw new NullParameterException("rule");
-		}
-		this.rule = rule;
-		this.iterable = iterable;
+		this(rule, iterable, DEFAULT_NUMTHREADS);
 	}
 
 	/**
@@ -43,7 +45,11 @@ public class ThreadServer<V extends Updatable> {
 	 */
 	public ThreadServer(Rule<V> rule, Iterable<V> iterable, int numThreads)
 			throws NullParameterException {
-		this(rule, iterable);
+		if (rule == null) {
+			throw new NullParameterException("rule");
+		}
+		this.rule = rule;
+		this.iterable = iterable;
 		this.numThreads = numThreads;
 	}
 
@@ -76,11 +82,6 @@ public class ThreadServer<V extends Updatable> {
 		}
 	}
 
-	protected void handleException(CAException e) {
-		e.printStackTrace();
-		System.exit(0);
-	}
-
 	/**
 	 * Updates the queued cells. TODO: return the actual value, and not just
 	 * false all the time...
@@ -90,7 +91,7 @@ public class ThreadServer<V extends Updatable> {
 	public boolean run() {
 		clockedInThreads = 0;
 		iterator = iterable.iterator();
-		
+
 		for (int i = 0; i < numThreads; i++) {
 			CAThread<V> thread = new CAThread<V>(this);
 			thread.start();
@@ -108,13 +109,28 @@ public class ThreadServer<V extends Updatable> {
 		return false;
 	}
 
+	/**
+	 * Called when a thread has finished.
+	 * 
+	 * @param caCellThread
+	 */
 	public synchronized void clockOut(CAThread<V> caCellThread) {
 		clockedInThreads++;
 		notify();
 	}
 
 	/**
-	 * Exception handler.
+	 * Handles exceptions.
+	 * 
+	 * @param e
+	 */
+	protected void handleException(CAException e) {
+		e.printStackTrace();
+		System.exit(0);
+	}
+
+	/**
+	 * Handles interruption exceptions.
 	 * 
 	 * @param e
 	 */

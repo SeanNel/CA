@@ -8,7 +8,7 @@ import exceptions.CAException;
 /* A cell rule that does nothing at all. */
 public class DummyRule extends CellRule {
 
-	public DummyRule(Lattice lattice, Neighbourhood neighbourhoodModel) throws CAException {
+	public DummyRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel) throws CAException {
 		super(lattice, neighbourhoodModel);
 	}
 

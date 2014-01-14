@@ -9,9 +9,9 @@ import exceptions.CAException;
 import exceptions.NullParameterException;
 
 public abstract class CellRule implements Rule<Cell> {
-	protected Lattice lattice;
-	protected Neighbourhood neighbourhoodModel;
-	protected final Stopwatch stopwatch = new Stopwatch();
+	protected final Lattice<Cell> lattice;
+	protected final Neighbourhood neighbourhoodModel;
+	protected final Stopwatch stopwatch;
 
 	/**
 	 * Constructor.
@@ -19,7 +19,7 @@ public abstract class CellRule implements Rule<Cell> {
 	 * @param ca
 	 * @throws CAException
 	 */
-	public CellRule(Lattice lattice, Neighbourhood neighbourhoodModel)
+	public CellRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel)
 			throws CAException {
 		if (lattice == null) {
 			throw new NullParameterException("lattice");
@@ -29,18 +29,23 @@ public abstract class CellRule implements Rule<Cell> {
 
 		this.lattice = lattice;
 		this.neighbourhoodModel = neighbourhoodModel;
+		stopwatch = new Stopwatch();
 	}
 
 	public void start() {
 		stopwatch.start();
 	}
 
-	public void update(Cell cell) {
-		if (cell.getState() != Cell.ACTIVE) {
-			return;
-		}
-		/* Method stub. */
-	}
+	// public void update(Cell cell) {
+	// /* Method stub. */
+	// /*
+	// * This bit should be added when subclasses extend this method, when
+	// * needed.
+	// */
+	// if (cell.getState() != Cell.ACTIVE) {
+	// return;
+	// }
+	// }
 
 	public void end() {
 		System.out.println(toString() + ", elapsed time: " + stopwatch.time()

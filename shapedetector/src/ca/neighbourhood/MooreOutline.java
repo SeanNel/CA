@@ -5,9 +5,8 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
-import ca.lattice.Lattice2D;
+import ca.lattice.CellLattice2D;
 import ca.shapedetector.BlobMap;
-import ca.shapedetector.ShapeList;
 import exceptions.NullParameterException;
 
 /**
@@ -17,12 +16,13 @@ import exceptions.NullParameterException;
  * ordered.
  * <p>
  * NOTE: the order has been made clockwise until the issue with reverse
- * PathIterators has been resolved.
+ * PathIterators has been resolved. Does not really make a difference at this
+ * point.
  */
-public class MooreOutline extends Neighbourhood2D {
-	protected BlobMap blobMap;
+public class MooreOutline extends CellNeighbourhood2D {
+	protected final BlobMap blobMap;
 
-	public MooreOutline(Lattice lattice, BlobMap blobMap)
+	public MooreOutline(Lattice<Cell> lattice, BlobMap blobMap)
 			throws NullParameterException {
 		super(lattice);
 		this.blobMap = blobMap;
@@ -35,14 +35,14 @@ public class MooreOutline extends Neighbourhood2D {
 		List<Cell> neighbourhood = new ArrayList<Cell>(8);
 		// add(neighbourhood, getCell(x, y));
 
-		// add(neighbourhood, ca.getCell(x - 1, y - 1));
-		// add(neighbourhood, (ca.getCell(x - 1, y));
-		// add(neighbourhood, ca.getCell(x - 1, y + 1));
-		// add(neighbourhood, ca.getCell(x, y + 1));
-		// add(neighbourhood, ca.getCell(x + 1, y + 1));
-		// add(neighbourhood, ca.getCell(x + 1, y));
-		// add(neighbourhood, ca.getCell(x + 1, y - 1));
-		// add(neighbourhood, ca.getCell(x, y - 1));
+		// add(neighbourhood, cell, ca.getCell(x - 1, y - 1));
+		// add(neighbourhood, cell, (ca.getCell(x - 1, y));
+		// add(neighbourhood, cell, ca.getCell(x - 1, y + 1));
+		// add(neighbourhood, cell, ca.getCell(x, y + 1));
+		// add(neighbourhood, cell, ca.getCell(x + 1, y + 1));
+		// add(neighbourhood, cell, ca.getCell(x + 1, y));
+		// add(neighbourhood, cell, ca.getCell(x + 1, y - 1));
+		// add(neighbourhood, cell, ca.getCell(x, y - 1));
 
 		add(neighbourhood, cell, lattice.getCell(x, y - 1));
 		add(neighbourhood, cell, lattice.getCell(x + 1, y - 1));
@@ -64,7 +64,7 @@ public class MooreOutline extends Neighbourhood2D {
 	 * @param neighbour
 	 */
 	protected void add(List<Cell> neighbourhood, Cell cell, Cell neighbour) {
-		if (cell != null && cell != Lattice2D.paddingCell
+		if (cell != null && cell != CellLattice2D.paddingCell
 				&& blobMap.getBlob(cell) == blobMap.getBlob(neighbour)) {
 			neighbourhood.add(neighbour);
 		}

@@ -4,13 +4,13 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
-import ca.lattice.Lattice2D;
+import ca.lattice.CellLattice2D;
 import exceptions.NullParameterException;
 
-public abstract class Neighbourhood2D implements Neighbourhood {
-	protected Lattice lattice;
+public abstract class CellNeighbourhood2D implements Neighbourhood {
+	protected final Lattice<Cell> lattice;
 
-	public Neighbourhood2D(Lattice lattice) throws NullParameterException {
+	public CellNeighbourhood2D(Lattice<Cell> lattice) throws NullParameterException {
 		if (lattice == null) {
 			throw new NullParameterException("lattice");
 		}
@@ -24,7 +24,7 @@ public abstract class Neighbourhood2D implements Neighbourhood {
 	 * @param cell
 	 */
 	protected void add(List<Cell> neighbourhood, Cell neighbour) {
-		if (neighbour != null && neighbour != Lattice2D.paddingCell) {
+		if (neighbour != null && neighbour != CellLattice2D.paddingCell) {
 			neighbourhood.add(neighbour);
 		}
 	}

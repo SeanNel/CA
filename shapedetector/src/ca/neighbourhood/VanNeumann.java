@@ -19,17 +19,17 @@ import exceptions.NullParameterException;
  * Another way to find these cells may be to iterate row for row and adjust the
  * y coordinate as a function of x.
  */
-public class VanNeumann extends Neighbourhood2D {
-	protected int neighbourhoodSize;
-	protected int r;
+public class VanNeumann extends CellNeighbourhood2D {
+	protected final int neighbourhoodSize;
+	protected final int r;
 
-	public VanNeumann(Lattice lattice, int r) throws NullParameterException {
+	public VanNeumann(Lattice<Cell> lattice, int r) throws NullParameterException {
 		super(lattice);
 		this.r = r;
+		neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
 	}
 
 	public List<Cell> gatherNeighbours(Cell cell) {
-		int neighbourhoodSize = (int) Math.ceil(Math.PI * r * r);
 		List<Cell> neighbourhood = new ArrayList<Cell>(neighbourhoodSize);
 
 		int[] coordinates = cell.getCoordinates();

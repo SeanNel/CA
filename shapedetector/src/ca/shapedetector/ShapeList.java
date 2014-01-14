@@ -1,32 +1,41 @@
 package ca.shapedetector;
 
 import exceptions.CAException;
-import graphics.SDPanel;
 import helpers.Stopwatch;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import ca.Debug;
+import ca.concurrency.ThreadServer;
 import ca.rules.shape.ShapeDrawRule;
 import ca.rules.shape.ShapeRule;
-import ca.shapedetector.shapes.SDShape;
+import ca.shapedetector.shapes.AbstractShape;
 
 public class ShapeList {
-	/** List of detected shapes. */
-	protected List<SDShape> shapes;
+	protected final ShapeDetector sd;
 	/** Processes to apply to each SDShape in sequence. */
-	public List<ShapeRule> shapeRules;
+	protected final List<ShapeRule> shapeRules;
+	/** List of detected shapes. */
+	protected final List<AbstractShape> shapes;
 
-	public void load(ShapeDetector ca) {
-		shapes = new LinkedList<SDShape>();
-		loadRules(ca);
+	/*
+	 * There is some concurrency issue with processing shapes in parallel. Set
+	 * this to false to enable it anyway.
+	 */
+	private static boolean debug = true;
+
+	public ShapeList(ShapeDetector sd) {
+		this.sd = sd;
+		shapes = new LinkedList<AbstractShape>();
+		shapeRules = new LinkedList<ShapeRule>();
+
+		// shapeRules.add(new ShapeDisplayRule(this, ShapeFrame.frame));
+		shapeRules.add(new ShapeDrawRule(this, sd.getPicturePanel()));
 	}
 
-	protected void loadRules(ShapeDetector ca) {
-		shapeRules = new LinkedList<ShapeRule>();
-		// shapeRules.add(new ShapeDisplayRule(this, ShapeFrame.frame));
-		shapeRules.add(new ShapeDrawRule(ca.getShapeList(), (SDPanel) ca
-				.getPicturePanel()));
+	public void clear() {
+		shapes.clear();
 	}
 
 	public void update() throws CAException {
@@ -36,17 +45,17 @@ public class ShapeList {
 
 		for (ShapeRule rule : shapeRules) {
 			rule.start();
-			/* Linear method */
-			for (SDShape shape : shapes) {
-				rule.update(shape);
+			if (debug || Debug.debug) {
+				/* Linear method */
+				for (AbstractShape shape : shapes) {
+					rule.update(shape);
+				}
+			} else {
+				/* Multithreaded method */
+				ThreadServer<AbstractShape> threadServer = new ThreadServer<AbstractShape>(
+						rule, shapes, sd.getCA().getNumThreads());
+				threadServer.run();
 			}
-			/*
-			 * TODO: fix bugs when using the multithreaded method here...
-			 */
-			/* Multithreaded method */
-			// ThreadServer<SDShape> threadServer = new ThreadServer<SDShape>(
-			// rule, shapes);
-			// threadServer.run();
 
 			rule.end();
 			System.out.println(rule + ", elapsed time: " + ruleStopwatch.time()
@@ -54,7 +63,10 @@ public class ShapeList {
 		}
 	}
 
-	public void addShape(SDShape shape) {
+	public synchronized void addShape(AbstractShape shape) {
+		if (shape == null) {
+			throw new RuntimeException();
+		}
 		shapes.add(shape);
 	}
 }

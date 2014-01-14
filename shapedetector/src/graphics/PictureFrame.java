@@ -23,8 +23,7 @@ public class PictureFrame extends JFrame implements ActionListener {
 
 	public PictureFrame(PicturePanel picturePanel) {
 		loadMenuBar();
-		this.picturePanel = picturePanel;
-		setContentPane(picturePanel);
+		setPanel(picturePanel);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -32,9 +31,14 @@ public class PictureFrame extends JFrame implements ActionListener {
 		// setResizable(false);
 	}
 
+	public void setPanel(PicturePanel picturePanel) {
+		this.picturePanel = picturePanel;
+		setContentPane(picturePanel);
+	}
+
 	public void setImage(BufferedImage image) {
-//		picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
-//				.getHeight()));
+		// picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
+		// .getHeight()));
 		picturePanel.setImage(image);
 		pack();
 	}

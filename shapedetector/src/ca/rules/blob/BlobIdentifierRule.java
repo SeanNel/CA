@@ -11,10 +11,10 @@ import exceptions.CAException;
  * Identifies blobs as CAShapes.
  */
 public class BlobIdentifierRule extends BlobRule {
-	static final RootShape shapeDetector = new RootShape();
-	protected ShapeList shapeList;
-	Stopwatch stopwatch;
-	long[] timers;
+	protected static final RootShape shapeDetector = new RootShape();
+	protected final ShapeList shapeList;
+	protected final Stopwatch stopwatch;
+	protected final long[] timers;
 
 	public BlobIdentifierRule(BlobMap blobMap, ShapeList shapeList) {
 		super(blobMap);
@@ -37,7 +37,7 @@ public class BlobIdentifierRule extends BlobRule {
 		}
 
 		stopwatch.start();
-		shapeList.addShape(shapeDetector.identifyShape(blob));
+		shapeList.addShape(shapeDetector.identify(blob));
 		// Input.waitForSpace();
 		timers[2] += stopwatch.time();
 	}

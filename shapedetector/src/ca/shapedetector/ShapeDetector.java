@@ -6,17 +6,18 @@ import graphics.SDPanel;
 import helpers.Stopwatch;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import std.Picture;
 import ca.CA;
+import ca.Cell;
+import ca.Debug;
+import ca.lattice.Lattice;
+import ca.lattice.CellLattice2D;
 import ca.neighbourhood.Moore;
 import ca.neighbourhood.Neighbourhood;
-import ca.rules.cell.BlobAssociationRule;
-import ca.rules.cell.CellRule;
-import ca.rules.cell.EdgeFinderRule;
-import ca.rules.cell.NoiseRemoverRule;
-import ca.rules.cell.OutlineFinderRule;
-import ca.rules.cell.ShapeFinderRule;
+import ca.rules.Rule;
+import ca.rules.cell.*;
 
 /**
  * Finds shapes in an image. Accepts bmp, png and jpg images.
@@ -37,11 +38,20 @@ import ca.rules.cell.ShapeFinderRule;
  * 
  * @author Sean
  */
-public class ShapeDetector extends CA {
+public class ShapeDetector {
+	protected final CA<Cell> ca;
+	protected CellLattice2D lattice;
+	/** Maps cells to blobs. */
 	protected BlobMap blobMap;
+	/** A list of shapes found. */
 	protected ShapeList shapeList;
-	
-	public static boolean debug = true;
+
+	/** A frame for displaying the output image. */
+	protected final PictureFrame pictureFrame;
+	/** A frame for displaying the output image. */
+	protected final SDPanel picturePanel;
+	/** Signals that the CA should display its results in a window. */
+	protected final boolean visible;
 
 	/**
 	 * Applies shape detector to image given as argument on the command line.
@@ -82,7 +92,6 @@ public class ShapeDetector extends CA {
 		ShapeDetector shapeDetector = new ShapeDetector(epsilon, r);
 		shapeDetector.apply(picture);
 
-		shapeDetector.pictureFrame.setVisible(true);
 		System.out.println("Finished in " + stopwatch.time() + " ms");
 	}
 
@@ -98,56 +107,69 @@ public class ShapeDetector extends CA {
 	 * @param r
 	 *            Search radius. Determines the size of the cell neighbourhood.
 	 */
+	/*
+	 * Might instead want to set epsilon dynamically according to the colour
+	 * range in the image.
+	 */
 	public ShapeDetector(float epsilon, int r) {
-		super();
-		blobMap = new BlobMap();
-		shapeList = new ShapeList();
-		/*
-		 * Might instead want to set epsilon dynamically according to the colour
-		 * range in the image.
-		 */
+		picturePanel = new SDPanel();
+		pictureFrame = new PictureFrame(picturePanel);
+		pictureFrame.setTitle("CA Shape Detector");
+		visible = true;
+
+		lattice = new CellLattice2D();
+		shapeList = new ShapeList(this);
+		blobMap = new BlobMap(this, shapeList);
+
+		List<Rule<Cell>> rules = new LinkedList<Rule<Cell>>();
 		try {
-			loadRules(r, epsilon);
+			Neighbourhood neighbourhoodModel = new Moore(lattice, r);
+			// rules.add(new DummyRule(lattice, neighbourhoodModel));
+			// rules.add(new GatherNeighboursRule(lattice, neighbourhoodModel));
+			rules.add(new NoiseRemoverRule(lattice, neighbourhoodModel, epsilon));
+			/* Optional step */
+			rules.add(new EdgeFinderRule(lattice, neighbourhoodModel, epsilon));
+			rules.add(new BlobAssociationRule(lattice, neighbourhoodModel,
+					blobMap));
+			// rules.add(new PrintBlobAssociationRule(lattice,
+			// neighbourhoodModel, blobMap));
+			rules.add(new ShapeFinderRule(lattice, blobMap, epsilon));
+			// rules.add(new ShapeAssimilatorRule(lattice, neighbourhoodModel,
+			// blobMap));
+			rules.add(new OutlineFinderRule(lattice, neighbourhoodModel,
+					blobMap));
 		} catch (CAException e) {
 			handleException(e);
 		}
 
-		SDPanel panel = new SDPanel();
-		pictureFrame = new PictureFrame(panel);
-		pictureFrame.setTitle("CA Shape Detector");
+		int numThreads = CA.DEFAULT_NUMTHREADS;
+		if (Debug.debug) {
+			numThreads = 1;
+		}
+		ca = new CA<Cell>(lattice, rules, numThreads);
 	}
 
-	@Override
+	/**
+	 * Sets picture to process and initializes cell lattice.
+	 * 
+	 * @param picture
+	 *            Picture to process.
+	 */
 	public void setPicture(Picture picture) {
-		super.setPicture(picture);
-		blobMap.load(this);
-		shapeList.load(this);
+		int w = picture.width();
+		int h = picture.height();
+
+		lattice.load(picture);
+		pictureFrame.setImage(lattice.getResult().getImage());
+		blobMap.clear(w, h);
+		shapeList.clear();
 	}
 
-	protected void loadRules(int r, float epsilon) throws CAException {
-		Neighbourhood neighbourhoodModel = new Moore(lattice, r);
-
-		cellRules = new LinkedList<CellRule>();
-		// cellRules.add(new CADummyRule(lattice));
-		// cellRules.add(new CAGatherNeighboursRule(lattice));
-		cellRules
-				.add(new NoiseRemoverRule(lattice, neighbourhoodModel, epsilon));
-		/* Optional step */
-		cellRules.add(new EdgeFinderRule(lattice, neighbourhoodModel, epsilon));
-		cellRules.add(new BlobAssociationRule(lattice, neighbourhoodModel,
-				blobMap));
-		// cellRules.add(new PrintBlobAssociationRule(lattice,
-		// neighbourhoodModel, blobMap));
-		cellRules.add(new ShapeFinderRule(lattice, blobMap, epsilon));
-		// cellRules.add(new CAShapeAssimilatorRule(lattice, neighbourhoodModel,
-		// blobMap));
-		cellRules.add(new OutlineFinderRule(lattice, neighbourhoodModel,
-				blobMap));
-	}
-
-	@Override
 	public Picture apply(Picture picture) {
-		super.apply(picture);
+		setPicture(picture);
+		pictureFrame.setVisible(visible);
+
+		ca.apply(picture);
 		try {
 			blobMap.update();
 			shapeList.update();
@@ -159,14 +181,62 @@ public class ShapeDetector extends CA {
 		graphics.IdentityFrame.frame.setVisible(false);
 		graphics.LineChartFrame.frame.setVisible(false);
 
-		return getResult();
+		pictureFrame.setVisible(true);
+		return ca.getResult();
 	}
 
+	/**
+	 * Gets the BlobMap.
+	 * 
+	 * @return
+	 */
 	public BlobMap getblobMap() {
 		return blobMap;
 	}
 
+	/**
+	 * Gets the ShapeList.
+	 * 
+	 * @return
+	 */
 	public ShapeList getShapeList() {
 		return shapeList;
 	}
+
+	/**
+	 * Handles exceptions.
+	 * 
+	 * @param e
+	 */
+	protected void handleException(CAException e) {
+		e.printStackTrace();
+		System.exit(0);
+	}
+
+	public Lattice<Cell> getLattice() {
+		return ca.getLattice();
+	}
+
+	public CA<Cell> getCA() {
+		return ca;
+	}
+
+	/**
+	 * Gets the panel displaying the CA output.
+	 * 
+	 * @return
+	 */
+	public PictureFrame getPictureFrame() {
+		return pictureFrame;
+	}
+
+	/**
+	 * Gets the panel displaying the CA output.
+	 * 
+	 * @return
+	 */
+	public SDPanel getPicturePanel() {
+		return picturePanel;
+	}
+
 }

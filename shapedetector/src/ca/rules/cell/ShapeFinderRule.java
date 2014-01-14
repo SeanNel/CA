@@ -14,10 +14,10 @@ import ca.shapedetector.BlobMap;
  * Groups cells of similar colour together into shapes.
  */
 public class ShapeFinderRule extends CellRule {
-	protected BlobMap blobMap;
-	protected float epsilon;
+	protected final BlobMap blobMap;
+	protected final float epsilon;
 
-	public ShapeFinderRule(Lattice lattice, BlobMap blobMap, float epsilon)
+	public ShapeFinderRule(Lattice<Cell> lattice, BlobMap blobMap, float epsilon)
 			throws CAException {
 		super(lattice, new VanNeumannCardinal(lattice));
 		this.blobMap = blobMap;
