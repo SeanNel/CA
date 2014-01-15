@@ -2,8 +2,6 @@ package ca.shapedetector.shapes;
 
 import java.awt.geom.Rectangle2D;
 
-import math.DiscreteFunction;
-import math.NoiseFilter;
 import math.functions.CyclicSimilarity;
 import math.functions.PeriodicDifferentiableFunction;
 import math.utils.CriticalPoints;
@@ -27,9 +25,11 @@ public abstract class AbstractShape implements SDShape {
 	/** Path that defines this shape as a polygon. */
 	protected final SDPath path;
 	/** The method of collection distribution data. */
-	protected final static Distribution distribution = new RadialDistance();
+	protected final static Distribution distribution = new RadialDistance(); // RadialGradient();
 	/** The shape distribution function. */
 	protected final UnivariateDifferentiableFunction distributionFunction;
+	/** Minimum side length */
+	protected double minSideLength = 3.0;
 
 	/**
 	 * Constructor for RootShape.
@@ -102,10 +102,8 @@ public abstract class AbstractShape implements SDShape {
 		if (x1 < 3.0) {
 			return new Constant(0.0);
 		}
-		DiscreteFunction f1 = distribution.compute(path);
-
-		UnivariateFunction f2 = NoiseFilter.filter(f1);
-		return new PeriodicDifferentiableFunction(f2, x0, x1);
+		UnivariateFunction f = distribution.compute(path);
+		return new PeriodicDifferentiableFunction(f, x0, x1);
 	}
 
 	/**
@@ -121,14 +119,12 @@ public abstract class AbstractShape implements SDShape {
 		return compareByArea(shape);
 	}
 
-	/* Assumes that this shape is larger than that of the parameter */
 	protected double compareByPerimeter(AbstractShape shape) {
 		double a = shape.getPath().getPerimeter();
 		double b = path.getPerimeter();
 		return FastMath.min(a, b) / FastMath.max(a, b);
 	}
 
-	/* Assumes that this shape is larger than that of the parameter */
 	protected double compareByArea(AbstractShape shape) {
 		double a = shape.getPath().getArea();
 		double b = path.getArea();
@@ -168,4 +164,5 @@ public abstract class AbstractShape implements SDShape {
 		}
 		return similarity;
 	}
+
 }

@@ -1,12 +1,8 @@
 package math.utils;
 
-import helpers.Misc;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import math.ComparableDerivativeStructure;
 import math.functions.Differential;
 
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
@@ -87,9 +83,8 @@ public class CriticalPoints {
 		return f.value(t);
 	}
 
-	protected static double[] filterSolutions(double[] solutions) {
+	protected static List<Double> filterSolutions(double[] solutions, double delta) {
 		double lastX = Double.MIN_VALUE;
-		double delta = 2.0;
 		int n = solutions.length;
 		List<Double> criticalPoints = new ArrayList<Double>(n);
 		for (int i = 0; i < n; i++) {
@@ -101,7 +96,7 @@ public class CriticalPoints {
 			}
 			criticalPoints.add(x);
 		}
-		return Misc.toArray(criticalPoints);
+		return criticalPoints;
 	}
 
 	/**
@@ -149,33 +144,24 @@ public class CriticalPoints {
 		return minimum;
 	}
 
-	public static double[] sortBy2ndDerivative(double[] abscissae) {
-		int n = abscissae.length;
-
-		/* Gets 2nd derivatives */
-		int order = 2;
-		ComparableDerivativeStructure[] data = new ComparableDerivativeStructure[n];
-		for (int i = 0; i < n; i++) {
-			DerivativeStructure x = new DerivativeStructure(1, order, 0,
-					abscissae[i]);
-			data[i] = new ComparableDerivativeStructure(x, order);
-		}
-
-		Arrays.sort(data);
-
-		abscissae = new double[n];
-		for (int i = 0; i < n; i++) {
-			abscissae[i] = data[i].t.getReal();
-		}
-		return abscissae;
-	}
-
+	/**
+	 * Prints the x coordinates with their corresponding values to standard
+	 * output.
+	 * 
+	 * @param xValues
+	 */
 	public void printPoints(List<Double> xValues) {
 		for (double x : xValues) {
 			System.out.println("x=" + x + ", y=" + f.value(x));
 		}
 	}
 
+	/**
+	 * Prints the x coordinates with their corresponding values to standard
+	 * output.
+	 * 
+	 * @param xValues
+	 */
 	public void printPoints(double[] xValues) {
 		for (double x : xValues) {
 			System.out.println("x=" + x + ", y=" + f.value(x));

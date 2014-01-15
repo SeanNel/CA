@@ -1,10 +1,9 @@
 package ca.shapedetector.shapes;
 
 import ca.Debug;
-import ca.shapedetector.PolygonDetector;
 import ca.shapedetector.path.SDPath;
 
-public class Quadrilateral extends AbstractShape {
+public class Quadrilateral extends Polygon {
 	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
 	protected final static double tolerance = 0.3;
 
@@ -43,7 +42,8 @@ public class Quadrilateral extends AbstractShape {
 		/* Input.waitforSpace() */
 
 		if (1.0 - match < tolerance) {
-			shape = new Quadrilateral(shape);
+			shape = new Quadrilateral(mask);
+//			shape = new Quadrilateral(shape);
 			// shape = Rectangle.identify(shape);
 		}
 		return shape;
@@ -51,7 +51,7 @@ public class Quadrilateral extends AbstractShape {
 
 	protected Quadrilateral getMask(AbstractShape shape) {
 		/* Creates mask shape and compares the two. */
-		SDPath path = PolygonDetector.getPolygon(shape, 4);
+		SDPath path = getPolygon(shape, 4);
 		return new Quadrilateral(path);
 	}
 }

@@ -9,7 +9,7 @@ import std.Picture;
  * 
  * @author Sean
  */
-public class Monochrome extends Filter {
+public class Monochrome extends ImageFilter {
 	public static Picture apply(Picture picture) {
 		Picture output = new Picture(picture.width(), picture.height());
 		output.setOriginUpperLeft();

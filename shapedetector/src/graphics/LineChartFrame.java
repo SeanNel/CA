@@ -6,6 +6,7 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
+import math.DiscreteFunction;
 import math.functions.Differential;
 
 import org.apache.commons.math3.analysis.FunctionUtils;
@@ -82,17 +83,6 @@ public class LineChartFrame extends JFrame {
 		return chart;
 	}
 
-	public static void displayData(final double[]... f) {
-		synchronized (dataset) {
-			dataset.removeAllSeries();
-			int i = 0;
-			for (double[] s : f) {
-				dataset.addSeries(frame.getSeries(s, "Series " + i++));
-			}
-		}
-		frame.setVisible(true);
-	}
-
 	public static void displayData(double x0, double x1,
 			final UnivariateFunction... f) {
 		synchronized (dataset) {
@@ -128,19 +118,48 @@ public class LineChartFrame extends JFrame {
 	public XYIntervalSeries getSeries(UnivariateFunction f, String label,
 			double x0, double x1) {
 		int n = (int) Math.ceil(x1 - x0);
+		if (n < 100) {
+			n = 100;
+		}
 
 		if (n < 1) {
 			return new XYIntervalSeries(label);
 		}
 		double[] samples = FunctionUtils.sample(f, x0, x1, n);
-		return getSeries(samples, label);
+		return getSeries(DiscreteFunction.getAbscissae(x0, x1, n), samples,
+				label);
 	}
 
-	public XYIntervalSeries getSeries(double[] f, String label) {
+	public XYIntervalSeries getSeries(double[] abscissae, double[] ordinates,
+			String label) {
 		XYIntervalSeries f1Series = new XYIntervalSeries(label);
 
-		for (int i = 0; i < f.length; i++) {
-			f1Series.add(i, i, i, f[i], f[i], f[i]);
+		for (int i = 0; i < ordinates.length; i++) {
+			double x = abscissae[i];
+			double y = ordinates[i];
+			f1Series.add(x, x, x, y, y, y);
+		}
+		return f1Series;
+	}
+
+	public static void displayData(final double[]... f) {
+		synchronized (dataset) {
+			dataset.removeAllSeries();
+			int i = 0;
+			for (double[] s : f) {
+				dataset.addSeries(frame.getSeries(s, "Series " + i++));
+			}
+		}
+		frame.setVisible(true);
+	}
+
+	public XYIntervalSeries getSeries(double[] ordinates, String label) {
+		XYIntervalSeries f1Series = new XYIntervalSeries(label);
+
+		for (int i = 0; i < ordinates.length; i++) {
+			double x = i;
+			double y = ordinates[i];
+			f1Series.add(x, x, x, y, y, y);
 		}
 		return f1Series;
 	}

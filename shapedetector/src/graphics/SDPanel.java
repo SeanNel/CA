@@ -138,9 +138,9 @@ public class SDPanel extends PicturePanel {
 			centroidColour = new Color(200, 50, 0, 40);
 			break;
 		case MASK:
-			outlineColour = Color.magenta;
-			labelColour = new Color(0, 0, 0, 20);
-			fillColour = new Color(230, 245, 250, 100);
+			outlineColour = Color.green;
+			labelColour = new Color(0, 0, 0, 0);
+			fillColour = new Color(230, 255, 250, 120);
 			break;
 		case SIMPLE:
 			outlineColour = Color.blue;

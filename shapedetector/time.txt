@@ -1,0 +1,11 @@
+CA started.
+Loading complete, elapsed time: 0 ms
+NoiseRemoverRule, elapsed time: 373 ms
+EdgeFinderRule, elapsed time: 180 ms
+BlobAssociationRule, elapsed time: 131 ms
+BlobMergeRule, elapsed time: 229 ms
+OutlineFinderRule, elapsed time: 103 ms
+BlobIdentifierRule, elapsed time: 162 ms
+Number of shapes: 39
+ShapeDrawRule, elapsed time: 43 ms
+Finished in 1537 ms

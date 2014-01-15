@@ -1,7 +1,6 @@
 package math;
 
 import java.util.Arrays;
-import java.util.Iterator;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -10,56 +9,11 @@ import org.apache.commons.math3.exception.NonMonotonicSequenceException;
 import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.commons.math3.util.MathArrays;
 
-public class DiscreteFunction implements UnivariateFunction,
-		Iterable<Double> { //UnivariateDifferentiableFunction
+public class DiscreteFunction implements UnivariateFunction { // UnivariateDifferentiableFunction
 	/** Abscissae. */
 	protected final double[] abscissae;
 	/** Ordinates. */
 	protected final double[] ordinates;
-
-	private class XIterator implements Iterator<Double> {
-		DiscreteFunction f;
-		int i = 0;
-
-		public XIterator(DiscreteFunction f) {
-			this.f = f;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return i < f.abscissae.length;
-		}
-
-		@Override
-		public Double next() {
-			return abscissae[i++];
-		}
-
-		@Override
-		public void remove() {
-			// TODO Auto-generated method stub
-		}
-	}
-
-	private class YIterator extends XIterator {
-		public YIterator(DiscreteFunction f) {
-			super(f);
-		}
-
-		@Override
-		public Double next() {
-			return ordinates[i++];
-		}
-	}
-
-	@Override
-	public Iterator<Double> iterator() {
-		return new XIterator(this);
-	}
-
-	public Iterator<Double> valueIterator() {
-		return new YIterator(this);
-	}
 
 	/**
 	 * Builds a step function from a list of arguments and the corresponding
@@ -109,6 +63,30 @@ public class DiscreteFunction implements UnivariateFunction,
 		ordinates = MathArrays.copyOf(y);
 	}
 
+	/**
+	 * Creates a function mapping each y value to an x value, from 0 to n.
+	 * 
+	 * @param y
+	 */
+	public DiscreteFunction(double[] y) {
+		this(new double[y.length], y);
+		for (int i = 0; i < abscissae.length; i++) {
+			abscissae[i] = i;
+		}
+	}
+
+	/**
+	 * Creates a function mapping each y value to an x value, spaced equally
+	 * from x0 to x1.
+	 * 
+	 * @param y
+	 * @param x0
+	 * @param x1
+	 */
+	public DiscreteFunction(double[] y, double x0, double x1) {
+		this(getAbscissae(x0, x1, y.length), y);
+	}
+
 	/** {@inheritDoc} */
 	@Override
 	public double value(double x) {
@@ -130,28 +108,28 @@ public class DiscreteFunction implements UnivariateFunction,
 		return fx;
 	}
 
-//	/** {@inheritDoc} */
-//	@Override
-//	public DerivativeStructure value(DerivativeStructure t)
-//			throws DimensionMismatchException {
-//		if (t.getOrder() > 1) {
-//			throw new RuntimeException();
-//		}
-//
-//		double x = Math.floor(t.getReal());
-//		int index = Arrays.binarySearch(abscissae, x);
-//		if (index + 1 > abscissae.length) {
-//			index = abscissae.length;
-//		}
-//		double h = abscissae[index + 1];
-//
-//		double dx = x - h;
-//		double dy = ordinates[index + 1] - ordinates[index]; // value(x);
-//
-//		DerivativeStructure result = new DerivativeStructure(
-//				t.getFreeParameters(), t.getOrder(), dx / dy);
-//		return result;
-//	}
+	// /** {@inheritDoc} */
+	// @Override
+	// public DerivativeStructure value(DerivativeStructure t)
+	// throws DimensionMismatchException {
+	// if (t.getOrder() > 1) {
+	// throw new RuntimeException();
+	// }
+	//
+	// double x = Math.floor(t.getReal());
+	// int index = Arrays.binarySearch(abscissae, x);
+	// if (index + 1 > abscissae.length) {
+	// index = abscissae.length;
+	// }
+	// double h = abscissae[index + 1];
+	//
+	// double dx = x - h;
+	// double dy = ordinates[index + 1] - ordinates[index]; // value(x);
+	//
+	// DerivativeStructure result = new DerivativeStructure(
+	// t.getFreeParameters(), t.getOrder(), dx / dy);
+	// return result;
+	// }
 
 	public int size() {
 		return abscissae.length;
@@ -165,4 +143,18 @@ public class DiscreteFunction implements UnivariateFunction,
 		return ordinates;
 	}
 
+	public static double[] getAbscissae(double x0, double x1, int n) {
+		if (x1 <= x0 || n <= 0) {
+			throw new RuntimeException();
+		}
+		double[] abscissae = new double[n];
+		// double delta = (x1 - x0) / (double) n;
+		// double x = x0;
+		double period = x1 - x0;
+		for (int i = 0; i < n; i++) {
+			// x += delta;
+			abscissae[i] = x0 + ((double) i * period / (double) n);
+		}
+		return abscissae;
+	}
 }

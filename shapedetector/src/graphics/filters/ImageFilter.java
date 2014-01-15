@@ -7,7 +7,7 @@ import std.Picture;
  * 
  * @author Sean
  */
-public abstract class Filter {
+public abstract class ImageFilter {
 	/**
 	 * Applies the filter to the specified image.
 	 * 

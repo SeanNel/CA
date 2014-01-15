@@ -317,6 +317,18 @@ public class SDPath implements Iterable<Point2D> {
 		// fromPath2D(path);
 	}
 
+	public List<Point2D> getVertices(List<Double> indices, int s) {
+		OutlineMap outlineMap = getOutlineMap();
+		int n = indices.size();
+		List<Point2D> vertices = new ArrayList<Point2D>(n);
+
+		for (int i = 0; i < n; i++) {
+			Point2D vertex = outlineMap.getVertex(indices.get(i));
+			vertices.add(vertex);
+		}
+		return vertices;
+	}
+
 	// /**
 	// * Rotates the path anti-clockwise around its center by the specified
 	// angle

@@ -4,7 +4,7 @@ import java.awt.Color;
 
 import std.Picture;
 
-public class Greyscale extends Filter {
+public class Greyscale extends ImageFilter {
 	public static Picture greyscale(Picture picture) {
 		Picture greypic = new Picture(picture.width(), picture.height());
 		greypic.setOriginUpperLeft();
