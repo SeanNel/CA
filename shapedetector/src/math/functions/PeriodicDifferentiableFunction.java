@@ -22,6 +22,16 @@ public class PeriodicDifferentiableFunction extends PeriodicFunction implements
 		super(differentiator.differentiate(f), x0, x1);
 	}
 
+	public PeriodicDifferentiableFunction(UnivariateDifferentiableFunction f,
+			double x0, double x1, double rotation) {
+		super(f, x0, x1, rotation);
+	}
+
+	public PeriodicDifferentiableFunction(UnivariateFunction f, double x0,
+			double x1, double rotation) {
+		super(differentiator.differentiate(f), x0, x1, rotation);
+	}
+
 	@Override
 	public DerivativeStructure value(DerivativeStructure t)
 			throws DimensionMismatchException {

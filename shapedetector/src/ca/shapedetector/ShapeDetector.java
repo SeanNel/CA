@@ -11,7 +11,6 @@ import java.util.List;
 import std.Picture;
 import ca.CA;
 import ca.Cell;
-import ca.Debug;
 import ca.lattice.Lattice;
 import ca.lattice.CellLattice2D;
 import ca.neighbourhood.Moore;
@@ -54,6 +53,13 @@ public class ShapeDetector {
 	protected final boolean visible;
 
 	/**
+	 * When true, displays the shape being processed, distribution graphs and
+	 * other debug info while running. Unpredictable output when running in
+	 * parallel mode, so forces single-threaded processing.
+	 */
+	public static boolean debug;
+
+	/**
 	 * Applies shape detector to image given as argument on the command line.
 	 * 
 	 * @param path
@@ -67,6 +73,7 @@ public class ShapeDetector {
 		String path;
 		float epsilon = 0.05f;
 		int r = 1;
+		boolean debug = false;
 
 		if (args.length == 0) {
 			System.out
@@ -81,6 +88,9 @@ public class ShapeDetector {
 		if (args.length > 2) {
 			r = Integer.parseInt(args[2]);
 		}
+		if (args.length > 3) {
+			debug = Boolean.parseBoolean(args[3]);
+		}
 
 		Picture picture = new Picture(path);
 
@@ -89,7 +99,7 @@ public class ShapeDetector {
 		// picture = Posterize.apply(picture, 3);
 
 		Stopwatch stopwatch = new Stopwatch();
-		ShapeDetector shapeDetector = new ShapeDetector(epsilon, r);
+		ShapeDetector shapeDetector = new ShapeDetector(epsilon, r, debug);
 		shapeDetector.apply(picture);
 
 		System.out.println("Finished in " + stopwatch.time() + " ms");
@@ -112,6 +122,12 @@ public class ShapeDetector {
 	 * range in the image.
 	 */
 	public ShapeDetector(float epsilon, int r) {
+		this(epsilon, r, false);
+	}
+
+	public ShapeDetector(float epsilon, int r, boolean debug) {
+		ShapeDetector.debug = debug;
+
 		picturePanel = new SDPanel();
 		pictureFrame = new PictureFrame(picturePanel);
 		pictureFrame.setTitle("CA Shape Detector");
@@ -141,9 +157,8 @@ public class ShapeDetector {
 		} catch (CAException e) {
 			handleException(e);
 		}
-
 		int numThreads = CA.DEFAULT_NUMTHREADS;
-		if (Debug.debug) {
+		if (ShapeDetector.debug) {
 			numThreads = 1;
 		}
 		ca = new CA<Cell>(lattice, rules, numThreads);

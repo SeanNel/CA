@@ -19,9 +19,9 @@ public class InterpolatingVertexIterator extends VertexIterator {
 		super(vertices, direction);
 		this.step = step;
 		if (direction == FORWARD) {
-			currentPosition = vertices.get(0);
-		} else {
 			currentPosition = vertices.get(vertices.size() - 1);
+		} else {
+			currentPosition = vertices.get(0);;
 		}
 	}
 

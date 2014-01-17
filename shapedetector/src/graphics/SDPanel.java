@@ -19,6 +19,8 @@ public class SDPanel extends PicturePanel {
 	protected Color outlineColour;
 	/** Shape's centroid colour. */
 	protected Color centroidColour;
+	/** Shape's starting point colour. */
+	protected Color startPointColour;
 	/** Shape's text label colour. */
 	protected Color labelColour;
 	protected static final Font DEFAULT_FONT = new Font("SansSerif",
@@ -78,6 +80,7 @@ public class SDPanel extends PicturePanel {
 
 		drawCentroid(shape);
 		drawLabel(shape);
+		drawStartPoint(shape);
 
 		repaint();
 	}
@@ -100,6 +103,17 @@ public class SDPanel extends PicturePanel {
 				centroidY + 2);
 		graphics.drawLine(centroidX - 2, centroidY + 2, centroidX + 2,
 				centroidY - 2);
+	}
+
+	public synchronized void drawStartPoint(AbstractShape shape) {
+		if (shape.getPath().getVertices().size() > 0) {
+			graphics.setColor(startPointColour);
+			Point2D startPoint = shape.getPath().getVertices().get(0);
+			int startPointX = (int) startPoint.getX();
+			int startPointY = (int) startPoint.getY();
+
+			graphics.drawOval(startPointX - 2, startPointY - 2, 4, 4);
+		}
 	}
 
 	/**
@@ -136,11 +150,14 @@ public class SDPanel extends PicturePanel {
 			labelColour = new Color(0, 0, 0, 40);
 			outlineColour = new Color(255, 255, 0, 40);
 			centroidColour = new Color(200, 50, 0, 40);
+			startPointColour = new Color(200, 50, 0, 0);
 			break;
 		case MASK:
 			outlineColour = Color.green;
 			labelColour = new Color(0, 0, 0, 0);
 			fillColour = new Color(230, 255, 250, 120);
+			centroidColour = new Color(210, 235, 200, 230);
+			startPointColour = new Color(210, 235, 200, 220);
 			break;
 		case SIMPLE:
 			outlineColour = Color.blue;
@@ -154,6 +171,7 @@ public class SDPanel extends PicturePanel {
 			outlineColour = Color.red;
 			centroidColour = Color.magenta;
 			labelColour = Color.blue;
+			startPointColour = Color.pink;
 			font = DEFAULT_FONT;
 		}
 	}

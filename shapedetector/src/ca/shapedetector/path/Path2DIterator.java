@@ -6,20 +6,26 @@ import java.awt.geom.Point2D;
 import java.util.Iterator;
 
 /**
- * Iterates through the path, assuming that the path is a polygonal closed loop.
+ * Iterates through the vertices of a Path2D object. Curved segments are
+ * approximated with a series of straight segments. It is only able to iterate
+ * along the primary direction of the outline.
  * 
  * @author Sean
  */
-public class SDPathIterator implements Iterator<Point2D> {
+public class Path2DIterator implements Iterator<Point2D> {
+	protected final static double flatness = 1.5d;
 	protected PathIterator pathIterator;
 	protected boolean hasNext;
-	/* Interpolates diagonal pixels at step < sqrt(2) */
-	protected double step = 1.0;
+	/*
+	 * Diagonal pixels are at distance sqrt(2) px, but horizontal and vertical
+	 * ones are only 1 px apart.
+	 */
+	protected double step = 1d;
 	protected Point2D currentPosition;
 	protected int currentSegment;
 
-	public SDPathIterator(Path2D path) {
-		pathIterator = path.getPathIterator(null);
+	public Path2DIterator(Path2D path) {
+		pathIterator = path.getPathIterator(null, flatness);
 		hasNext = !pathIterator.isDone();
 		currentPosition = getSegmentCoordinates();
 	}
@@ -58,13 +64,13 @@ public class SDPathIterator implements Iterator<Point2D> {
 	}
 
 	protected Point2D getSegmentCoordinates() {
-		double[] coordinates = new double[5];
+		double[] coordinates = new double[6];
 		currentSegment = pathIterator.currentSegment(coordinates);
 		return new Point2D.Double(coordinates[0], coordinates[1]);
 	}
 
 	protected int getSegmentType() {
-		double[] p = new double[5];
+		double[] p = new double[6];
 		return pathIterator.currentSegment(p);
 	}
 

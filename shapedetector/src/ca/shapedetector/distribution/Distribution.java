@@ -36,12 +36,15 @@ public abstract class Distribution {
 		Point2D a = vertices.get(n - 1);
 		while (iterator.hasNext()) {
 			Point2D b = iterator.next();
-			perimeter += a.distance(b);
+			double distance = a.distance(b);
+			if (distance > 0) {
+				perimeter += a.distance(b);
 
-			xList.add(perimeter);
-			yList.add(getValue(o, a, b));
+				xList.add(perimeter);
+				yList.add(getValue(o, a, b));
 
-			a = b;
+				a = b;
+			}
 		}
 
 		double[] abscissae = Misc.toArray(xList);

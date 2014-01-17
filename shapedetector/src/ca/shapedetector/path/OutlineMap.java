@@ -43,6 +43,34 @@ public class OutlineMap {
 		return perimeter;
 	}
 
+	/**
+	 * Gets the distance around the perimeter from the starting point to the
+	 * vertex at index i.
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public double getDistance(int i) {
+		return vertexIndices[i];
+	}
+
+	/**
+	 * Gets the distance around the perimeter from the starting point to the
+	 * vertex.
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public double getDistance(Point2D vertex) {
+		for (int i = 0; i < vertices.size(); i++) {
+			Point2D v = vertices.get(i);
+			if (v.equals(vertex)) {
+				return vertexIndices[i];
+			}
+		}
+		throw new RuntimeException("Vertex not found");
+	}
+
 	public Point2D getVertex(double d) {
 		while (d < 0) {
 			d += perimeter;

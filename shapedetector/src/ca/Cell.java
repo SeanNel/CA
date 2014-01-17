@@ -116,7 +116,8 @@ public class Cell {
 	}
 
 	public String toString() {
-		return "(CACell) [x=" + coordinates[0] + ", y=" + coordinates[1]
-				+ ", state=" + state + "]";
+//		return "[x=" + coordinates[0] + ", y=" + coordinates[1] + "]";
+		 return "(CACell) [x=" + coordinates[0] + ", y=" + coordinates[1]
+		 + ", state=" + state + "]";
 	}
 }

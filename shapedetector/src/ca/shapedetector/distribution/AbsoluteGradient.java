@@ -1,5 +1,7 @@
 package ca.shapedetector.distribution;
 
+import helpers.Misc;
+
 import java.awt.geom.Point2D;
 
 import math.DiscreteFunction;
@@ -7,7 +9,6 @@ import math.DiscreteFunction;
 import org.apache.commons.math3.analysis.FunctionUtils;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
-import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariatePeriodicInterpolator;
 
@@ -26,47 +27,42 @@ public class AbsoluteGradient extends Distribution {
 		return theta;
 	}
 
-	public static double getAngle(double x, double y) {
-		if (x == 0) {
-			if (y >= 0) {
-				return Math.PI / 2.0;
-			} else {
-				return 1.5 * Math.PI;
-			}
-		} else if (y == 0) {
-			if (x >= 0) {
-				return 0;
-			} else {
-				return Math.PI;
-			}
-		} else {
-			double angle = Math.atan(Math.abs(y / x));
-			if (x < 0 && y > 0) {
-				angle = Math.PI - angle;
-			} else if (x < 0 && y < 0) {
-				angle = Math.PI + angle;
-			} else if (x > 0 && y < 0) {
-				angle = 2.0 * Math.PI - angle;
-			}
-			return angle;
-		}
-	}
-
 	protected static double getGradient(Point2D v1, Point2D v2) {
-		/* Y is negative because it increases from top to bottom. */
-		double theta1 = getAngle(v1.getX(), -v1.getY());
-		double theta2 = getAngle(v2.getX(), -v2.getY());
+		double x = v2.getX() - v1.getX();
+		double y = v2.getY() - v1.getY();
 
-		double gradient = theta2 - theta1;
-		if (gradient < 0) {
-			gradient += 2.0 * Math.PI;
+		/* Y is negative because it increases from top to bottom. */
+		double theta = Misc.getAngle(x, -y);
+
+		if (theta < 0) {
+			theta += 2.0 * Math.PI;
 		}
 		// gradient -= (Math.PI / 2.0);
-		return gradient;
+		return theta;
 	}
+
+	// protected static double getGradient(Point2D v1, Point2D v2) {
+	// /* Y is negative because it increases from top to bottom. */
+	// double theta1 = Misc.getAngle(v1.getX(), -v1.getY());
+	// double theta2 = Misc.getAngle(v2.getX(), -v2.getY());
+	//
+	// double gradient = theta2 - theta1;
+	// if (gradient < 0) {
+	// gradient += 2.0 * Math.PI;
+	// }
+	// // gradient -= (Math.PI / 2.0);
+	// return gradient;
+	// }
 
 	/**
 	 * Filters noise and returns an interpolated polynomial.
+	 * <p>
+	 * Applying a mean filter makes the slopes less steep, such that each vertex
+	 * creates two critical points. A median filter creates vertices along
+	 * straight, though slanted lines.
+	 * <p>
+	 * So this method is not practical until a way is found to effectively
+	 * filter out the noise.
 	 * 
 	 * @param f
 	 * @return
@@ -82,17 +78,18 @@ public class AbsoluteGradient extends Distribution {
 		double x0 = a[0];
 		double x1 = a[a.length - 1];
 
-		double[] samples = FunctionUtils.sample(f, x0, x1, a.length);
+		 double[] samples = FunctionUtils.sample(f, x0, x1, a.length);
 
-		// double bandwidth = 2.0;
+		// double bandwidth = 5.0;
 		// int numSamples = (int) (bandwidth * 2.0);
 		// Filter g = new MeanFilter(f, x0, x1, bandwidth, numSamples, true);
 		// double[] samples = g.sample(a.length);
 
 		// bandwidth = 4.0;
 		// numSamples = (int) (bandwidth * 2.0);
-		// g = new MedianFilter(g, x0, x1, bandwidth, numSamples, true);
-		// double[] samples = g.sample(a.lesngth);
+		// // g = new MedianFilter(g, x0, x1, bandwidth, numSamples, true);
+		// Filter g = new MedianFilter(f, x0, x1, bandwidth, numSamples, true);
+		// double[] samples = g.sample(a.length);
 
 		// UnivariateFunction h = new DiscreteFunction(samples, x0, x1);
 		// graphics.LineChartFrame.displayData(x0, x1, f, h);
@@ -114,19 +111,18 @@ public class AbsoluteGradient extends Distribution {
 		// int iters = LoessInterpolator.DEFAULT_ROBUSTNESS_ITERS;
 		// double accuracy = LoessInterpolator.DEFAULT_ACCURACY;
 
-		/* Gradient method */
-		double bandwidth = 0.001;
-		int iters = 0;
-		double accuracy = 1;
+		// double bandwidth = 0.05;
+		// int iters = 0;
+		// double accuracy = 1;
 
 		UnivariateInterpolator interpolator;
-		if ((n * bandwidth) < 2) {
-			/* Fail-safe option */
-			interpolator = new LinearInterpolator();
-		} else {
-			interpolator = new LoessInterpolator(bandwidth, iters, accuracy);
-		}
+		// if ((n * bandwidth) < 2) {
+		// /* Fail-safe option */
 		// interpolator = new LinearInterpolator();
+		// } else {
+		// interpolator = new LoessInterpolator(bandwidth, iters, accuracy);
+		// }
+		interpolator = new LinearInterpolator();
 
 		/*
 		 * We need to have periodic data for the interpolator to work over the

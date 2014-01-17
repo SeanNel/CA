@@ -18,7 +18,7 @@ import ca.shapedetector.BlobMap;
 import ca.shapedetector.blob.Blob;
 
 /**
- * Assimilates small shapes into larger ones of similar colour.
+ * Incomplete rule. Assimilates small shapes into larger ones of similar colour.
  * <p>
  * TODO: fix sync issues
  */
@@ -32,7 +32,9 @@ public class ShapeAssimilatorRule extends CellRule {
 	public static int I = 0;
 	protected Hashtable<Blob, Color> shapeColours;
 
-	public ShapeAssimilatorRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel, BlobMap blobMap) throws CAException {
+	public ShapeAssimilatorRule(Lattice<Cell> lattice,
+			Neighbourhood neighbourhoodModel, BlobMap blobMap)
+			throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
 		shapeColours = new Hashtable<Blob, Color>();

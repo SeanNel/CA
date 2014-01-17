@@ -23,13 +23,20 @@ public class BlobIdentifierRule extends BlobRule {
 		timers = new long[3];
 	}
 
+	@Override
 	public void update(Blob blob) throws CAException {
 		if (blob.getArea() < 16) {
 			return;
 		}
 
 		stopwatch.start();
+
+		// System.out.println("Unarranged outline cells:");
+		// System.out.println(blob.getOutlineCells());
 		blob.arrangeOutlineCells();
+		// System.out.println("Arranged outline cells:");
+		// System.out.println(blob.getOutlineCells());
+
 		timers[0] += stopwatch.time();
 
 		if (blob.getOutlineCells().size() < 16) {
@@ -40,6 +47,11 @@ public class BlobIdentifierRule extends BlobRule {
 		shapeList.addShape(shapeDetector.identify(blob));
 		// Input.waitForSpace();
 		timers[2] += stopwatch.time();
+	}
+	
+	@Override
+	public void end() {
+		printTimers();
 	}
 
 	public void printTimers() {

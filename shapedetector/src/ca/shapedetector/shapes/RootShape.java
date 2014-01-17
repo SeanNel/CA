@@ -11,7 +11,10 @@ public class RootShape extends AbstractShape {
 	protected final List<AbstractShape> relatedShapes;
 
 	public RootShape() {
+		super(null, null, 0d);
 		relatedShapes = new ArrayList<AbstractShape>();
+		relatedShapes.add(new Ellipse());
+		relatedShapes.add(new Triangle());
 		relatedShapes.add(new Quadrilateral());
 	}
 

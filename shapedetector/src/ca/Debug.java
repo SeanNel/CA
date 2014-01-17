@@ -9,13 +9,6 @@ import ca.shapedetector.shapes.AbstractShape;
 public class Debug {
 
 	/**
-	 * When true, displays the shape being processed, distribution graphs and
-	 * other debug info while running. Unpredictable output when running in
-	 * parallel mode, so forces single-threaded processing.
-	 */
-	public static boolean debug = false;
-
-	/**
 	 * For debugging. Displays the active shape.
 	 * 
 	 * @param shape

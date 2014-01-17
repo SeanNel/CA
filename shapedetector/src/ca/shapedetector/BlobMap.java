@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import ca.Cell;
-import ca.Debug;
 import ca.concurrency.ThreadServer;
 import ca.rules.blob.*;
 import ca.shapedetector.blob.*;
@@ -23,6 +22,12 @@ public class BlobMap {
 	protected Set<Blob> blobs;
 	/** Processes to apply to each blob in sequence. */
 	protected final List<BlobRule> blobRules;
+
+	/**
+	 * TODO: There is some concurrency problem when identifying quadrilaterals.
+	 * Certain shapes sometimes fail to be identified when running in parallel.
+	 */
+	protected final static boolean debugOverride = true;
 
 	public BlobMap(ShapeDetector sd, ShapeList shapeList) {
 		this.sd = sd;
@@ -39,6 +44,7 @@ public class BlobMap {
 		blobs = new HashSet<Blob>(w * h);
 	}
 
+	@SuppressWarnings("unused")
 	protected void update() throws CAException {
 		Stopwatch ruleStopwatch = new Stopwatch();
 		/*
@@ -55,7 +61,7 @@ public class BlobMap {
 
 		for (BlobRule rule : blobRules) {
 			rule.start();
-			if (Debug.debug) {
+			if (debugOverride || ShapeDetector.debug) {
 				/* Linear method. For easier debugging. */
 				for (Blob blob : blobs) {
 					rule.update(blob);

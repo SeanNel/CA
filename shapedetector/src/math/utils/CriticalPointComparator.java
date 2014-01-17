@@ -2,8 +2,8 @@ package math.utils;
 
 import java.util.Comparator;
 
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
+import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 
 /**
  * Sorts a list of x coordinates by according to specified criteria.
@@ -15,17 +15,20 @@ public class CriticalPointComparator implements Comparator<Double> {
 	public final static int MAXIMUM_Y = 1;
 	public final static int MINIMUM_Y = 2;
 	public final static int SECOND_DERIVATIVE = 3;
-	protected final UnivariateFunction f;
+	protected final UnivariateDifferentiableFunction f;
 	protected final int comparisonType;
 
-	public CriticalPointComparator(UnivariateFunction f, int comparisonType) {
+	public CriticalPointComparator(UnivariateDifferentiableFunction f,
+			int comparisonType) {
+		if (f == null) {
+			throw new RuntimeException();
+		}
 		this.f = f;
 		this.comparisonType = comparisonType;
 	}
 
-	public CriticalPointComparator(UnivariateFunction f) {
-		this.f = f;
-		this.comparisonType = INCREASING_X;
+	public CriticalPointComparator(UnivariateDifferentiableFunction f) {
+		this(f, INCREASING_X);
 	}
 
 	@Override
@@ -89,4 +92,5 @@ public class CriticalPointComparator implements Comparator<Double> {
 			return 1;
 		}
 	}
+
 }

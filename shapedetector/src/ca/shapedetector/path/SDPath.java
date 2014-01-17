@@ -15,7 +15,8 @@ import ca.Cell;
 import ca.shapedetector.blob.Blob;
 
 /**
- * An abstraction layer for working with paths that describe shapes.
+ * An abstraction layer for working with closed, polygonal paths that describe
+ * shapes.
  * 
  * @author Sean
  */
@@ -36,10 +37,18 @@ public class SDPath implements Iterable<Point2D> {
 	/** A Path2D instance for drawing graphics. */
 	protected Path2D.Double path2D;
 
+	/**
+	 * Creates a path describing the outline cells of the target Blob.
+	 * 
+	 * @param blob
+	 */
 	public SDPath(Blob blob) {
 		addCells(blob.getOutlineCells());
 	}
 
+	/**
+	 * Constructor. Creates an empty path with no vertices.
+	 */
 	public SDPath() {
 		vertices = new ArrayList<Point2D>();
 	}
@@ -68,6 +77,12 @@ public class SDPath implements Iterable<Point2D> {
 		area = 0.0;
 	}
 
+	/**
+	 * Removes any existing vertices and replaces them with those from the
+	 * parameter.
+	 * 
+	 * @param vertices
+	 */
 	public void addVertices(List<Point2D> vertices) {
 		this.vertices = new ArrayList<Point2D>(vertices);
 
@@ -111,13 +126,21 @@ public class SDPath implements Iterable<Point2D> {
 	 * @param path
 	 */
 	protected void fromPath2D(Path2D path) {
-		SDPathIterator iterator = new SDPathIterator(path);
+		Path2DIterator iterator = new Path2DIterator(path);
 		vertices = new ArrayList<Point2D>();
 		while (iterator.hasNext()) {
 			vertices.add(iterator.next());
 		}
+		/*
+		 * The last vertex returned from SDPathIterator is also the first. The
+		 * distance between the end and start points would then be 0, which
+		 * causes failure of the periodic interpolator (the points must be
+		 * strictly increasing. So we remove it.
+		 */
+		if (vertices.size() > 0) {
+			vertices.remove(vertices.size() - 1);
+		}
 		bounds = path.getBounds2D();
-		centroid = new Point2D.Double(bounds.getCenterX(), bounds.getCenterY());
 	}
 
 	/**
@@ -179,11 +202,11 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	public double getCentreX() {
-		return bounds.getCenterX();
+		return getBounds().getCenterX();
 	}
 
 	public double getCentreY() {
-		return bounds.getCenterY();
+		return getBounds().getCenterY();
 	}
 
 	/**
@@ -206,21 +229,45 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	/**
-	 * Gets the centroid (centre of gravity).
+	 * Gets the centroid (geometric centre).
 	 * 
+	 * @see https://en.wikipedia.org/wiki/Centroid, Centroid of polygon
 	 * @return
 	 */
 	public Point2D getCentroid() {
 		if (centroid == null) {
+			double x = 0d;
+			double y = 0d;
+
+			Iterator<Point2D> iterator = iterator();
+			if (vertices.size() > 0) {
+				Point2D a = vertices.get(vertices.size() - 1);
+
+				while (iterator.hasNext()) {
+					Point2D b = iterator.next();
+					double factor2 = (a.getX() * b.getY() - b.getX() * a.getY());
+					x += (a.getX() + b.getX()) * factor2;
+					y += (a.getY() + b.getY()) * factor2;
+					a = b;
+				}
+			}
+
+			area = getArea();
+			x /= 6d * area;
+			y /= 6d * area;
+
+			centroid = new Point2D.Double(x, y);
 			/*
 			 * Cannot derive the centroid from the areaCells when shapes contain
-			 * nested shapes. So for now, the centre of gravity is the same as
-			 * the geometric centre. This only becomes an issue once we test for
-			 * non-symmetrical shapes.
+			 * nested shapes.
 			 */
-			getBounds();
-			centroid = new Point2D.Double(bounds.getCenterX(),
-					bounds.getCenterY());
+			/*
+			 * Gets the centre of the bounding rectangle. Not useful for shapes
+			 * such as triangles.
+			 */
+			// getBounds();
+			// centroid = new Point2D.Double(bounds.getCenterX(),
+			// bounds.getCenterY());
 		}
 		return centroid;
 	}
@@ -298,7 +345,8 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	/**
-	 * Moves this path (with regards to its center) to the specified position.
+	 * Moves this path (with regards to the center of its bounding rectangle) to
+	 * the specified position.
 	 * 
 	 * @param x
 	 * @param y
@@ -317,14 +365,23 @@ public class SDPath implements Iterable<Point2D> {
 		// fromPath2D(path);
 	}
 
-	public List<Point2D> getVertices(List<Double> indices, int s) {
+	/**
+	 * Gets the vertices that correspond to distances from the starting point
+	 * that are listed in <code>indices</code>.
+	 * 
+	 * @param indices
+	 * @return
+	 */
+	public List<Point2D> getVertices(List<Double> indices) {
 		OutlineMap outlineMap = getOutlineMap();
 		int n = indices.size();
 		List<Point2D> vertices = new ArrayList<Point2D>(n);
 
 		for (int i = 0; i < n; i++) {
 			Point2D vertex = outlineMap.getVertex(indices.get(i));
-			vertices.add(vertex);
+			if (vertex != null) {
+				vertices.add(vertex);
+			}
 		}
 		return vertices;
 	}

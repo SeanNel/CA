@@ -1,12 +1,15 @@
 package math.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import math.functions.Differential;
 
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
+
+import ca.shapedetector.ShapeDetector;
 
 public class CriticalPoints {
 	protected final UnivariateDifferentiableFunction f;
@@ -83,7 +86,8 @@ public class CriticalPoints {
 		return f.value(t);
 	}
 
-	protected static List<Double> filterSolutions(double[] solutions, double delta) {
+	protected static List<Double> filterSolutions(double[] solutions,
+			double delta) {
 		double lastX = Double.MIN_VALUE;
 		int n = solutions.length;
 		List<Double> criticalPoints = new ArrayList<Double>(n);
@@ -166,5 +170,66 @@ public class CriticalPoints {
 		for (double x : xValues) {
 			System.out.println("x=" + x + ", y=" + f.value(x));
 		}
+	}
+
+	/**
+	 * Gets the positions of n significant points. These may be the critical
+	 * points with the greatest y values, the sharpest peaks etc.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public List<Double> significantPoints(int comparisonType, int n,
+			double minDistance) {
+		if (n < 1 || minDistance < 0d) {
+			throw new RuntimeException();
+		}
+		/* Gets the local critical points */
+		CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);
+		List<Double> list;
+
+		switch (comparisonType) {
+		case CriticalPointComparator.MAXIMUM_Y:
+			list = criticalPoints.maxima();
+		case CriticalPointComparator.MINIMUM_Y:
+			list = criticalPoints.minima();
+		case CriticalPointComparator.SECOND_DERIVATIVE:
+		case CriticalPointComparator.INCREASING_X:
+		default:
+			list = criticalPoints.criticalPoints();
+		}
+
+		/* Removes points too close to one another */
+		double last = -minDistance - 1.0;
+		List<Double> shortlist = new ArrayList<Double>(list);
+		for (double x : list) {
+			if (x < last + minDistance) {
+				shortlist.remove(x);
+			} else {
+				last = x;
+			}
+		}
+
+//		if (shortlist.size() < n) {
+//			return new ArrayList<Double>();
+//		}
+
+		Collections.sort(shortlist, new CriticalPointComparator(f,
+				comparisonType));
+
+		/* Selects the n points of greatest value */
+		if (n > shortlist.size()) {
+			n = shortlist.size();
+		}
+		shortlist = shortlist.subList(0, n);
+		Collections.sort(shortlist, new CriticalPointComparator(f,
+				CriticalPointComparator.INCREASING_X));
+
+//		if (ShapeDetector.debug) {
+//			System.out
+//					.println("SignificantPoints() :");
+//			criticalPoints.printPoints(shortlist);
+//		}
+		return shortlist;
 	}
 }

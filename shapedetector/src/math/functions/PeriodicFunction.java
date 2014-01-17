@@ -8,13 +8,19 @@ public class PeriodicFunction implements UnivariateFunction, Periodic {
 	protected final double x1;
 	protected double rotation;
 
-	public PeriodicFunction(UnivariateFunction f, double x0, double x1) {
+	public PeriodicFunction(UnivariateFunction f, double x0, double x1,
+			double rotation) {
 		if (f == null || x1 <= x0) {
 			throw new RuntimeException();
 		}
 		this.f = f;
 		this.x0 = x0;
 		this.x1 = x1;
+		this.rotation = rotation;
+	}
+
+	public PeriodicFunction(UnivariateFunction f, double x0, double x1) {
+		this(f, x0, x1, 0d);
 	}
 
 	public void rotate(double x) {

@@ -1,10 +1,11 @@
 package ca.shapedetector.shapes;
 
+import java.awt.geom.Area;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 import math.functions.CyclicSimilarity;
 import math.functions.PeriodicDifferentiableFunction;
-import math.utils.CriticalPoints;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
@@ -12,6 +13,8 @@ import org.apache.commons.math3.analysis.function.Constant;
 import org.apache.commons.math3.util.FastMath;
 
 import ca.Debug;
+import ca.shapedetector.ShapeDetector;
+import ca.shapedetector.distribution.AbsoluteGradient;
 import ca.shapedetector.distribution.Distribution;
 import ca.shapedetector.distribution.RadialDistance;
 import ca.shapedetector.path.SDPath;
@@ -22,32 +25,47 @@ import ca.shapedetector.path.SDPath;
  * @author Sean
  */
 public abstract class AbstractShape implements SDShape {
+	protected final static double DEFAULT_TOLERANCE = 0.05d; // 0.3d;
+
+	protected final static Distribution RADIAL_DISTANCE = new RadialDistance();
+	protected final static Distribution GRADIENT_DISTRIBUTION = new AbsoluteGradient();
+	protected final static Distribution DEFAULT_DISTRIBUTION = RADIAL_DISTANCE;
+
 	/** Path that defines this shape as a polygon. */
 	protected final SDPath path;
 	/** The method of collection distribution data. */
-	protected final static Distribution distribution = new RadialDistance(); // RadialGradient();
-	/** The shape distribution function. */
-	protected final UnivariateDifferentiableFunction distributionFunction;
-	/** Minimum side length */
-	protected double minSideLength = 3.0;
-
-	/**
-	 * Constructor for RootShape.
-	 */
-	protected AbstractShape() {
-		path = null;
-		distributionFunction = null;
-	}
+	protected final Distribution distributionType;
+	// /** The shape distribution function. */
+	// protected final UnivariateDifferentiableFunction distributionFunction;
+	/** Uncertainty tolerance when detecting a shape, expressed as a ratio. */
+	protected final double tolerance;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param path
 	 *            The path that describes this shape.
+	 * @param distribution
 	 */
-	public AbstractShape(SDPath path) {
+	public AbstractShape(SDPath path, Distribution distributionType,
+			double tolerance) {
 		this.path = path;
-		distributionFunction = loadShapeDistribution();
+		this.distributionType = distributionType;
+		this.tolerance = tolerance;
+		// if (path != null) {
+		// distributionFunction = loadShapeDistribution();
+		// } else {
+		// distributionFunction = null;
+		// }
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param distribution
+	 */
+	protected AbstractShape(Distribution distribution, double tolerance) {
+		this(null, distribution, tolerance);
 	}
 
 	/**
@@ -57,7 +75,9 @@ public abstract class AbstractShape implements SDShape {
 	 */
 	public AbstractShape(AbstractShape shape) {
 		path = new SDPath(shape.path);
-		distributionFunction = shape.distributionFunction;
+		this.distributionType = shape.distributionType;
+		this.tolerance = shape.tolerance;
+		// distributionFunction = shape.distributionFunction;
 	}
 
 	/**
@@ -74,8 +94,17 @@ public abstract class AbstractShape implements SDShape {
 	 * 
 	 * @return
 	 */
-	public UnivariateDifferentiableFunction getDistribution() {
-		return distributionFunction;
+	public UnivariateDifferentiableFunction getDistribution(
+			Distribution distributionType) {
+		// return distributionFunction;
+
+		double x0 = 0;
+		double x1 = path.getPerimeter();
+		if (x1 < 3.0) {
+			return new Constant(0.0);
+		}
+		UnivariateFunction f = distributionType.compute(path);
+		return new PeriodicDifferentiableFunction(f, x0, x1);
 	}
 
 	/**
@@ -96,14 +125,53 @@ public abstract class AbstractShape implements SDShape {
 		return "w=" + bounds.getWidth() + ", h=" + bounds.getHeight();
 	}
 
-	protected UnivariateDifferentiableFunction loadShapeDistribution() {
-		double x0 = 0;
-		double x1 = path.getPerimeter();
-		if (x1 < 3.0) {
-			return new Constant(0.0);
+	public AbstractShape identify(AbstractShape shape) {
+		if (shape == null) {
+			throw new RuntimeException();
 		}
-		UnivariateFunction f = distribution.compute(path);
-		return new PeriodicDifferentiableFunction(f, x0, x1);
+		/* For debugging */
+		if (ShapeDetector.debug) {
+			Debug.displayActiveShape(shape);
+		}
+
+		AbstractShape mask = getMask(shape);
+		if (mask == null) {
+			return null;
+		}
+
+		/* For debugging */
+		if (ShapeDetector.debug) {
+			Debug.displayMaskShape(shape, mask);
+
+			double x0 = -1.0;
+			double x1 = shape.getPath().getPerimeter();
+			UnivariateDifferentiableFunction f1 = shape
+					.getDistribution(distributionType);
+			UnivariateDifferentiableFunction f2 = mask
+					.getDistribution(distributionType);
+
+			/* Displays a chart of the shape distribution. */
+			if (ShapeDetector.debug) {
+				graphics.LineChartFrame.frame.setTitle("Shape distribution");
+				graphics.LineChartFrame.displayData(x0, x1, f1, f2);
+			}
+		}
+
+		double match = mask.compare(shape);
+		/* Input.waitforSpace() */
+
+		if (1.0 - match < tolerance) {
+			shape = mask.identifySubclass();
+		}
+		return shape;
+	}
+
+	protected AbstractShape getMask(AbstractShape shape) {
+		return shape;
+	}
+
+	protected AbstractShape identifySubclass() {
+		return this;
 	}
 
 	/**
@@ -115,54 +183,110 @@ public abstract class AbstractShape implements SDShape {
 	 * @return The difference ratio.
 	 */
 	public double compare(AbstractShape shape) {
+		return compareByAreaDifference(shape);
+		// return compareByArea(shape);
+		// return compareByPerimeter(shape);
 		// return compareByDistribution(shape);
-		return compareByArea(shape);
 	}
 
+	/**
+	 * This method just is no good for matching any shapes.
+	 * 
+	 * @param shape
+	 * @return
+	 */
 	protected double compareByPerimeter(AbstractShape shape) {
 		double a = shape.getPath().getPerimeter();
 		double b = path.getPerimeter();
 		return FastMath.min(a, b) / FastMath.max(a, b);
 	}
 
+	/**
+	 * This method matches quadrilaterals, but also matches ellipses to
+	 * quadrilaterals when they have the same area. So let's not use this...
+	 * 
+	 * @param shape
+	 * @return
+	 */
 	protected double compareByArea(AbstractShape shape) {
 		double a = shape.getPath().getArea();
 		double b = path.getArea();
 		return FastMath.min(a, b) / FastMath.max(a, b);
 	}
 
-	/* This method also has its problems... */
+	/*
+	 * This method also has its problems. Even very similar shapes may start
+	 * from different points and have much different perimeter lengths etc which
+	 * makes comparing their graphs difficult.
+	 */
 	protected double compareByDistribution(AbstractShape shape) {
+		/* The mask */
+		UnivariateDifferentiableFunction f1 = getDistribution(distributionType);
+		/* The target shape */
+		UnivariateDifferentiableFunction f2 = shape
+				.getDistribution(distributionType);
+
+		SDPath path1 = getPath();
+		SDPath path2 = shape.getPath();
+
 		double x0 = 0;
-		double x1 = shape.getPath().getPerimeter();
+		double x1 = path2.getPerimeter();
 		if (x1 - x0 <= 0) {
 			return 0.0;
 		}
-		UnivariateDifferentiableFunction f1 = shape.distributionFunction;
-		UnivariateDifferentiableFunction f2 = distributionFunction;
-
-		// x1 = 100;
-		// UnivariateFunction g1 = new StretchFunction(distribution, x0,
-		// perimeter, x0, x1);
-		// UnivariateFunction g2 = new StretchFunction(shape.distribution, x0,
-		// shape.perimeter, x0, x1);
-		// UnivariateDifferentiableFunction f1 =
-		// differentiator.differentiate(g1);
-		// UnivariateDifferentiableFunction f2 =
-		// differentiator.differentiate(g2);
+		/*
+		 * Aligns the graphs by finding a common vertex, and comparing the
+		 * distance from each starting point.
+		 */
+		Point2D start = path1.getVertices().get(0);
+		double theta = path2.getOutlineMap().getDistance(start);
+		// f2 = new PeriodicDifferentiableFunction(f2, x0, x1, -theta);
+		UnivariateDifferentiableFunction f3 = new PeriodicDifferentiableFunction(
+				f2, x0, x1, theta);
 
 		UnivariateDifferentiableFunction f = new CyclicSimilarity(f1, f2, 1,
 				x0, x1);
 
-		CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);
-		double similarity = f.value(criticalPoints.maximum());
+		/* Stretches/compresses the graphs to fit over the same domain. */
+		// f1 = new StretchDifferentiableFunction(f1, x0, path1.getPerimeter(),
+		// x0, x1);
+		// f2 = new StretchDifferentiableFunction(f2, x0, path2.getPerimeter(),
+		// x0, x1);
 
-		if (Debug.debug) {
+		// CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);
+		// double similarity = f.value(criticalPoints.maximum());
+
+		/* Gets the similarity between the graphs when both are already aligned. */
+		double similarity = f.value(0d);
+
+		if (ShapeDetector.debug) {
 			System.out.println(similarity);
 			graphics.LineChartFrame.frame.setTitle("Shape distribution");
-			graphics.LineChartFrame.displayData(x0, x1, f1, f2, f);
+			graphics.LineChartFrame.displayData(x0, x1, f1, f2, f3, f);
 		}
 		return similarity;
+	}
+
+	protected double compareByAreaDifference(AbstractShape shape) {
+		Area maskAreaPolygon = getPath().getAreaPolygon();
+		Area shapePolygon = shape.getPath().getAreaPolygon();
+
+		double maskArea = getPath().getArea();
+		double shapeArea = shape.getPath().getArea();
+
+		shapePolygon.add(maskAreaPolygon);
+		SDPath totalAreaPath = new SDPath(shapePolygon);
+		double totalArea = totalAreaPath.getArea();
+
+		// Debug.displayMaskShape(shape, new UnknownShape(totalAreaPath));
+
+		/* Path either contains curved segments or crosses itself */
+		if (totalArea < shapeArea) {
+			maskArea -= shapeArea - totalArea;
+			totalArea = shapeArea;
+		}
+
+		return (shapeArea + maskArea - totalArea) / totalArea;
 	}
 
 }

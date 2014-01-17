@@ -6,7 +6,6 @@ import helpers.Stopwatch;
 import java.util.LinkedList;
 import java.util.List;
 
-import ca.Debug;
 import ca.concurrency.ThreadServer;
 import ca.rules.shape.ShapeDrawRule;
 import ca.rules.shape.ShapeRule;
@@ -39,7 +38,7 @@ public class ShapeList {
 
 		for (ShapeRule rule : shapeRules) {
 			rule.start();
-			if (Debug.debug) {
+			if (ShapeDetector.debug) {
 				/* Linear method */
 				for (AbstractShape shape : shapes) {
 					rule.update(shape);

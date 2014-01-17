@@ -1,0 +1,24 @@
+package ca.shapedetector.shapes;
+
+import ca.shapedetector.path.SDPath;
+
+public class Triangle extends Polygon {
+	protected final static double TOLERANCE = 0.3d;
+
+	Triangle() {
+		super(DISTRIBUTION, TOLERANCE);
+	}
+
+	public Triangle(SDPath path) {
+		super(path, DISTRIBUTION, TOLERANCE);
+	}
+
+	public Triangle(AbstractShape shape) {
+		super(shape);
+	}
+
+	protected Triangle getMask(AbstractShape shape) {
+		SDPath path = getPolygon(shape, 3);
+		return new Triangle(path);
+	}
+}
