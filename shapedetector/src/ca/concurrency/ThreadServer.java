@@ -7,7 +7,7 @@ import exceptions.CAException;
 import exceptions.NullParameterException;
 
 /**
- * Coordinates threads that update objects concurrently.
+ * Coordinates threads that update cells concurrently.
  * 
  * @author Sean
  */
@@ -17,7 +17,7 @@ public class ThreadServer<V> {
 	/** The rule to apply to queued items. */
 	protected final Rule<V> rule;
 	/** The source to queue items from. */
-	protected final Iterable<V> iterable;
+	// protected final Iterable<V> source;
 	/** The queue iterator. */
 	protected Iterator<V> iterator;
 
@@ -31,25 +31,38 @@ public class ThreadServer<V> {
 	 * 
 	 * @throws NullParameterException
 	 */
-	public ThreadServer(Rule<V> rule, Iterable<V> iterable)
+	public ThreadServer(final Rule<V> rule, final Iterable<V> source)
 			throws NullParameterException {
-		this(rule, iterable, DEFAULT_NUMTHREADS);
+		this(rule, source.iterator(), DEFAULT_NUMTHREADS);
+	}
+
+	public ThreadServer(final Rule<V> rule, final Iterator<V> iterator)
+			throws NullParameterException {
+		this(rule, iterator, DEFAULT_NUMTHREADS);
+	}
+
+	public ThreadServer(final Rule<V> rule, final Iterable<V> source,
+			int numThreads) throws NullParameterException {
+		this(rule, source.iterator(), numThreads);
 	}
 
 	/**
 	 * Creates server with specified number of threads.
 	 * 
+	 * @param rule
+	 * @param source
 	 * @param numThreads
 	 *            Number of threads to create.
 	 * @throws NullParameterException
 	 */
-	public ThreadServer(Rule<V> rule, Iterable<V> iterable, int numThreads)
+	public ThreadServer(Rule<V> rule, final Iterator<V> iterator, final int numThreads)
 			throws NullParameterException {
 		if (rule == null) {
 			throw new NullParameterException("rule");
 		}
 		this.rule = rule;
-		this.iterable = iterable;
+		// this.source = source;
+		this.iterator = iterator;
 		this.numThreads = numThreads;
 	}
 
@@ -74,7 +87,7 @@ public class ThreadServer<V> {
 	 * @param cell
 	 *            Cell to update.
 	 */
-	public void update(V object) {
+	public void update(final V object) {
 		try {
 			rule.update(object);
 		} catch (CAException e) {
@@ -90,7 +103,6 @@ public class ThreadServer<V> {
 	 */
 	public boolean run() {
 		clockedInThreads = 0;
-		iterator = iterable.iterator();
 
 		for (int i = 0; i < numThreads; i++) {
 			CAThread<V> thread = new CAThread<V>(this);
@@ -114,7 +126,7 @@ public class ThreadServer<V> {
 	 * 
 	 * @param caCellThread
 	 */
-	public synchronized void clockOut(CAThread<V> caCellThread) {
+	public synchronized void clockOut(final CAThread<V> thread) {
 		clockedInThreads++;
 		notify();
 	}
@@ -124,7 +136,7 @@ public class ThreadServer<V> {
 	 * 
 	 * @param e
 	 */
-	protected void handleException(CAException e) {
+	protected void handleException(final CAException e) {
 		e.printStackTrace();
 		System.exit(0);
 	}
@@ -134,7 +146,7 @@ public class ThreadServer<V> {
 	 * 
 	 * @param e
 	 */
-	protected void interrupted(InterruptedException e) {
+	protected void interrupted(final InterruptedException e) {
 		Thread.currentThread().interrupt();
 		throw new RuntimeException("Unexpected interruption");
 	}

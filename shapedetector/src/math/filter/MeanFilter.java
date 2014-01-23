@@ -12,21 +12,23 @@ public class MeanFilter extends AbstractFilter {
 	}
 
 	@Override
-	public double value(double x) {
+	public double value(final double x) {
+		double h = x;
 		if (!periodic) {
 			if (x - delta < x0) {
-				x = x0 + delta;
+				h = x0 + delta;
 			} else if (x + delta > x1) {
-				x = x1 - delta;
+				h = x1 - delta;
 			}
 		}
 
-		double[] samples = FunctionUtils.sample(f, x - delta, x + delta, numSamples);
+		double[] samples = FunctionUtils.sample(f, h - delta, h + delta,
+				numSamples);
 		return elementValue(x, new RingBuffer(samples));
 	}
 
 	@Override
-	public double elementValue(double x, RingBuffer buffer) {
+	public double elementValue(final double x, final RingBuffer buffer) {
 		double[] samples = buffer.getArray();
 		return StatUtils.mean(samples);
 	}

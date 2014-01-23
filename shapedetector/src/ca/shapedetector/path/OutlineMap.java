@@ -3,6 +3,12 @@ package ca.shapedetector.path;
 import java.awt.geom.Point2D;
 import java.util.List;
 
+/**
+ * Maps the vertices of a path to the distance from the starting point, along
+ * the path, to each vertex.
+ * 
+ * @author Sean
+ */
 public class OutlineMap {
 	/** Outline vertices. */
 	protected final List<Point2D> vertices;
@@ -14,7 +20,12 @@ public class OutlineMap {
 	/** Length of the perimeter. */
 	protected final double perimeter;
 
-	public OutlineMap(SDPath path) {
+	/**
+	 * Constructor.
+	 * 
+	 * @param path
+	 */
+	public OutlineMap(final SDPath path) {
 		vertices = path.getVertices();
 		int n = vertices.size();
 		vertexIndices = new double[n];
@@ -33,12 +44,11 @@ public class OutlineMap {
 		this.perimeter = perimeter;
 	}
 
-	// public OutlineMap(OutlineMap original) {
-	// this.perimeter = original.getPerimeter();
-	// this.vertexIndices = original.vertexIndices.clone();
-	// this.vertices = new ArrayList<Point2D>(original.getVertices());
-	// }
-
+	/**
+	 * Gets the length of the perimeter.
+	 * 
+	 * @return
+	 */
 	public double getPerimeter() {
 		return perimeter;
 	}
@@ -50,7 +60,7 @@ public class OutlineMap {
 	 * @param i
 	 * @return
 	 */
-	public double getDistance(int i) {
+	public double getDistance(final int i) {
 		return vertexIndices[i];
 	}
 
@@ -61,7 +71,7 @@ public class OutlineMap {
 	 * @param i
 	 * @return
 	 */
-	public double getDistance(Point2D vertex) {
+	public double getDistance(final Point2D vertex) {
 		for (int i = 0; i < vertices.size(); i++) {
 			Point2D v = vertices.get(i);
 			if (v.equals(vertex)) {
@@ -71,7 +81,15 @@ public class OutlineMap {
 		throw new RuntimeException("Vertex not found");
 	}
 
-	public Point2D getVertex(double d) {
+	/**
+	 * Gets a vertex closest to the specified distance from the starting point.
+	 * 
+	 * @param d
+	 * @return
+	 */
+	public Point2D getVertex(final double distance) {
+		double d = distance;
+		/* TODO: use formula, not loop to constrain d to the period */
 		while (d < 0) {
 			d += perimeter;
 		}
@@ -102,8 +120,8 @@ public class OutlineMap {
 	 * @param end
 	 * @return
 	 */
-	protected static int searchIndex(double[] indices, double y, int start,
-			int end) {
+	protected static int searchIndex(final double[] indices, final double y,
+			final int start, final int end) {
 		int mid = (start + end) / 2;
 
 		if (end - start <= 1 && y >= indices[mid] && y <= indices[end]) {

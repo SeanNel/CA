@@ -20,22 +20,24 @@ import exceptions.CAException;
  * <p>
  * Assumes that cells have Van Neumann neighbourhoods, with r=1.
  */
-public class OutlineFinderRule extends CellRule {
-	protected final MooreOutline outlineNeighbourhood;
-	protected final BlobMap blobMap;
+public class OutlineFinderRule<V> extends CellRule<V> {
+	protected final MooreOutline<V> outlineNeighbourhood;
+	protected final BlobMap<V> blobMap;
 
-	public OutlineFinderRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
-			BlobMap blobMap) throws CAException {
+	public OutlineFinderRule(final Lattice<V> lattice,
+			final Neighbourhood<V> neighbourhoodModel, final BlobMap<V> blobMap)
+			throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
-		outlineNeighbourhood = new MooreOutline(lattice, blobMap);
+		outlineNeighbourhood = new MooreOutline<V>(lattice, blobMap);
 	}
 
-	public void update(Cell cell) {
-		Blob blob = blobMap.getBlob(cell);
+	@Override
+	public void update(final Cell<V> cell) throws CAException {
+		Blob<V> blob = blobMap.getBlob(cell);
 
-		List<Cell> neighbourhood = cell.getNeighbourhood();
-		for (Cell neighbour : neighbourhood) {
+		List<Cell<V>> neighbourhood = cell.getNeighbourhood();
+		for (Cell<V> neighbour : neighbourhood) {
 			if (neighbour != cell && blob != blobMap.getBlob(neighbour)) {
 
 				/*

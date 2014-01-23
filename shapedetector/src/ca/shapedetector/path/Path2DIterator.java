@@ -24,7 +24,7 @@ public class Path2DIterator implements Iterator<Point2D> {
 	protected Point2D currentPosition;
 	protected int currentSegment;
 
-	public Path2DIterator(Path2D path) {
+	public Path2DIterator(final Path2D path) {
 		pathIterator = path.getPathIterator(null, flatness);
 		hasNext = !pathIterator.isDone();
 		currentPosition = getSegmentCoordinates();
@@ -37,11 +37,6 @@ public class Path2DIterator implements Iterator<Point2D> {
 
 	@Override
 	public Point2D next() {
-		currentPosition = nextStep();
-		return currentPosition;
-	}
-
-	protected Point2D nextStep() {
 		Point2D nextPosition = getSegmentCoordinates();
 
 		/* Interpolates points between vertices further apart than step length. */
@@ -60,7 +55,7 @@ public class Path2DIterator implements Iterator<Point2D> {
 		}
 		// }
 
-		return nextPosition;
+		return currentPosition = nextPosition;
 	}
 
 	protected Point2D getSegmentCoordinates() {

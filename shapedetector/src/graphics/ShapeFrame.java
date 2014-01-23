@@ -10,27 +10,27 @@ public class ShapeFrame extends PictureFrame {
 	public static final SDPanel panel = new SDPanel();
 	public static final ShapeFrame frame = new ShapeFrame(panel);
 
-	public ShapeFrame(SDPanel panel) {
+	public ShapeFrame(final SDPanel panel) {
 		super(panel);
 		setTitle("Shape");
 	}
 
-	public static void display(AbstractShape shape) {
+	public static void display(final AbstractShape shape) {
 		panel.display(shape);
 		frame.pack();
 		frame.setVisible(true);
 	}
 
-	public static void setTheme(SDPanelTheme theme) {
+	public static void setTheme(final SDPanelTheme theme) {
 		panel.setTheme(theme);
 	}
 
-	public static void reset(AbstractShape shape) {
+	public static void reset(final AbstractShape shape) {
 		Rectangle2D bounds = shape.getPath().getBounds();
 		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 	}
 
-	public static void moveDrawCursor(double x, double y) {
+	public static void moveDrawCursor(final double x, final double y) {
 		panel.moveDrawCursor(x, y);
 	}
 

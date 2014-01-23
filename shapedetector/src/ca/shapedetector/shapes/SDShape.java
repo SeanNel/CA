@@ -8,5 +8,5 @@ public interface SDShape {
 	 * @return An instance of the detected shape if detected or returns its
 	 *         parameter otherwise.
 	 */
-	abstract AbstractShape identify(AbstractShape shape);
+	abstract AbstractShape identify(final AbstractShape shape);
 }

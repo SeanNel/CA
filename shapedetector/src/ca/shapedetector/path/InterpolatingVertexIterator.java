@@ -14,14 +14,15 @@ public class InterpolatingVertexIterator extends VertexIterator {
 	protected final double step;
 	protected Point2D currentPosition;
 
-	public InterpolatingVertexIterator(List<Point2D> vertices, int direction,
-			double step) {
+	public InterpolatingVertexIterator(final List<Point2D> vertices,
+			final int direction, final double step) {
 		super(vertices, direction);
 		this.step = step;
 		if (direction == FORWARD) {
 			currentPosition = vertices.get(vertices.size() - 1);
 		} else {
-			currentPosition = vertices.get(0);;
+			currentPosition = vertices.get(0);
+			;
 		}
 	}
 

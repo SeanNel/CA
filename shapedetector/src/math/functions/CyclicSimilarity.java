@@ -23,9 +23,9 @@ public class CyclicSimilarity implements UnivariateDifferentiableFunction {
 
 	final double normalizationFactor;
 
-	public CyclicSimilarity(UnivariateDifferentiableFunction f1,
-			UnivariateDifferentiableFunction f2, double delta, double x0,
-			double x1) {
+	public CyclicSimilarity(final UnivariateDifferentiableFunction f1,
+			final UnivariateDifferentiableFunction f2, final double delta,
+			final double x0, final double x1) {
 		this.f1 = f1;
 		this.f2 = f2;
 		this.delta = delta;
@@ -57,7 +57,7 @@ public class CyclicSimilarity implements UnivariateDifferentiableFunction {
 	}
 
 	@Override
-	public double value(double x) {
+	public double value(final double x) {
 		if (normalizationFactor == 0) {
 			return 0.0;
 		}
@@ -82,7 +82,7 @@ public class CyclicSimilarity implements UnivariateDifferentiableFunction {
 	}
 
 	@Override
-	public DerivativeStructure value(DerivativeStructure t)
+	public DerivativeStructure value(final DerivativeStructure t)
 			throws DimensionMismatchException {
 		if (t.getOrder() > 1) {
 			throw new RuntimeException();

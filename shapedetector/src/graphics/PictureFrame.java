@@ -21,7 +21,7 @@ public class PictureFrame extends JFrame implements ActionListener {
 
 	protected PicturePanel picturePanel;
 
-	public PictureFrame(PicturePanel picturePanel) {
+	public PictureFrame(final PicturePanel picturePanel) {
 		loadMenuBar();
 		setPanel(picturePanel);
 
@@ -31,12 +31,12 @@ public class PictureFrame extends JFrame implements ActionListener {
 		// setResizable(false);
 	}
 
-	public void setPanel(PicturePanel picturePanel) {
+	public void setPanel(final PicturePanel picturePanel) {
 		this.picturePanel = picturePanel;
 		setContentPane(picturePanel);
 	}
 
-	public void setImage(BufferedImage image) {
+	public void setImage(final BufferedImage image) {
 		// picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
 		// .getHeight()));
 		picturePanel.setImage(image);
@@ -58,14 +58,14 @@ public class PictureFrame extends JFrame implements ActionListener {
 	 * Save the picture to a file in a standard image format. The filetype must
 	 * be .png or .jpg.
 	 */
-	public void save(String name) {
+	public void save(final String name) {
 		save(new File(name));
 	}
 
 	/**
 	 * Save the picture to a file in a standard image format.
 	 */
-	public void save(File file) {
+	public void save(final File file) {
 		String filename = file.getName();
 		String suffix = filename.substring(filename.lastIndexOf('.') + 1);
 		suffix = suffix.toLowerCase();
@@ -95,7 +95,7 @@ public class PictureFrame extends JFrame implements ActionListener {
 	/**
 	 * Opens a save dialog box when the user selects "Save As" from the menu.
 	 */
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(final ActionEvent e) {
 		FileDialog chooser = new FileDialog(this,
 				"Use a .png or .jpg extension", FileDialog.SAVE);
 		chooser.setVisible(true);

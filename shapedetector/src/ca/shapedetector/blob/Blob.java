@@ -1,8 +1,9 @@
 package ca.shapedetector.blob;
 
 import graphics.SDPanelTheme;
-import helpers.Output;
 
+import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,31 +13,29 @@ import ca.shapedetector.shapes.AbstractShape;
 import ca.shapedetector.shapes.UnknownShape;
 
 /**
- * A blob made up of CACells. TODO: extend CACell (to take advantage of
- * CACellThreads etc)
+ * A blob made up of CACells.
  * 
  * @author Sean
  */
-public class Blob implements Comparable<Blob> {
+public class Blob<V> {
 	/**
 	 * Collection of cells that make up this blob.
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	protected List<Cell> areaCells;
+	protected List<Cell<V>> areaCells;
 	/**
 	 * Collection of cells on the perimeter of this blob. This is a subset of
 	 * areaCells.
 	 * <p>
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
-	protected List<Cell> outlineCells;
+	protected List<Cell<V>> outlineCells;
 
 	/**
-	 * The boundary coordinates of this blob (a row each for minima and maxima,
-	 * a column for each axis, e.g. x and y).
+	 * The boundary rectangle of this blob.
 	 */
-	protected int[][] boundaries;
+	protected Rectangle bounds;
 
 	/**
 	 * Singleton constructor.
@@ -52,16 +51,13 @@ public class Blob implements Comparable<Blob> {
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
-	public Blob(Cell cell) {
-		areaCells = new LinkedList<Cell>();
-		outlineCells = new LinkedList<Cell>();
+	public Blob(final Cell<V> cell) {
+		areaCells = new LinkedList<Cell<V>>();
+		outlineCells = new LinkedList<Cell<V>>();
 		areaCells.add(cell);
 
 		int[] coordinates = cell.getCoordinates();
-		boundaries = new int[2][coordinates.length];
-		for (int i = 0; i < coordinates.length; i++) {
-			boundaries[0][i] = boundaries[1][i] = coordinates[i];
-		}
+		bounds = new Rectangle(coordinates[0], coordinates[1], 1, 1);
 	}
 
 	/**
@@ -71,17 +67,10 @@ public class Blob implements Comparable<Blob> {
 	 * to do.
 	 * 
 	 * @param blob
-	 *            blob to merge with.
+	 *            Blob to merge with.
 	 */
-	public void merge(Blob blob) {
-		for (int i = 0; i < boundaries.length; i++) {
-			if (blob.boundaries[0][i] < boundaries[0][i]) {
-				boundaries[0][i] = blob.boundaries[0][i];
-			}
-			if (blob.boundaries[1][i] > boundaries[1][i]) {
-				boundaries[1][i] = blob.boundaries[1][i];
-			}
-		}
+	public void merge(final Blob<V> blob) {
+		bounds = bounds.union(blob.bounds).getBounds();
 
 		synchronized (areaCells) {
 			areaCells.addAll(blob.getAreaCells());
@@ -100,20 +89,17 @@ public class Blob implements Comparable<Blob> {
 	 * @param cell
 	 *            Cell to add.
 	 */
-	public void addOutlineCell(Cell cell) {
+	public void addOutlineCell(final Cell<V> cell) {
 		synchronized (outlineCells) {
 			outlineCells.add(cell);
 		}
 	}
 
 	/**
-	 * Gets the boundary coordinates of this blob.
-	 * 
-	 * @return A row for each axis, e.g. x and y, with columns for minima and
-	 *         maxima.
+	 * Gets the bounding rectangle of this blob.
 	 */
-	public int[][] getBoundaries() {
-		return boundaries;
+	public Rectangle getBounds() {
+		return bounds;
 	}
 
 	/**
@@ -121,7 +107,7 @@ public class Blob implements Comparable<Blob> {
 	 * 
 	 * @return Collection of area cells.
 	 */
-	public List<Cell> getAreaCells() {
+	public List<Cell<V>> getAreaCells() {
 		return areaCells;
 	}
 
@@ -131,13 +117,13 @@ public class Blob implements Comparable<Blob> {
 	 * 
 	 * @return Collection of outline cells.
 	 */
-	public List<Cell> getOutlineCells() {
+	public List<Cell<V>> getOutlineCells() {
 		return outlineCells;
 	}
 
 	/**
-	 * Gets the area in cells squared, that is the number of cells that make up
-	 * the shape.
+	 * Gets the surface area in cells squared, that is the number of cells that
+	 * make up the shape.
 	 * 
 	 * @return Area of the shape.
 	 */
@@ -152,16 +138,14 @@ public class Blob implements Comparable<Blob> {
 	}
 
 	public String toString() {
-		return "(" + this.getClass().getSimpleName() + ") ["
-				+ Output.toString(boundaries[0]) + ":"
-				+ Output.toString(boundaries[1]) + "]";
+		return "(" + this.getClass().getSimpleName() + ") [" + bounds + "]";
 	}
 
-	/** Attempt to free memory allocated to this shape. */
+	/** Attempts to free memory allocated to this shape. */
 	public void destroy() {
 		areaCells.clear();
 		outlineCells.clear();
-		boundaries = null;
+		bounds = null;
 		areaCells = null;
 		outlineCells = null;
 	}
@@ -182,12 +166,12 @@ public class Blob implements Comparable<Blob> {
 		// display(outlineCells);
 		// }
 
-		Cell first = firstOutlineCell();
+		Cell<V> first = firstOutlineCell();
 		if (first == null) {
 			return;
 		} else {
 			synchronized (outlineCells) {
-				LoopFinder loopFinder = new LoopFinder(outlineCells);
+				LoopFinder<V> loopFinder = new LoopFinder<V>(outlineCells);
 				outlineCells = loopFinder.getLoop(first);
 			}
 			/* For debugging */
@@ -197,8 +181,12 @@ public class Blob implements Comparable<Blob> {
 		}
 	}
 
-	/* For debugging */
-	public static void display(List<Cell> cells) {
+	/**
+	 * For debugging. Displays a blob made of the specified cells.
+	 * 
+	 * @param cells
+	 */
+	public static void display(final List<Cell<?>> cells) {
 		graphics.ShapeFrame.setTheme(SDPanelTheme.DEFAULT);
 		SDPath path = new SDPath();
 		path.addCells(cells);
@@ -216,31 +204,16 @@ public class Blob implements Comparable<Blob> {
 	 * 
 	 * @return The '1st' cell to start the loop of outline cells.
 	 */
-	protected Cell firstOutlineCell() {
-		List<Cell> cells = outlineCells;
-		for (Cell cell : cells) {
+	protected Cell<V> firstOutlineCell() {
+		List<Cell<V>> cells = outlineCells;
+		for (Cell<V> cell : cells) {
 			int[] coordinates = cell.getCoordinates();
 			/* Looks at row along top boundary: */
-			if (coordinates[1] == boundaries[0][1]) {
+			if (coordinates[1] == bounds.getMinY()) {
 				return cell;
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Places shapes in order of area size. Guarantees that shapes of identical
-	 * size can coexist in a set of unique shapes.
-	 */
-	@Override
-	public int compareTo(Blob arg0) {
-		if (this == arg0) {
-			return 0;
-		} else if (getArea() >= arg0.getArea()) {
-			return 1;
-		} else {
-			return -1;
-		}
 	}
 
 	/**
@@ -250,12 +223,9 @@ public class Blob implements Comparable<Blob> {
 	 * @return
 	 */
 	public boolean isInsignificant() {
-		int width = boundaries[1][0] - boundaries[0][0];
-		int height = boundaries[1][1] - boundaries[0][1];
-
 		synchronized (outlineCells) {
 			return outlineCells == null || outlineCells.size() < 18
-					|| width < 4 || height < 4;
+					|| bounds.getWidth() < 4 || bounds.getHeight() < 4;
 		}
 	}
 
@@ -265,20 +235,19 @@ public class Blob implements Comparable<Blob> {
 	 * 
 	 * @return
 	 */
-	public double[] calculateCentroid() {
-		List<Cell> cells = getAreaCells();
-		double left = boundaries[0][0];
-		double top = boundaries[0][1];
+	public Point2D calculateCentroid() {
+		List<Cell<V>> cells = getAreaCells();
+		double left = bounds.getMinX();
+		double top = bounds.getMinY();
 		double x = 0;
 		double y = 0;
-		for (Cell cell : cells) {
+		for (Cell<V> cell : cells) {
 			int[] coordinates = cell.getCoordinates();
 			x += coordinates[0] - left;
 			y += coordinates[1] - top;
 		}
 		x = (x / cells.size()) + left;
 		y = (y / cells.size()) + top;
-		double[] centroid = { x, y };
-		return centroid;
+		return new Point2D.Double(x, y);
 	}
 }

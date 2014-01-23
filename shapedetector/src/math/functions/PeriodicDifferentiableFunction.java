@@ -12,28 +12,30 @@ public class PeriodicDifferentiableFunction extends PeriodicFunction implements
 	protected final static UnivariateFunctionDifferentiator differentiator = new FiniteDifferencesDifferentiator(
 			2, 1);
 
-	public PeriodicDifferentiableFunction(UnivariateDifferentiableFunction f,
-			double x0, double x1) {
+	public PeriodicDifferentiableFunction(
+			final UnivariateDifferentiableFunction f, final double x0,
+			final double x1) {
 		super(f, x0, x1);
 	}
 
-	public PeriodicDifferentiableFunction(UnivariateFunction f, double x0,
-			double x1) {
+	public PeriodicDifferentiableFunction(final UnivariateFunction f,
+			final double x0, final double x1) {
 		super(differentiator.differentiate(f), x0, x1);
 	}
 
-	public PeriodicDifferentiableFunction(UnivariateDifferentiableFunction f,
-			double x0, double x1, double rotation) {
+	public PeriodicDifferentiableFunction(
+			final UnivariateDifferentiableFunction f, final double x0,
+			final double x1, final double rotation) {
 		super(f, x0, x1, rotation);
 	}
 
-	public PeriodicDifferentiableFunction(UnivariateFunction f, double x0,
-			double x1, double rotation) {
+	public PeriodicDifferentiableFunction(final UnivariateFunction f,
+			final double x0, final double x1, final double rotation) {
 		super(differentiator.differentiate(f), x0, x1, rotation);
 	}
 
 	@Override
-	public DerivativeStructure value(DerivativeStructure t)
+	public DerivativeStructure value(final DerivativeStructure t)
 			throws DimensionMismatchException {
 		return ((UnivariateDifferentiableFunction) f).value(t);
 	}

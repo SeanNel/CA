@@ -13,11 +13,11 @@ public class Circle extends Ellipse {
 		super();
 	}
 
-	public Circle(SDPath path) {
+	public Circle(final SDPath path) {
 		super();
 	}
 
-	public Circle(AbstractShape shape) {
+	public Circle(final AbstractShape shape) {
 		super(shape);
 	}
 
@@ -27,7 +27,8 @@ public class Circle extends Ellipse {
 	// return new Circle(path);
 	// }
 
-	public AbstractShape identify(Ellipse shape) {
+	public AbstractShape identify(final Ellipse ellipse) {
+		AbstractShape shape = ellipse;
 		Rectangle2D bounds = shape.getPath().getBounds();
 		double w = bounds.getWidth();
 		double h = bounds.getHeight();

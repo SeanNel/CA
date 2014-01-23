@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 import ca.shapedetector.path.SDPath;
@@ -41,27 +42,27 @@ public class SDPanel extends PicturePanel {
 	 * @param shape
 	 * @return the position where the shape was drawn.
 	 */
-	public synchronized void display(AbstractShape shape) {
-		shape = new UnknownShape(shape);
+	public synchronized void display(final AbstractShape abstractShape) {
+		AbstractShape shape = new UnknownShape(abstractShape);
 		shape.getPath().move(drawCursor[0], drawCursor[1]);
 
 		draw(shape);
 	}
 
-	public synchronized void reset(int w, int h) {
-		w += padding;
-		h += padding;
+	public synchronized void reset(final int width, final int height) {
+		int w = width + padding;
+		int h = height + padding;
 		setImage(new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB));
 		clear();
 		drawCursor[0] = w / 2;
 		drawCursor[1] = h / 2;
 	}
 
-	public synchronized void moveDrawCursor(double[] drawCursor) {
+	public synchronized void moveDrawCursor(final double[] drawCursor) {
 		this.drawCursor = drawCursor;
 	}
 
-	public synchronized void moveDrawCursor(double x, double y) {
+	public synchronized void moveDrawCursor(final double x, final double y) {
 		drawCursor[0] = x;
 		drawCursor[1] = y;
 	}
@@ -75,7 +76,7 @@ public class SDPanel extends PicturePanel {
 	 * 
 	 * @param shape
 	 */
-	public synchronized void draw(AbstractShape shape) {
+	public synchronized void draw(final AbstractShape shape) {
 		shape.getPath().draw(graphics, outlineColour, fillColour);
 
 		drawCentroid(shape);
@@ -85,7 +86,7 @@ public class SDPanel extends PicturePanel {
 		repaint();
 	}
 
-	public synchronized void draw(SDPath path) {
+	public synchronized void draw(final SDPath path) {
 		path.draw(graphics, outlineColour, fillColour);
 		repaint();
 	}
@@ -93,7 +94,7 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a cross at the centroid of the shape in the specified colour.
 	 */
-	public synchronized void drawCentroid(AbstractShape shape) {
+	public synchronized void drawCentroid(final AbstractShape shape) {
 		Point2D centroid = shape.getPath().getCentroid();
 		graphics.setColor(centroidColour);
 		int centroidX = (int) centroid.getX();
@@ -105,7 +106,7 @@ public class SDPanel extends PicturePanel {
 				centroidY - 2);
 	}
 
-	public synchronized void drawStartPoint(AbstractShape shape) {
+	public synchronized void drawStartPoint(final AbstractShape shape) {
 		if (shape.getPath().getVertices().size() > 0) {
 			graphics.setColor(startPointColour);
 			Point2D startPoint = shape.getPath().getVertices().get(0);
@@ -119,7 +120,7 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a descriptive label of the shape.
 	 */
-	public synchronized void drawLabel(AbstractShape shape) {
+	public synchronized void drawLabel(final AbstractShape shape) {
 		Point2D centroid = shape.getPath().getCentroid();
 		int centroidX = (int) centroid.getX();
 		int centroidY = (int) centroid.getY();
@@ -133,7 +134,8 @@ public class SDPanel extends PicturePanel {
 	/**
 	 * Draws a string.
 	 */
-	public synchronized void drawString(String string, int x, int y) {
+	public synchronized void drawString(final String string, final int x,
+			final int y) {
 		graphics.setColor(labelColour);
 		graphics.setFont(font);
 		FontMetrics metrics = graphics.getFontMetrics();
@@ -144,7 +146,7 @@ public class SDPanel extends PicturePanel {
 		graphics.drawString(string, (int) (x - ws / 2.0), (float) (y + hs));
 	}
 
-	public synchronized void setTheme(SDPanelTheme theme) {
+	public synchronized void setTheme(final SDPanelTheme theme) {
 		switch (theme) {
 		case UNRECOGNIZED:
 			labelColour = new Color(0, 0, 0, 40);
@@ -174,6 +176,39 @@ public class SDPanel extends PicturePanel {
 			startPointColour = Color.pink;
 			font = DEFAULT_FONT;
 		}
+	}
+
+	/**
+	 * For debugging. Displays the active shape.
+	 * 
+	 * @param shape
+	 */
+	public static void displayActiveShape(final AbstractShape shape) {
+		// graphics.ShapeFrame.setTheme(SDPanel.SIMPLE);
+		ShapeFrame.reset(shape);
+		ShapeFrame.setTheme(SDPanelTheme.DEFAULT);
+		ShapeFrame.display(shape);
+	}
+
+	/**
+	 * For debugging. Displays the identity shape.
+	 * 
+	 * @param shape
+	 */
+	public static void displayMaskShape(final AbstractShape shape,
+			final AbstractShape mask) {
+		ShapeFrame.setTheme(SDPanelTheme.MASK);
+		double[] cursor = ShapeFrame.getDrawCursor();
+
+		Rectangle2D a = shape.getPath().getBounds();
+		Rectangle2D b = mask.getPath().getBounds();
+
+		double x = b.getCenterX() - a.getCenterX() + cursor[0];
+		double y = b.getCenterY() - a.getCenterY() + cursor[1];
+
+		ShapeFrame.moveDrawCursor(x, y);
+		ShapeFrame.display(mask);
+		// MaskFrame.display(identity);
 	}
 
 }

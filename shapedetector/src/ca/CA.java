@@ -4,7 +4,6 @@ import helpers.Stopwatch;
 
 import java.util.List;
 
-import std.Picture;
 import ca.concurrency.ThreadServer;
 import ca.lattice.Lattice;
 import ca.rules.Rule;
@@ -20,7 +19,7 @@ public class CA<V> {
 	/** The cell lattice. */
 	protected Lattice<V> lattice;
 	/** Rules to apply to each cell in sequence. */
-	public final List<Rule<V>> rules;
+	public final List<Rule<Cell<V>>> rules;
 	/**
 	 * Number of additional threads to run in parallel.
 	 */
@@ -36,80 +35,58 @@ public class CA<V> {
 	 * @param r
 	 *            Search radius. Determines the size of the neighbourhood.
 	 */
-	public CA(Lattice<V> lattice, List<Rule<V>> rules, int numThreads) {
+	public CA(final Lattice<V> lattice, final List<Rule<Cell<V>>> rules,
+			final int numThreads) {
 		this.lattice = lattice;
 		this.rules = rules;
 		this.numThreads = numThreads;
 	}
 
-	public CA(Lattice<V> lattice, List<Rule<V>> rules) {
+	public CA(final Lattice<V> lattice, final List<Rule<Cell<V>>> rules) {
 		this(lattice, rules, DEFAULT_NUMTHREADS);
 	}
 
 	/**
-	 * Updates cells until they are all done (that is, until they all become
-	 * inactive).
+	 * Applies the cell rules to each cell.
 	 * 
 	 * @param picture
 	 *            Picture to process.
 	 * @return Processed picture.
+	 * @throws CAException
 	 */
-	public Picture apply(Picture picture) {
-		try {
-			System.out.println(this.getClass().getSimpleName() + " started.");
-			Stopwatch stopwatch = new Stopwatch();
+	public void apply() throws CAException {
+		System.out.println(this.getClass().getSimpleName() + " started.");
+		Stopwatch stopwatch = new Stopwatch();
 
-			stopwatch.print("Loading complete, elapsed time: ");
+		stopwatch.print("Loading complete, elapsed time: ");
 
-			for (Rule<V> rule : rules) {
-				rule.start();
-				boolean active = true;
-				// int passes = 0;
-				while (active) {
-					// stopwatch.start();
-					// if (debug) {
-					// /* Linear method */
-					// for (Cell cell : lattice) {
-					// rule.update(cell);
-					// }
-					// } else {
-					/* Multithreaded method */
-					ThreadServer<V> threadServer = new ThreadServer<V>(rule,
-							lattice, numThreads);
-					active = threadServer.run();
-					// }
-					lattice.complete();
-					// passes++;
-					// if (active || passes > 0) {
-					// System.out.println(" pass #" + passes +
-					// ", elapsed time: "
-					// + stopwatch.time() + " ms");
-					// }
-				}
-				rule.end();
+		for (Rule<Cell<V>> rule : rules) {
+			rule.prepare();
+			boolean active = true;
+			// int passes = 0;
+			while (active) {
+				// stopwatch.start();
+				// if (numThreads==0) {
+				// /* Linear method */
+				// for (Cell cell : lattice) {
+				// rule.update(cell);
+				// }
+				// } else {
+				/* Multithreaded method */
+				ThreadServer<Cell<V>> threadServer = new ThreadServer<Cell<V>>(
+						rule, lattice, numThreads);
+				active = threadServer.run();
+				// }
+				lattice.complete();
+				// passes++;
+				// if (active || passes > 0) {
+				// System.out.println(" pass #" + passes +
+				// ", elapsed time: "
+				// + stopwatch.time() + " ms");
+				// }
 			}
-		} catch (CAException e) {
-			handleException(e);
+			rule.complete();
 		}
-
-		return lattice.getResult();
-	}
-
-	/**
-	 * Handles exceptions.
-	 * 
-	 * @param e
-	 */
-	protected void handleException(CAException e) {
-		e.printStackTrace();
-		System.exit(0);
-	}
-
-	/**
-	 * Gets the output image.
-	 */
-	public Picture getResult() {
-		return lattice.getResult();
 	}
 
 	/**

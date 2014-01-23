@@ -15,35 +15,38 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 public class MedianFilter extends AbstractFilter {
 	protected final int m;
 
-	public MedianFilter(UnivariateFunction f, double x0, double x1) {
+	public MedianFilter(final UnivariateFunction f, final double x0,
+			final double x1) {
 		super(f, x0, x1, (x1 - x0) / 10.0, 10, true);
 		m = (int) ((double) numSamples / 2.0);
 	}
 
-	public MedianFilter(UnivariateFunction f, double x0, double x1,
-			double bandwidth, int numSamples, boolean periodic) {
+	public MedianFilter(final UnivariateFunction f, final double x0,
+			final double x1, final double bandwidth, final int numSamples,
+			final boolean periodic) {
 		super(f, x0, x1, bandwidth, numSamples, periodic);
 		m = numSamples / 2;
 	}
 
 	@Override
-	public double value(double x) {
+	public double value(final double x) {
+		double h = x;
 		if (!periodic) {
-			if (x - delta < x0) {
-				x = x0 + delta;
+			if (h - delta < x0) {
+				h = x0 + delta;
 			} else if (x + delta > x1) {
-				x = x1 - delta;
+				h = x1 - delta;
 			}
 		}
 
-		double[] samples = FunctionUtils.sample(f, x - delta, x + delta,
+		double[] samples = FunctionUtils.sample(f, h - delta, h + delta,
 				numSamples);
 		double result = elementValue(x, new RingBuffer(samples));
 		return result;
 	}
 
 	@Override
-	public double elementValue(double x, RingBuffer buffer) {
+	public double elementValue(final double x, final RingBuffer buffer) {
 		double[] samples = buffer.getArray();
 		Arrays.sort(samples);
 		return samples[m];

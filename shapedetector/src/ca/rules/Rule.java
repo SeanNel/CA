@@ -2,12 +2,19 @@ package ca.rules;
 
 import exceptions.CAException;
 
+/**
+ * Interface for classes that perform actions on objects.
+ * 
+ * @author Sean
+ * 
+ * @param <V>
+ */
 public interface Rule<V> {
 
 	/**
 	 * Does what has to be done before the rule starts.
 	 */
-	public void start() throws CAException;
+	public void prepare() throws CAException;
 
 	/**
 	 * Applies the rule and updates the specified object.
@@ -15,10 +22,10 @@ public interface Rule<V> {
 	 * @param object
 	 * @throws CAException
 	 */
-	public void update(V object) throws CAException;
+	public void update(final V object) throws CAException;
 
 	/**
-	 * Does what has to be done after the rule has finished.
+	 * Does what has to be done after the rule has completed.
 	 */
-	public void end() throws CAException;
+	public void complete() throws CAException;
 }

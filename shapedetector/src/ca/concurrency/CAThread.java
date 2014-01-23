@@ -15,7 +15,7 @@ public class CAThread<V> extends Thread {
 	 * @param server
 	 *            The CAThreadServer that coordinates this thread.
 	 */
-	public CAThread(ThreadServer<V> server) {
+	public CAThread(final ThreadServer<V> server) {
 		this.server = server;
 	}
 

@@ -7,7 +7,7 @@ public class CAException extends Exception {
 		super();
 	}
 	
-	public CAException(String message) {
+	public CAException(final String message) {
 		super(message);
 	}
 

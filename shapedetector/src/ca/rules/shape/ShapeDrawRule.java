@@ -12,12 +12,12 @@ import ca.shapedetector.shapes.UnknownShape;
 public class ShapeDrawRule extends ShapeRule {
 	protected final SDPanel sdPanel;
 
-	public ShapeDrawRule(ShapeList shapeList, SDPanel sdPanel) {
+	public ShapeDrawRule(final ShapeList shapeList, final SDPanel sdPanel) {
 		super(shapeList);
 		this.sdPanel = sdPanel;
 	}
 
-	public synchronized void update(AbstractShape shape) {
+	public synchronized void update(final AbstractShape shape) {
 		if (shape.getClass() != UnknownShape.class) {
 			sdPanel.setTheme(SDPanelTheme.RECOGNIZED);
 		} else {

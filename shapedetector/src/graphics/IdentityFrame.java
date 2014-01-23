@@ -11,12 +11,12 @@ public class IdentityFrame extends ShapeFrame {
 	private static final SDPanel panel = new SDPanel();
 	public static final IdentityFrame frame = new IdentityFrame(panel);
 
-	public IdentityFrame(SDPanel panel) {
+	public IdentityFrame(final SDPanel panel) {
 		super(panel);
 		setTitle("Identity shape");
 	}
 
-	public static void display(AbstractShape shape) {
+	public static void display(final AbstractShape shape) {
 		int x = shapeFrame.getX();
 		int y = shapeFrame.getY() + shapeFrame.getHeight() + 20;
 		frame.setLocation(x, y);

@@ -10,7 +10,7 @@ import std.Picture;
  * @author Sean
  */
 public class Monochrome extends ImageFilter {
-	public static Picture apply(Picture picture) {
+	public static Picture apply(final Picture picture) {
 		Picture output = new Picture(picture.width(), picture.height());
 		output.setOriginUpperLeft();
 		for (int x = 0; x < picture.width(); x++) {

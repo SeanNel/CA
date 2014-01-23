@@ -9,6 +9,11 @@ import org.apache.commons.math3.exception.NonMonotonicSequenceException;
 import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.commons.math3.util.MathArrays;
 
+/**
+ * A step function.
+ * 
+ * @author Sean
+ */
 public class DiscreteFunction implements UnivariateFunction { // UnivariateDifferentiableFunction
 	/** Abscissae. */
 	protected final double[] abscissae;

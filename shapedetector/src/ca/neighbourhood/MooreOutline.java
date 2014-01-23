@@ -5,8 +5,8 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
-import ca.lattice.CellLattice2D;
 import ca.shapedetector.BlobMap;
+import exceptions.CAException;
 import exceptions.NullParameterException;
 
 /**
@@ -19,39 +19,31 @@ import exceptions.NullParameterException;
  * PathIterators has been resolved. Does not really make a difference at this
  * point.
  */
-public class MooreOutline extends CellNeighbourhood2D {
-	protected final BlobMap blobMap;
+public class MooreOutline<V> extends CellNeighbourhood2D<V> {
+	protected final BlobMap<V> blobMap;
 
-	public MooreOutline(Lattice<Cell> lattice, BlobMap blobMap)
+	public MooreOutline(final Lattice<V> lattice, final BlobMap<V> blobMap)
 			throws NullParameterException {
 		super(lattice);
 		this.blobMap = blobMap;
 	}
 
-	public List<Cell> gatherNeighbours(Cell cell) {
+	@Override
+	public List<Cell<V>> gatherNeighbours(final Cell<V> cell)
+			throws CAException {
 		int[] coordinates = cell.getCoordinates();
 		int x = coordinates[0];
 		int y = coordinates[1];
-		List<Cell> neighbourhood = new ArrayList<Cell>(8);
-		// add(neighbourhood, getCell(x, y));
+		List<Cell<V>> neighbourhood = new ArrayList<Cell<V>>(8);
 
-		// add(neighbourhood, cell, ca.getCell(x - 1, y - 1));
-		// add(neighbourhood, cell, (ca.getCell(x - 1, y));
-		// add(neighbourhood, cell, ca.getCell(x - 1, y + 1));
-		// add(neighbourhood, cell, ca.getCell(x, y + 1));
-		// add(neighbourhood, cell, ca.getCell(x + 1, y + 1));
-		// add(neighbourhood, cell, ca.getCell(x + 1, y));
-		// add(neighbourhood, cell, ca.getCell(x + 1, y - 1));
-		// add(neighbourhood, cell, ca.getCell(x, y - 1));
-
-		add(neighbourhood, cell, lattice.getCell(x, y - 1));
-		add(neighbourhood, cell, lattice.getCell(x + 1, y - 1));
-		add(neighbourhood, cell, lattice.getCell(x + 1, y));
-		add(neighbourhood, cell, lattice.getCell(x + 1, y + 1));
-		add(neighbourhood, cell, lattice.getCell(x, y + 1));
-		add(neighbourhood, cell, lattice.getCell(x - 1, y + 1));
-		add(neighbourhood, cell, lattice.getCell(x - 1, y));
-		add(neighbourhood, cell, lattice.getCell(x - 1, y - 1));
+		add(neighbourhood, cell, lattice.get(x, y - 1));
+		add(neighbourhood, cell, lattice.get(x + 1, y - 1));
+		add(neighbourhood, cell, lattice.get(x + 1, y));
+		add(neighbourhood, cell, lattice.get(x + 1, y + 1));
+		add(neighbourhood, cell, lattice.get(x, y + 1));
+		add(neighbourhood, cell, lattice.get(x - 1, y + 1));
+		add(neighbourhood, cell, lattice.get(x - 1, y));
+		add(neighbourhood, cell, lattice.get(x - 1, y - 1));
 
 		return neighbourhood;
 	}
@@ -62,10 +54,11 @@ public class MooreOutline extends CellNeighbourhood2D {
 	 * @param neighbourhood
 	 * @param cell
 	 * @param neighbour
+	 * @throws CAException
 	 */
-	protected void add(List<Cell> neighbourhood, Cell cell, Cell neighbour) {
-		if (cell != null && cell != CellLattice2D.paddingCell
-				&& blobMap.getBlob(cell) == blobMap.getBlob(neighbour)) {
+	protected void add(final List<Cell<V>> neighbourhood, final Cell<V> cell,
+			final Cell<V> neighbour) throws CAException {
+		if (cell != null && blobMap.getBlob(cell) == blobMap.getBlob(neighbour)) {
 			neighbourhood.add(neighbour);
 		}
 	}

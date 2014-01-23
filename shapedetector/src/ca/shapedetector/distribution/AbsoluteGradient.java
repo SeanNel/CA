@@ -16,17 +16,27 @@ import org.apache.commons.math3.analysis.interpolation.UnivariatePeriodicInterpo
  * In principle, this method should be able to find vertices of most polygonal
  * shapes, but because the angles are quantized the graph is too irregular to be
  * of use.
+ * <p>
+ * The results should be similar to taking the differentiation of the
+ * RadialDistance graph, and subtracting the angle between the centroid and each
+ * point along the outline.
  * 
  * @author Sean
- * 
  */
 public class AbsoluteGradient extends Distribution {
 
-	protected double getValue(Point2D o, Point2D a, Point2D b) {
+	protected double getValue(final Point2D o, final Point2D a, final Point2D b) {
 		double theta = getGradient(a, b);
 		return theta;
 	}
 
+	/**
+	 * Gets the angle between two points.
+	 * 
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
 	protected static double getGradient(Point2D v1, Point2D v2) {
 		double x = v2.getX() - v1.getX();
 		double y = v2.getY() - v1.getY();
@@ -41,19 +51,6 @@ public class AbsoluteGradient extends Distribution {
 		return theta;
 	}
 
-	// protected static double getGradient(Point2D v1, Point2D v2) {
-	// /* Y is negative because it increases from top to bottom. */
-	// double theta1 = Misc.getAngle(v1.getX(), -v1.getY());
-	// double theta2 = Misc.getAngle(v2.getX(), -v2.getY());
-	//
-	// double gradient = theta2 - theta1;
-	// if (gradient < 0) {
-	// gradient += 2.0 * Math.PI;
-	// }
-	// // gradient -= (Math.PI / 2.0);
-	// return gradient;
-	// }
-
 	/**
 	 * Filters noise and returns an interpolated polynomial.
 	 * <p>
@@ -67,7 +64,7 @@ public class AbsoluteGradient extends Distribution {
 	 * @param f
 	 * @return
 	 */
-	public UnivariateFunction filter(DiscreteFunction f) {
+	public UnivariateFunction filter(final DiscreteFunction f) {
 		if (f == null) {
 			throw new RuntimeException();
 		}
@@ -78,7 +75,7 @@ public class AbsoluteGradient extends Distribution {
 		double x0 = a[0];
 		double x1 = a[a.length - 1];
 
-		 double[] samples = FunctionUtils.sample(f, x0, x1, a.length);
+		double[] samples = FunctionUtils.sample(f, x0, x1, a.length);
 
 		// double bandwidth = 5.0;
 		// int numSamples = (int) (bandwidth * 2.0);
@@ -100,8 +97,8 @@ public class AbsoluteGradient extends Distribution {
 		return interpolate(abscissae, ordinates);
 	}
 
-	protected UnivariateFunction interpolate(double[] abscissae,
-			double[] ordinates) {
+	protected UnivariateFunction interpolate(final double[] abscissae,
+			final double[] ordinates) {
 		int n = abscissae.length;
 		if (n < 3) {
 			return new DiscreteFunction(abscissae, ordinates);

@@ -19,7 +19,7 @@ public class Posterize {
 	 * @param n Number of intervals per colour channel.
 	 * @return Filtered image.
 	 */
-	public static Picture apply(Picture picture, int n) {
+	public static Picture apply(final Picture picture, final int n) {
 		long timer = System.currentTimeMillis();
 
 		float[][] range = ColourCompare.getRange(picture);

@@ -12,7 +12,7 @@ public interface Filter extends UnivariateFunction {
 	 * @param x
 	 * @return
 	 */
-	public double elementValue(double x, RingBuffer buffer);
+	public double elementValue(final double x, final RingBuffer buffer);
 
 	/**
 	 * Gets a array of n filtered values, spaced at equal intervals. (More
@@ -20,5 +20,5 @@ public interface Filter extends UnivariateFunction {
 	 * 
 	 * @return
 	 */
-	public double[] sample(int n);
+	public double[] sample(final int n);
 }

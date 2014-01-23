@@ -22,31 +22,32 @@ import ca.shapedetector.blob.Blob;
  * <p>
  * TODO: fix sync issues
  */
-public class ShapeAssimilatorRule extends CellRule {
-	protected final BlobMap blobMap;
+public class ShapeAssimilatorRule extends CellRule<Color> {
+	protected final BlobMap<Color> blobMap;
 	/**
 	 * Shapes with areas smaller than this will be assimilated into larger
 	 * shapes.
 	 */
 	protected int minArea = 100;// 25;
+	/** For debugging: a counter */
 	public static int I = 0;
-	protected Hashtable<Blob, Color> shapeColours;
+	protected Hashtable<Blob<Color>, Color> shapeColours;
 
-	public ShapeAssimilatorRule(Lattice<Cell> lattice,
-			Neighbourhood neighbourhoodModel, BlobMap blobMap)
-			throws CAException {
+	public ShapeAssimilatorRule(final Lattice<Color> lattice,
+			final Neighbourhood<Color> neighbourhoodModel,
+			final BlobMap<Color> blobMap) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
-		shapeColours = new Hashtable<Blob, Color>();
+		shapeColours = new Hashtable<Blob<Color>, Color>();
 	}
 
-	public void update(Cell cell) {
+	public void update(final Cell<Color> cell) throws CAException {
 		/* Assumes that cell has a Van Neumann neighbourhood, with r=1 */
-		Blob blob = blobMap.getBlob(cell);
+		Blob<Color> blob = blobMap.getBlob(cell);
 
 		// synchronized (blob) {
 		if (blob.getArea() < minArea) {
-			Blob newblob = assimilate(cell);
+			Blob<Color> newblob = assimilate(cell);
 			/* The shape colour has become outdated. */
 			if (newblob != null) {
 				shapeColours.remove(newblob);
@@ -72,25 +73,27 @@ public class ShapeAssimilatorRule extends CellRule {
 	 * 
 	 * @param blob
 	 * @return The merged blob.
+	 * @throws CAException
 	 */
-	protected Blob assimilate(Cell repCell) {
+	protected Blob<Color> assimilate(final Cell<Color> repCell) throws CAException {
 		/** A set of cells representing all the shapes next to this one. */
-		Set<Cell> shapeRepresentatives = new HashSet<Cell>();
+		Set<Cell<Color>> shapeRepresentatives = new HashSet<Cell<Color>>();
 
-		Blob blob = blobMap.getBlob(repCell);
+		Blob<Color> blob = blobMap.getBlob(repCell);
 		Color colour1 = getColour(blob);
 
-		List<Cell> cells = new LinkedList<Cell>(blob.getAreaCells());
+		List<Cell<Color>> cells = new LinkedList<Cell<Color>>(
+				blob.getAreaCells());
 		/*
 		 * Gathers all the shapes next to this one. Duplicates would slow down
 		 * the step after this which iterates through all these shapes, which is
 		 * why neighbouringShapes is a set and not a list.
 		 */
-		for (Cell cell : cells) {
-			List<Cell> neighbourhood = cell.getNeighbourhood();
-			for (Cell neighbour : neighbourhood) {
+		for (Cell<Color> cell : cells) {
+			List<Cell<Color>> neighbourhood = cell.getNeighbourhood();
+			for (Cell<Color> neighbour : neighbourhood) {
 				if (neighbour != cell) {
-					Blob neighbouringShape = blobMap.getBlob(neighbour);
+					Blob<Color> neighbouringShape = blobMap.getBlob(neighbour);
 					if (neighbouringShape != blob) {
 						shapeRepresentatives.add(neighbour);
 					}
@@ -99,21 +102,21 @@ public class ShapeAssimilatorRule extends CellRule {
 		}
 
 		/** This gives the least difference to a neighbouring shape. */
-		float minDifference = 2f;
+		double minDifference = 2f;
 		/**
 		 * A representative shape from the neighbouring shape most similar to
 		 * this shape.
 		 */
-		Cell similarCell = null;
+		Cell<Color> similarCell = null;
 
 		/*
 		 * Finds a representative cell from the shape next to this one that is
 		 * most similar to this shape.
 		 */
-		for (Cell neighbour : shapeRepresentatives) {
+		for (Cell<Color> neighbour : shapeRepresentatives) {
 			// System.out.print(I++ + ".");
-			Blob neighbouringShape = blobMap.getBlob(neighbour);
-			float difference = 1f;
+			Blob<Color> neighbouringShape = blobMap.getBlob(neighbour);
+			double difference = 1f;
 			Color colour2 = null;
 			synchronized (neighbouringShape) {
 				if (neighbouringShape.getAreaCells() != null) {
@@ -145,7 +148,7 @@ public class ShapeAssimilatorRule extends CellRule {
 		// CACell repCell2 = neighbouringShape.getAreaCells().get(0);
 		// colour2 = getColour(repCell2);
 		// // }
-		// float difference = ColourCompare.getDifference(colour1, colour2);
+		// double difference = ColourCompare.getDifference(colour1, colour2);
 		// if (difference < minDifference) {
 		// minDifference = difference;
 		// similarCell = repCell2;
@@ -173,16 +176,16 @@ public class ShapeAssimilatorRule extends CellRule {
 	 * 
 	 * @return Average colour.
 	 */
-	protected Color getMeanColour(Collection<Cell> cells) {
+	protected Color getMeanColour(final Collection<Cell<Color>> cells) {
 		// Collection<CACell> cells = new LinkedList<CACell>(cells);
 		LinkedList<Color> colours = new LinkedList<Color>();
-		for (Cell cell : cells) {
-			colours.add(lattice.getColour(cell));
+		for (Cell<Color> cell : cells) {
+			colours.add(lattice.getState(cell));
 		}
 		return ColourCompare.meanColour(colours);
 	}
 
-	protected Color getColour(Blob shape) {
+	protected Color getColour(final Blob<Color> shape) {
 		Color colour = shapeColours.get(shape);
 		if (colour == null) {
 			colour = getMeanColour(shape.getAreaCells());

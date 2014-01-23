@@ -11,14 +11,15 @@ import exceptions.CAException;
  * 
  * @author Sean
  */
-public class GatherNeighboursRule extends CellRule {
+public class GatherNeighboursRule<V> extends CellRule<V> {
 
-	public GatherNeighboursRule(Lattice<Cell> lattice,
-			Neighbourhood neighbourhoodModel) throws CAException {
+	public GatherNeighboursRule(final Lattice<V> lattice,
+			final Neighbourhood<V> neighbourhoodModel) throws CAException {
 		super(lattice, neighbourhoodModel);
 	}
 
-	public void update(Cell cell) {
+	@Override
+	public void update(final Cell<V> cell) throws CAException {
 		cell.setNeighbourhood(neighbourhoodModel.gatherNeighbours(cell));
 	}
 }

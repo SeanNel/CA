@@ -17,7 +17,13 @@ public class VertexIterator implements Iterator<Point2D> {
 	protected final List<Point2D> vertices;
 	protected int index;
 
-	public VertexIterator(List<Point2D> vertices, int direction) {
+	/**
+	 * Constructor.
+	 * 
+	 * @param vertices
+	 * @param direction
+	 */
+	public VertexIterator(final List<Point2D> vertices, final int direction) {
 		this.vertices = vertices;
 		this.direction = direction;
 		if (direction == FORWARD) {

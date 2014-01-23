@@ -7,6 +7,13 @@ import java.awt.geom.Point2D;
 import math.DiscreteFunction;
 import ca.shapedetector.path.SDPath;
 
+/**
+ * Divides a path into triangular sectors, subtended by the centroid and
+ * extending to the outline. Then computes the area each sector as a function of
+ * the sector angle.
+ * 
+ * @author Sean
+ */
 public class AreaDistribution {
 
 	/**
@@ -22,8 +29,8 @@ public class AreaDistribution {
 	 * 
 	 * @return The number of sectors to divide the azimuth into.
 	 */
-	public static DiscreteFunction getAreaDistribution(SDPath path,
-			int numSectors) {
+	public static DiscreteFunction getAreaDistribution(final SDPath path,
+			final int numSectors) {
 		double sweep = 2.0 * Math.PI / (double) numSectors;
 		double w = path.getBounds().getWidth();
 		double h = path.getBounds().getHeight();

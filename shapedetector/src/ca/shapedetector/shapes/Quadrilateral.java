@@ -19,7 +19,7 @@ public class Quadrilateral extends Polygon {
 	}
 
 	@Override
-	protected Quadrilateral getMask(AbstractShape shape) {
+	protected Quadrilateral getMask(final AbstractShape shape) {
 		SDPath path = getPolygon(shape, 4);
 		return new Quadrilateral(path);
 	}

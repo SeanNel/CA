@@ -12,11 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import ca.Cell;
-import ca.shapedetector.blob.Blob;
 
 /**
- * An abstraction layer for working with closed, polygonal paths that describe
- * shapes.
+ * An abstraction layer for working with closed, polygonal paths that do not
+ * intersect themselves.
+ * 
+ * @param V
  * 
  * @author Sean
  */
@@ -38,15 +39,6 @@ public class SDPath implements Iterable<Point2D> {
 	protected Path2D.Double path2D;
 
 	/**
-	 * Creates a path describing the outline cells of the target Blob.
-	 * 
-	 * @param blob
-	 */
-	public SDPath(Blob blob) {
-		addCells(blob.getOutlineCells());
-	}
-
-	/**
 	 * Constructor. Creates an empty path with no vertices.
 	 */
 	public SDPath() {
@@ -59,10 +51,10 @@ public class SDPath implements Iterable<Point2D> {
 	 * @param cells
 	 * @return
 	 */
-	public void addCells(List<Cell> cells) {
+	public void addCells(final List<Cell<?>> cells) {
 		vertices = new ArrayList<Point2D>(cells.size());
 
-		Iterator<Cell> cellIterator = cells.iterator();
+		Iterator<Cell<?>> cellIterator = cells.iterator();
 		int[] coordinates = cellIterator.next().getCoordinates();
 		Point2D vertex = new Point2D.Double(coordinates[0], coordinates[1]);
 		vertices.add(vertex);
@@ -83,7 +75,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * 
 	 * @param vertices
 	 */
-	public void addVertices(List<Point2D> vertices) {
+	public void addVertices(final List<Point2D> vertices) {
 		this.vertices = new ArrayList<Point2D>(vertices);
 
 		outlineMap = null;
@@ -95,7 +87,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * 
 	 * @param original
 	 */
-	public SDPath(SDPath original) {
+	public SDPath(final SDPath original) {
 		List<Point2D> originalVertices = original.getVertices();
 		vertices = new ArrayList<Point2D>(originalVertices.size());
 		for (Point2D point : originalVertices) {
@@ -114,7 +106,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * @see java.awt.geom.Shape
 	 * @param shape
 	 */
-	public SDPath(Shape shape) {
+	public SDPath(final Shape shape) {
 		Path2D.Double path = new Path2D.Double();
 		path.append(shape, true);
 		fromPath2D(path);
@@ -125,7 +117,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * 
 	 * @param path
 	 */
-	protected void fromPath2D(Path2D path) {
+	protected void fromPath2D(final Path2D path) {
 		Path2DIterator iterator = new Path2DIterator(path);
 		vertices = new ArrayList<Point2D>();
 		while (iterator.hasNext()) {
@@ -201,16 +193,8 @@ public class SDPath implements Iterable<Point2D> {
 		return bounds;
 	}
 
-	public double getCentreX() {
-		return getBounds().getCenterX();
-	}
-
-	public double getCentreY() {
-		return getBounds().getCenterY();
-	}
-
 	/**
-	 * Gets an array of points on the outline of the shape.
+	 * Gets a list of vertices describing the path.
 	 * 
 	 * @return
 	 */
@@ -229,7 +213,8 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	/**
-	 * Gets the centroid (geometric centre).
+	 * Gets the centroid (geometric centre). This formula only works for closed
+	 * paths that do not intersect themselves.
 	 * 
 	 * @see https://en.wikipedia.org/wiki/Centroid, Centroid of polygon
 	 * @return
@@ -294,8 +279,11 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	/**
-	 * Gets the area enclosed by the path. Formula source:
-	 * http://www.mathopenref.com/coordpolygonarea.html
+	 * Gets the area enclosed by the path. This formula only works for closed
+	 * paths that do not intersect themselves.
+	 * <p>
+	 * 
+	 * @see http://www.mathopenref.com/coordpolygonarea.html
 	 * 
 	 * @return Area in pixels squared.
 	 */
@@ -335,7 +323,8 @@ public class SDPath implements Iterable<Point2D> {
 	 * @param outlineColour
 	 * @param fillColour
 	 */
-	public void draw(Graphics2D graphics, Color outlineColour, Color fillColour) {
+	public void draw(final Graphics2D graphics, final Color outlineColour,
+			final Color fillColour) {
 		Path2D path = getPath2D();
 		graphics.setColor(fillColour);
 		graphics.fill(path);
@@ -351,7 +340,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * @param x
 	 * @param y
 	 */
-	public void move(double x, double y) {
+	public void move(final double x, final double y) {
 		double x0 = bounds.getCenterX();
 		double y0 = bounds.getCenterY();
 
@@ -372,7 +361,7 @@ public class SDPath implements Iterable<Point2D> {
 	 * @param indices
 	 * @return
 	 */
-	public List<Point2D> getVertices(List<Double> indices) {
+	public List<Point2D> getVertices(final List<Double> indices) {
 		OutlineMap outlineMap = getOutlineMap();
 		int n = indices.size();
 		List<Point2D> vertices = new ArrayList<Point2D>(n);
@@ -393,7 +382,7 @@ public class SDPath implements Iterable<Point2D> {
 	// *
 	// * @param theta
 	// */
-	// public void rotate(double theta) {
+	// public void rotate(final double theta) {
 	// /* Better to use the centre of gravity for this? */
 	// double x = path.getBounds2D().getCenterX();
 	// double y = path.getBounds2D().getCenterY();
@@ -407,7 +396,7 @@ public class SDPath implements Iterable<Point2D> {
 	// *
 	// * @param bounds
 	// */
-	// public void resize(Rectangle2D bounds) {
+	// public void resize(final Rectangle2D bounds) {
 	// Rectangle2D currentBounds = this.bounds;
 	// double x = currentBounds.getWidth();
 	// double y = currentBounds.getHeight();

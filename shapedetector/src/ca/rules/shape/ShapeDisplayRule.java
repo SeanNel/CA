@@ -13,16 +13,16 @@ import ca.shapedetector.shapes.AbstractShape;
 public class ShapeDisplayRule extends ShapeRule {
 	final SDPanel panel;
 
-	public ShapeDisplayRule(ShapeList shapeList, SDPanel panel) {
+	public ShapeDisplayRule(final ShapeList shapeList, final SDPanel panel) {
 		super(shapeList);
 		this.panel = panel;
 	}
 
-	public void start() {
+	public void prepare() {
 		panel.setVisible(true);
 	}
 
-	public synchronized void update(AbstractShape shape) {
+	public synchronized void update(final AbstractShape shape) {
 		Rectangle2D bounds = shape.getPath().getBounds();
 		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
 		panel.display(shape);

@@ -5,6 +5,7 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
+import exceptions.CAException;
 import exceptions.NullParameterException;
 
 /**
@@ -12,20 +13,21 @@ import exceptions.NullParameterException;
  * cell. Optimized for VanNeumann neighbourhood, r=1. Does not include the cell
  * in its own neighbourhood.
  */
-public class VanNeumannCardinal extends CellNeighbourhood2D {
+public class VanNeumannCardinal<V> extends CellNeighbourhood2D<V> {
 
-	public VanNeumannCardinal(Lattice<Cell> lattice) throws NullParameterException {
+	public VanNeumannCardinal(final Lattice<V> lattice) throws NullParameterException {
 		super(lattice);
 	}
 
-	public List<Cell> gatherNeighbours(Cell cell) {
+	@Override
+	public List<Cell<V>> gatherNeighbours(final Cell<V> cell) throws CAException {
 		int[] coordinates = cell.getCoordinates();
-		List<Cell> neighbourhood = new ArrayList<Cell>(4);
+		List<Cell<V>> neighbourhood = new ArrayList<Cell<V>>(4);
 		// neighbourhood.add(getCell(coordinates[0], coordinates[1]));
-		add(neighbourhood, lattice.getCell(coordinates[0], coordinates[1] - 1));
-		add(neighbourhood, lattice.getCell(coordinates[0], coordinates[1] + 1));
-		add(neighbourhood, lattice.getCell(coordinates[0] - 1, coordinates[1]));
-		add(neighbourhood, lattice.getCell(coordinates[0] + 1, coordinates[1]));
+		add(neighbourhood, lattice.get(coordinates[0], coordinates[1] - 1));
+		add(neighbourhood, lattice.get(coordinates[0], coordinates[1] + 1));
+		add(neighbourhood, lattice.get(coordinates[0] - 1, coordinates[1]));
+		add(neighbourhood, lattice.get(coordinates[0] + 1, coordinates[1]));
 		return neighbourhood;
 	}
 }

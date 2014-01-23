@@ -35,59 +35,46 @@ public class ColourCompare {
 	 *            A vector to find the distance to.
 	 * @return Distance between the vectors.
 	 */
-	public static float distance(float[] vector1, float[] vector2) {
+	public static double distance(final float[] vector1, final float[] vector2) {
 		float sum = 0.0f;
 		for (int i = 0; i < vector1.length; i++) {
 			float x = vector1[i] - vector2[i];
 			sum += x * x;
 		}
-		return (float) Math.sqrt(sum);
+		return Math.sqrt(sum);
 	}
 
 	/**
-	 * Gets the similarity between two colours.
-	 * 
-	 * @param colour1
-	 *            1st colour.
-	 * @param colour2
-	 *            2nd colour.
-	 * @return The similarity is expressed as a ratio: 0f is the maximum
-	 *         similarity (the colours are the same), 1f is minimum similarity
-	 *         (black and white).
-	 */
-	public static float getMatch(Color colour1, Color colour2) {
-		return 1f - getDifference(colour1, colour2);
-	}
-
-	/**
-	 * Gets the difference between two colours.
+	 * Gets the difference quotient between two colours.
 	 * <p>
 	 * The YCbCr colour space is the digital equivalent of YUV, and represents
-	 * colours with a model of human perception. Probably better to convert
-	 * image once to YCbCr and back to RGB once done instead of doing it here.
+	 * colours with a model of human perception.
+	 * <p>
+	 * Probably better to convert image once to YCbCr and back to RGB once done
+	 * instead of doing it here.
 	 * 
 	 * @param colour1
 	 *            1st colour.
 	 * @param colour2
 	 *            2nd colour.
 	 * @return The difference is expressed as a ratio: 1f is the maximum
-	 *         difference (black and whit)e. 0f means the colours are the same.
+	 *         difference (black and white). 0f means the colours are the same.
 	 *         For example, in the RGB colour space, the difference between
 	 *         bright red and blue is the vector (255, 0, 0-255, 255-255). The
 	 *         ratio of the norm of this vector over the maximum distance
 	 *         possible is: 360/510 = 0.71.
 	 */
-	public static float getDifference(Color colour1, Color colour2) {
-		colour1 = toYCbCr(colour1);
-		colour2 = toYCbCr(colour2);
+	public static double getDifference(final Color colour1, final Color colour2) {
+		Color c1 = toYCbCr(colour1);
+		Color c2 = toYCbCr(colour2);
 
-		float[] p1Components = colour1.getColorComponents(null);
-		float[] p2Components = colour2.getColorComponents(null);
+		float[] p1Components = c1.getColorComponents(null);
+		float[] p2Components = c2.getColorComponents(null);
 
 		double distance = distance(p1Components, p2Components);
 		double max_distance = Math.sqrt(p1Components.length);
 
-		return (float) distance / (float) max_distance;
+		return distance / max_distance;
 	}
 
 	/**
@@ -97,7 +84,7 @@ public class ColourCompare {
 	 *            RGB colour.
 	 * @return YCbCr colour.
 	 */
-	public static Color toYCbCr(Color colour) {
+	public static Color toYCbCr(final Color colour) {
 		float[] c = colourSpace.fromRGB(colour.getColorComponents(null));
 		for (int i = 0; i < c.length; i++) {
 			c[i] /= 255f;
@@ -114,7 +101,7 @@ public class ColourCompare {
 	 *            Another colour.
 	 * @return Average colour.
 	 */
-	public static Color meanColour(Color colour1, Color colour2) {
+	public static Color meanColour(final Color colour1, final Color colour2) {
 		LinkedList<Color> colours = new LinkedList<Color>();
 		colours.add(colour1);
 		colours.add(colour2);
@@ -128,7 +115,7 @@ public class ColourCompare {
 	 *            Array of colours to find the average of.
 	 * @return Average colour.
 	 */
-	public static Color meanColour(Collection<Color> colours) {
+	public static Color meanColour(final Collection<Color> colours) {
 		int r = 0, g = 0, b = 0, a = 0;
 		for (Color colour : colours) {
 			r += colour.getRed();
@@ -157,20 +144,21 @@ public class ColourCompare {
 	 *            Array of colours to find the average of.
 	 * @return Median colour.
 	 */
-	public static Color medianColour(Color refColour, Collection<Color> colours) {
-//		if (colours == null || colours.isEmpty()) {
-//			return null;
-//		}
+	public static Color medianColour(final Color refColour,
+			final Collection<Color> colours) {
+		if (colours == null || colours.isEmpty()) {
+			return null;
+		}
 
-		Hashtable<Float, Color> colourTable = new Hashtable<Float, Color>();
+		Hashtable<Double, Color> colourTable = new Hashtable<Double, Color>();
 
 		for (Color colour : colours) {
-			Float difference = getDifference(refColour, colour);
+			double difference = getDifference(refColour, colour);
 			colourTable.put(difference, colour);
 		}
 
-		Float[] keys = colourTable.keySet().toArray(
-				new Float[colourTable.size()]);
+		Double[] keys = colourTable.keySet().toArray(
+				new Double[colourTable.size()]);
 		Arrays.sort(keys);
 		int median = (int) Math.floor(keys.length / 2.0);
 
@@ -186,18 +174,18 @@ public class ColourCompare {
 	 *            Array of colours to find the average of.
 	 * @return Median colour.
 	 */
-	public static Color medianColour(Collection<Color> colours) {
+	public static Color medianColour(final Collection<Color> colours) {
 		if (colours == null || colours.isEmpty()) {
 			return null;
 		}
 
-		Hashtable<Float, Color> colourTable = new Hashtable<Float, Color>();
+		Hashtable<Double, Color> colourTable = new Hashtable<Double, Color>();
 
 		for (Color colour1 : colours) {
-			Float maxDifference = Float.MAX_VALUE;
+			Double maxDifference = Double.MAX_VALUE;
 			for (Color colour2 : colours) {
 				if (colour1 != colour2) {
-					Float difference = getDifference(colour1, colour2);
+					Double difference = getDifference(colour1, colour2);
 					if (difference > maxDifference) {
 						maxDifference = difference;
 					}
@@ -206,8 +194,8 @@ public class ColourCompare {
 			colourTable.put(maxDifference, colour1);
 		}
 
-		Float[] keys = colourTable.keySet().toArray(
-				new Float[colourTable.size()]);
+		Double[] keys = colourTable.keySet().toArray(
+				new Double[colourTable.size()]);
 		Arrays.sort(keys);
 		int median = (int) Math.floor(keys.length / 2.0);
 
@@ -221,7 +209,7 @@ public class ColourCompare {
 	 * @return An array of arrays, {minima, maxima} each consisting of an array
 	 *         of colour components.
 	 */
-	public static float[][] getRange(Picture picture) {
+	public static float[][] getRange(final Picture picture) {
 		int numComponents = picture.get(0, 0).getColorComponents(null).length;
 
 		float[] minima = new float[numComponents];
@@ -259,7 +247,8 @@ public class ColourCompare {
 	 * @return Upper bound on the interval in which the specified colour
 	 *         component occurs.
 	 */
-	public static float findInterval(float component, float[] intervals) {
+	public static float findInterval(final float component,
+			final float[] intervals) {
 		for (int i = 0; i < intervals.length; i++) {
 			if (component <= intervals[i]) {
 				return intervals[i];

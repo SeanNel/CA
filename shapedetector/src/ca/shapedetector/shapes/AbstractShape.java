@@ -1,5 +1,7 @@
 package ca.shapedetector.shapes;
 
+import graphics.SDPanel;
+
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -12,7 +14,6 @@ import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiabl
 import org.apache.commons.math3.analysis.function.Constant;
 import org.apache.commons.math3.util.FastMath;
 
-import ca.Debug;
 import ca.shapedetector.ShapeDetector;
 import ca.shapedetector.distribution.AbsoluteGradient;
 import ca.shapedetector.distribution.Distribution;
@@ -47,8 +48,8 @@ public abstract class AbstractShape implements SDShape {
 	 *            The path that describes this shape.
 	 * @param distribution
 	 */
-	public AbstractShape(SDPath path, Distribution distributionType,
-			double tolerance) {
+	public AbstractShape(final SDPath path,
+			final Distribution distributionType, final double tolerance) {
 		this.path = path;
 		this.distributionType = distributionType;
 		this.tolerance = tolerance;
@@ -64,7 +65,8 @@ public abstract class AbstractShape implements SDShape {
 	 * 
 	 * @param distribution
 	 */
-	protected AbstractShape(Distribution distribution, double tolerance) {
+	protected AbstractShape(final Distribution distribution,
+			final double tolerance) {
 		this(null, distribution, tolerance);
 	}
 
@@ -95,7 +97,7 @@ public abstract class AbstractShape implements SDShape {
 	 * @return
 	 */
 	public UnivariateDifferentiableFunction getDistribution(
-			Distribution distributionType) {
+			final Distribution distributionType) {
 		// return distributionFunction;
 
 		double x0 = 0;
@@ -125,13 +127,15 @@ public abstract class AbstractShape implements SDShape {
 		return "w=" + bounds.getWidth() + ", h=" + bounds.getHeight();
 	}
 
-	public AbstractShape identify(AbstractShape shape) {
+	public AbstractShape identify(final AbstractShape abstractShape) {
+		AbstractShape shape = abstractShape;
+		
 		if (shape == null) {
 			throw new RuntimeException();
 		}
 		/* For debugging */
 		if (ShapeDetector.debug) {
-			Debug.displayActiveShape(shape);
+			SDPanel.displayActiveShape(shape);
 		}
 
 		AbstractShape mask = getMask(shape);
@@ -141,7 +145,7 @@ public abstract class AbstractShape implements SDShape {
 
 		/* For debugging */
 		if (ShapeDetector.debug) {
-			Debug.displayMaskShape(shape, mask);
+			SDPanel.displayMaskShape(shape, mask);
 
 			double x0 = -1.0;
 			double x1 = shape.getPath().getPerimeter();
@@ -153,7 +157,12 @@ public abstract class AbstractShape implements SDShape {
 			/* Displays a chart of the shape distribution. */
 			if (ShapeDetector.debug) {
 				graphics.LineChartFrame.frame.setTitle("Shape distribution");
-				graphics.LineChartFrame.displayData(x0, x1, f1, f2);
+				// graphics.LineChartFrame.displayData(x0, x1, f1, f2);
+				UnivariateDifferentiableFunction g1 = new math.functions.Differential(
+						f1);
+				UnivariateDifferentiableFunction g2 = new math.functions.Differential(
+						f2);
+				graphics.LineChartFrame.displayData(x0, x1, g1, g2);
 			}
 		}
 
@@ -166,7 +175,7 @@ public abstract class AbstractShape implements SDShape {
 		return shape;
 	}
 
-	protected AbstractShape getMask(AbstractShape shape) {
+	protected AbstractShape getMask(final AbstractShape shape) {
 		return shape;
 	}
 
@@ -182,7 +191,7 @@ public abstract class AbstractShape implements SDShape {
 	 *            The shape to compare this shape to.
 	 * @return The difference ratio.
 	 */
-	public double compare(AbstractShape shape) {
+	public double compare(final AbstractShape shape) {
 		return compareByAreaDifference(shape);
 		// return compareByArea(shape);
 		// return compareByPerimeter(shape);
@@ -195,7 +204,7 @@ public abstract class AbstractShape implements SDShape {
 	 * @param shape
 	 * @return
 	 */
-	protected double compareByPerimeter(AbstractShape shape) {
+	protected double compareByPerimeter(final AbstractShape shape) {
 		double a = shape.getPath().getPerimeter();
 		double b = path.getPerimeter();
 		return FastMath.min(a, b) / FastMath.max(a, b);
@@ -208,7 +217,7 @@ public abstract class AbstractShape implements SDShape {
 	 * @param shape
 	 * @return
 	 */
-	protected double compareByArea(AbstractShape shape) {
+	protected double compareByArea(final AbstractShape shape) {
 		double a = shape.getPath().getArea();
 		double b = path.getArea();
 		return FastMath.min(a, b) / FastMath.max(a, b);
@@ -219,7 +228,7 @@ public abstract class AbstractShape implements SDShape {
 	 * from different points and have much different perimeter lengths etc which
 	 * makes comparing their graphs difficult.
 	 */
-	protected double compareByDistribution(AbstractShape shape) {
+	protected double compareByDistribution(final AbstractShape shape) {
 		/* The mask */
 		UnivariateDifferentiableFunction f1 = getDistribution(distributionType);
 		/* The target shape */
@@ -267,7 +276,7 @@ public abstract class AbstractShape implements SDShape {
 		return similarity;
 	}
 
-	protected double compareByAreaDifference(AbstractShape shape) {
+	protected double compareByAreaDifference(final AbstractShape shape) {
 		Area maskAreaPolygon = getPath().getAreaPolygon();
 		Area shapePolygon = shape.getPath().getAreaPolygon();
 

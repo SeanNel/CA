@@ -9,16 +9,16 @@ import ca.shapedetector.path.SDPath;
  */
 public class UnknownShape extends AbstractShape {
 
-	public UnknownShape(SDPath path) {
+	public UnknownShape(final SDPath path) {
 		super(path, DEFAULT_DISTRIBUTION, DEFAULT_TOLERANCE);
 	}
 
-	public UnknownShape(AbstractShape shape) {
+	public UnknownShape(final AbstractShape shape) {
 		super(shape);
 	}
 
 	@Override
-	public AbstractShape identify(AbstractShape shape) {
+	public AbstractShape identify(final AbstractShape shape) {
 		return null;
 	}
 

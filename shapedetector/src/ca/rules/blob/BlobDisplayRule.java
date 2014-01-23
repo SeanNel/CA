@@ -15,24 +15,26 @@ import ca.shapedetector.shapes.UnknownShape;
 /**
  * Displays all the found blobs larger than 4x4 cells on the screen, in turn.
  */
-public class BlobDisplayRule extends BlobRule {
+public class BlobDisplayRule<V extends Blob<V>> extends BlobRule<V> {
 	final SDPanel panel;
 
-	public BlobDisplayRule(BlobMap blobMap, SDPanel panel) {
+	public BlobDisplayRule(final BlobMap<V> blobMap, final SDPanel panel) {
 		super(blobMap);
 		this.panel = panel;
 	}
 
-	public void start() {
+	@Override
+	public void prepare() {
 		panel.setVisible(true);
 	}
 
-	public void update(Blob blob) {
+	@Override
+	public void update(final Blob<V> blob) {
 		if (blob.getArea() < 16) {
 			return;
 		}
 
-		Area area = SDArea.makeArea(blob.getAreaCells());
+		Area area = (new SDArea<V>()).makeArea(blob.getAreaCells());
 		// area = SDPath.fillGaps(area);
 		SDPath path = new SDPath(area);
 		AbstractShape shape = new UnknownShape(path);
@@ -43,4 +45,5 @@ public class BlobDisplayRule extends BlobRule {
 
 		// helpers.Input.waitForSpace();
 	}
+
 }

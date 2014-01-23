@@ -13,19 +13,19 @@ public abstract class ShapeRule implements Rule<AbstractShape> {
 	 * 
 	 * @param shapeList
 	 */
-	public ShapeRule(ShapeList shapeList) {
+	public ShapeRule(final ShapeList shapeList) {
 		this.shapeList = shapeList;
 	}
-	
-	public void start() throws CAException {
+
+	public void prepare() throws CAException {
 		/* Method stub. */
 	}
 
 	// public void update(AbstractShape shape) throws CAException {
 	// /* Method stub. */
 	// }
-	
-	public void end() throws CAException {
+
+	public void complete() throws CAException {
 		/* Method stub. */
 	}
 

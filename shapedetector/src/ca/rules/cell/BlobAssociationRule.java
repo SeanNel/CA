@@ -11,11 +11,11 @@ import exceptions.NullParameterException;
 /**
  * Creates a CABlob object for each cell.
  */
-public class BlobAssociationRule extends CellRule {
-	protected final BlobMap blobMap;
+public class BlobAssociationRule<V> extends CellRule<V> {
+	protected final BlobMap<V> blobMap;
 
-	public BlobAssociationRule(Lattice<Cell> lattice,
-			Neighbourhood neighbourhoodModel, BlobMap blobMap)
+	public BlobAssociationRule(final Lattice<V> lattice,
+			final Neighbourhood<V> neighbourhoodModel, final BlobMap<V> blobMap)
 			throws CAException {
 		super(lattice, neighbourhoodModel);
 		if (blobMap == null) {
@@ -25,8 +25,9 @@ public class BlobAssociationRule extends CellRule {
 		this.blobMap = blobMap;
 	}
 
-	public void update(Cell cell) {
-		Blob blob = new Blob(cell);
+	@Override
+	public void update(final Cell<V> cell) throws CAException {
+		Blob<V> blob = new Blob<V>(cell);
 		blobMap.setBlob(cell, blob);
 		blobMap.addBlob(blob);
 		// System.out.println(cell.getCoordinates()[0] + ", " +

@@ -14,8 +14,8 @@ public class CrossCorrelation implements UnivariateFunction {
 
 	double normalizationFactor;
 
-	public CrossCorrelation(UnivariateFunction f1, UnivariateFunction f2,
-			double delta, double x0, double x1) {
+	public CrossCorrelation(final UnivariateFunction f1, final UnivariateFunction f2,
+			final double delta, final double x0,final  double x1) {
 		// int theta = f1.phaseDifference(f2);
 		// f2.rotate(theta);
 		// double similarity = f1.similarity(f2);
@@ -27,8 +27,9 @@ public class CrossCorrelation implements UnivariateFunction {
 		// return correlation;
 	}
 
+	/* TODO */
 	@Override
-	public double value(double x) {
+	public double value(final double x) {
 		return 0.0;
 	}
 
@@ -59,7 +60,7 @@ public class CrossCorrelation implements UnivariateFunction {
 	 * @return
 	 */
 	// public DiscreteFunctionPeriodic crossCorrelation(
-	// DiscreteFunctionPeriodic f) {
+	// final DiscreteFunctionPeriodic f) {
 	// int n = f.size();
 	//
 	// DiscreteFunction f1 = new DiscreteFunction(this);
@@ -112,12 +113,13 @@ public class CrossCorrelation implements UnivariateFunction {
 	 * @param n
 	 * @return
 	 */
-	protected int leastPower(int x, int n) {
+	protected int leastPower(final int x, final int n) {
+		int h = x;
 		double p = Math.log(x) / Math.log(n);
 		if (p != (int) p) {
-			x = (int) Math.pow(n, Math.ceil(p));
+			h = (int) Math.pow(n, Math.ceil(p));
 		}
-		return x;
+		return h;
 	}
 
 }

@@ -14,10 +14,15 @@ import ca.shapedetector.path.InterpolatingVertexIterator;
 import ca.shapedetector.path.SDPath;
 import ca.shapedetector.path.VertexIterator;
 
+/**
+ * Computes a function that describes the outline of a path.
+ * 
+ * @author Sean
+ */
 public abstract class Distribution {
 	public final static double delta = 1.5;
 
-	public UnivariateFunction compute(SDPath path) {
+	public UnivariateFunction compute(final SDPath path) {
 		List<Point2D> vertices = path.getVertices();
 		InterpolatingVertexIterator iterator = new InterpolatingVertexIterator(
 				vertices, VertexIterator.FORWARD, 1.5);
@@ -58,7 +63,7 @@ public abstract class Distribution {
 		return filter(f);
 	}
 
-	protected double getValue(Point2D o, Point2D a, Point2D b) {
+	protected double getValue(final Point2D o, final Point2D a, final Point2D b) {
 		return 0.0;
 	}
 
@@ -68,7 +73,7 @@ public abstract class Distribution {
 	 * @param f
 	 * @return
 	 */
-	public UnivariateFunction filter(DiscreteFunction f) {
+	public UnivariateFunction filter(final DiscreteFunction f) {
 		return f;
 	}
 }

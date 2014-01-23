@@ -14,7 +14,7 @@ public abstract class ImageFilter {
 	 * @param picture Image to apply the filter to.
 	 * @return Filtered image.
 	 */
-	public static Picture apply(Picture picture) {
+	public static Picture apply(final Picture picture) {
 		return picture;
 	}
 }

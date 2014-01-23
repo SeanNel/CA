@@ -6,13 +6,14 @@ import ca.neighbourhood.Neighbourhood;
 import exceptions.CAException;
 
 /* A cell rule that does nothing at all. */
-public class DummyRule extends CellRule {
+public class DummyRule<V> extends CellRule<V> {
 
-	public DummyRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel) throws CAException {
+	public DummyRule(final Lattice<V> lattice, final Neighbourhood<V> neighbourhoodModel) throws CAException {
 		super(lattice, neighbourhoodModel);
 	}
 
-	public void update(Cell cell) {
+	@Override
+	public void update(final Cell<V> cell) {
 		/* Does nothing but demonstrate the overhead of a cell rule. */
 	}
 }

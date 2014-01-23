@@ -12,7 +12,7 @@ public class YCbCrColorSpace extends ColorSpace {
         super(TYPE_YCbCr, 3);
     }
 
-    public float[] fromRGB(float[] rgb) {
+    public float[] fromRGB(final float[] rgb) {
         float[] yCbCr = new float[3];
 
         yCbCr[0] = 16 + (float)(
@@ -41,17 +41,17 @@ public class YCbCrColorSpace extends ColorSpace {
         return yCbCr;
     }
 
-    public int[] fromRGB(int[] rgb) {
+    public int[] fromRGB(final int[] rgb) {
         int[] yCbCr = new int[3];
         fromRGB(rgb, yCbCr);
         return yCbCr;
     }
 
-    public void fromRGB(int[] rgb, int[] yCbCr) {
+    public void fromRGB(final int[] rgb, final int[] yCbCr) {
         fromRGB(rgb[0], rgb[1], rgb[2], yCbCr);
     }
 
-    public void fromRGB(byte[] rgb, byte[] yCbCr) {
+    public void fromRGB(final byte[] rgb, final byte[] yCbCr) {
         fromRGB(rgb[0], rgb[1], rgb[2], yCbCr);
     }
     

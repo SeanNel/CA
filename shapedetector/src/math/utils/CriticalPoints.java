@@ -9,8 +9,12 @@ import math.functions.Differential;
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 
-import ca.shapedetector.ShapeDetector;
-
+/**
+ * Creates an interface for finding and manipulating the local and absolute
+ * maxima and minima of a function.
+ * 
+ * @author Sean
+ */
 public class CriticalPoints {
 	protected final UnivariateDifferentiableFunction f;
 	protected final List<Double> criticalPoints;
@@ -28,8 +32,8 @@ public class CriticalPoints {
 	 * @param x0
 	 * @param x1
 	 */
-	public CriticalPoints(UnivariateDifferentiableFunction f, double x0,
-			double x1) {
+	public CriticalPoints(final UnivariateDifferentiableFunction f,
+			final double x0, final double x1) {
 		if (f == null || x1 <= x0) {
 			throw new RuntimeException();
 		}
@@ -78,29 +82,12 @@ public class CriticalPoints {
 		this.minimum = minPos;
 	}
 
-	public double value(double x) {
+	public double value(final double x) {
 		return f.value(x);
 	}
 
-	public DerivativeStructure value(DerivativeStructure t) {
+	public DerivativeStructure value(final DerivativeStructure t) {
 		return f.value(t);
-	}
-
-	protected static List<Double> filterSolutions(double[] solutions,
-			double delta) {
-		double lastX = Double.MIN_VALUE;
-		int n = solutions.length;
-		List<Double> criticalPoints = new ArrayList<Double>(n);
-		for (int i = 0; i < n; i++) {
-			double x = solutions[i];
-			if (x < lastX + delta) {
-				continue;
-			} else {
-				lastX = x;
-			}
-			criticalPoints.add(x);
-		}
-		return criticalPoints;
 	}
 
 	/**
@@ -154,7 +141,7 @@ public class CriticalPoints {
 	 * 
 	 * @param xValues
 	 */
-	public void printPoints(List<Double> xValues) {
+	public void printPoints(final List<Double> xValues) {
 		for (double x : xValues) {
 			System.out.println("x=" + x + ", y=" + f.value(x));
 		}
@@ -166,7 +153,7 @@ public class CriticalPoints {
 	 * 
 	 * @param xValues
 	 */
-	public void printPoints(double[] xValues) {
+	public void printPoints(final double[] xValues) {
 		for (double x : xValues) {
 			System.out.println("x=" + x + ", y=" + f.value(x));
 		}
@@ -176,11 +163,14 @@ public class CriticalPoints {
 	 * Gets the positions of n significant points. These may be the critical
 	 * points with the greatest y values, the sharpest peaks etc.
 	 * 
-	 * @param f
+	 * @param comparisonType
+	 * @param samples
+	 * @param minDistance
 	 * @return
 	 */
-	public List<Double> significantPoints(int comparisonType, int n,
-			double minDistance) {
+	public List<Double> significantPoints(final int comparisonType,
+			final int samples, final double minDistance) {
+		int n = samples;
 		if (n < 1 || minDistance < 0d) {
 			throw new RuntimeException();
 		}
@@ -210,9 +200,9 @@ public class CriticalPoints {
 			}
 		}
 
-//		if (shortlist.size() < n) {
-//			return new ArrayList<Double>();
-//		}
+		// if (shortlist.size() < n) {
+		// return new ArrayList<Double>();
+		// }
 
 		Collections.sort(shortlist, new CriticalPointComparator(f,
 				comparisonType));
@@ -225,11 +215,11 @@ public class CriticalPoints {
 		Collections.sort(shortlist, new CriticalPointComparator(f,
 				CriticalPointComparator.INCREASING_X));
 
-//		if (ShapeDetector.debug) {
-//			System.out
-//					.println("SignificantPoints() :");
-//			criticalPoints.printPoints(shortlist);
-//		}
+		// if (ShapeDetector.debug) {
+		// System.out
+		// .println("SignificantPoints() :");
+		// criticalPoints.printPoints(shortlist);
+		// }
 		return shortlist;
 	}
 }

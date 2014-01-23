@@ -6,7 +6,7 @@ import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 
 /**
- * Sorts a list of x coordinates by according to specified criteria.
+ * Sorts a list of x-coordinates according to specified criteria.
  * 
  * @author Sean
  */
@@ -18,7 +18,7 @@ public class CriticalPointComparator implements Comparator<Double> {
 	protected final UnivariateDifferentiableFunction f;
 	protected final int comparisonType;
 
-	public CriticalPointComparator(UnivariateDifferentiableFunction f,
+	public CriticalPointComparator(final UnivariateDifferentiableFunction f,
 			int comparisonType) {
 		if (f == null) {
 			throw new RuntimeException();
@@ -27,12 +27,12 @@ public class CriticalPointComparator implements Comparator<Double> {
 		this.comparisonType = comparisonType;
 	}
 
-	public CriticalPointComparator(UnivariateDifferentiableFunction f) {
+	public CriticalPointComparator(final UnivariateDifferentiableFunction f) {
 		this(f, INCREASING_X);
 	}
 
 	@Override
-	public int compare(Double x1, Double x2) {
+	public int compare(final Double x1, final Double x2) {
 		switch (comparisonType) {
 		case MAXIMUM_Y:
 			return compareMaximum(x1, x2);
@@ -46,7 +46,7 @@ public class CriticalPointComparator implements Comparator<Double> {
 		}
 	}
 
-	public int compareIncreasing(double x1, double x2) {
+	public int compareIncreasing(final double x1, final double x2) {
 		if (x1 < x2) {
 			return -1;
 		} else if (x1 > x2) {
@@ -55,7 +55,7 @@ public class CriticalPointComparator implements Comparator<Double> {
 		return 0;
 	}
 
-	public int compareMaximum(double x1, double x2) {
+	public int compareMaximum(final double x1,final  double x2) {
 		double y1 = f.value(x1);
 		double y2 = f.value(x2);
 

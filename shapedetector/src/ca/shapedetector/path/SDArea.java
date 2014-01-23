@@ -9,18 +9,23 @@ import java.util.List;
 
 import ca.Cell;
 
-public class SDArea {
+/**
+ * Provides some static methods for manipulating Area objects.
+ * 
+ * @author Sean
+ */
+public class SDArea<V> {
 	/**
-	 * Construct a path from a list of cells describing the area.
+	 * Constructs a path from a list of cells describing the area.
 	 * 
 	 * @param cells
 	 * @return
 	 */
-	public static Area makeArea(List<Cell> cells) {
+	public Area makeArea(final List<Cell<V>> cells) {
 		Area area = new Area();
-		Iterator<Cell> cellIterator = cells.iterator();
+		Iterator<Cell<V>> cellIterator = cells.iterator();
 		while (cellIterator.hasNext()) {
-			Cell cell = cellIterator.next();
+			Cell<V> cell = cellIterator.next();
 			int[] coordinates = cell.getCoordinates();
 			Rectangle2D rectangle = new Rectangle2D.Double(coordinates[0],
 					coordinates[1], 1, 1);
@@ -36,9 +41,9 @@ public class SDArea {
 	 * @param cells
 	 * @return
 	 */
-	public static Area fillGaps(Area area) {
-		area = new Area(area);
-		PathIterator pathIterator = area.getPathIterator(null);
+	public static Area fillGaps(final Area area) {
+		Area areaCopy = new Area(area);
+		PathIterator pathIterator = areaCopy.getPathIterator(null);
 		double[] coordinates = new double[6];
 		Path2D path = new Path2D.Double();
 		path.moveTo(coordinates[0], coordinates[1]);
@@ -49,7 +54,7 @@ public class SDArea {
 			case PathIterator.SEG_MOVETO:
 				path.closePath();
 				Area segmentArea = new Area(path);
-				area.add(segmentArea);
+				areaCopy.add(segmentArea);
 				path = new Path2D.Double();
 				path.moveTo(coordinates[0], coordinates[1]);
 				break;

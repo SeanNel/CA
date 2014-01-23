@@ -35,7 +35,7 @@ public class LineChartFrame extends JFrame {
 
 	protected JFreeChart chart;
 
-	protected LineChartFrame(XYIntervalSeriesCollection dataset) {
+	protected LineChartFrame(final XYIntervalSeriesCollection dataset) {
 		setTitle("Chart");
 		ValueAxis xAxis = new NumberAxis("X");
 		ValueAxis yAxis = new NumberAxis("Y");
@@ -83,7 +83,7 @@ public class LineChartFrame extends JFrame {
 		return chart;
 	}
 
-	public static void displayData(double x0, double x1,
+	public static void displayData(final double x0, final double x1,
 			final UnivariateFunction... f) {
 		synchronized (dataset) {
 			dataset.removeAllSeries();
@@ -95,8 +95,8 @@ public class LineChartFrame extends JFrame {
 		frame.setVisible(true);
 	}
 
-	public static void displayDifferentialData(double x0, double x1,
-			UnivariateDifferentiableFunction f) {
+	public static void displayDifferentialData(final double x0,
+			final double x1, final UnivariateDifferentiableFunction f) {
 		int n = (int) Math.ceil(x1 - x0);
 		// double n = (x1 - x0) / 100.0;// 1;
 
@@ -115,8 +115,8 @@ public class LineChartFrame extends JFrame {
 		frame.repaint();
 	}
 
-	public XYIntervalSeries getSeries(UnivariateFunction f, String label,
-			double x0, double x1) {
+	public XYIntervalSeries getSeries(final UnivariateFunction f,
+			final String label, final double x0, final double x1) {
 		int n = (int) Math.ceil(x1 - x0);
 		if (n < 100) {
 			n = 100;
@@ -130,8 +130,8 @@ public class LineChartFrame extends JFrame {
 				label);
 	}
 
-	public XYIntervalSeries getSeries(double[] abscissae, double[] ordinates,
-			String label) {
+	public XYIntervalSeries getSeries(final double[] abscissae,
+			final double[] ordinates, final String label) {
 		XYIntervalSeries f1Series = new XYIntervalSeries(label);
 
 		for (int i = 0; i < ordinates.length; i++) {
@@ -153,7 +153,8 @@ public class LineChartFrame extends JFrame {
 		frame.setVisible(true);
 	}
 
-	public XYIntervalSeries getSeries(double[] ordinates, String label) {
+	public XYIntervalSeries getSeries(final double[] ordinates,
+			final String label) {
 		XYIntervalSeries f1Series = new XYIntervalSeries(label);
 
 		for (int i = 0; i < ordinates.length; i++) {

@@ -56,7 +56,7 @@ public class Stopwatch {
 	 * @param label
 	 *            Specifies a text label to give context to the output message.
 	 */
-	public void print(String label) {
+	public void print(final String label) {
 		System.out.print(label);
 		print();
 	}

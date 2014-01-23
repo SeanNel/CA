@@ -13,7 +13,7 @@ import ca.neighbourhood.Neighbourhood;
 /**
  * Finds the edges in the image.
  */
-public class EdgeFinderRule extends CellRule {
+public class EdgeFinderRule extends CellRule<Color> {
 	/**
 	 * Colour that cells turn to when they become inactive, that is the
 	 * background colour of the output image.
@@ -25,26 +25,28 @@ public class EdgeFinderRule extends CellRule {
 	 */
 	public final static Color EDGE_COLOUR = new Color(200, 200, 200);
 
-	protected final float epsilon;
+	protected final double epsilon;
 
-	public EdgeFinderRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
-			float epsilon) throws CAException {
+	public EdgeFinderRule(final Lattice<Color> lattice,
+			final Neighbourhood<Color> neighbourhoodModel, final double epsilon)
+			throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.epsilon = epsilon;
 	}
 
-	public void update(Cell cell) {
-		List<Cell> neighbourhood = cell.getNeighbourhood();
-		for (Cell neighbour : neighbourhood) {
+	@Override
+	public void update(Cell<Color> cell) {
+		List<Cell<Color>> neighbourhood = cell.getNeighbourhood();
+		for (Cell<Color> neighbour : neighbourhood) {
 			if (neighbour != cell) {
-				float difference = ColourCompare.getDifference(
-						lattice.getColour(cell), lattice.getColour(neighbour));
+				double difference = ColourCompare.getDifference(
+						lattice.getState(cell), lattice.getState(neighbour));
 				if (difference > epsilon) {
-					lattice.setColour(cell, EDGE_COLOUR);
+					lattice.setState(cell, EDGE_COLOUR);
 					return;
 				}
 			}
 		}
-		lattice.setColour(cell, QUIESCENT_COLOUR);
+		lattice.setState(cell, QUIESCENT_COLOUR);
 	}
 }

@@ -12,20 +12,21 @@ import ca.shapedetector.path.SDPath;
 /**
  * Displays all the found blobs larger than 4x4 cells on the screen, in turn.
  */
-public class BlobDrawRule extends BlobRule {
+public class BlobDrawRule<V extends Blob<V>> extends BlobRule<V> {
 	protected final SDPanel panel;
 
-	public BlobDrawRule(SDPanel panel, BlobMap blobMap) {
+	public BlobDrawRule(final SDPanel panel, final BlobMap<V> blobMap) {
 		super(blobMap);
 		this.panel = panel;
 	}
 
-	public void update(Blob blob) {
+	@Override
+	public void update(final Blob<V> blob) {
 		if (blob.getArea() < 16) {
 			return;
 		}
 
-		Area area = SDArea.makeArea(blob.getAreaCells());
+		Area area = (new SDArea<V>()).makeArea(blob.getAreaCells());
 		// area = SDPath.fillGaps(area);
 		SDPath path = new SDPath(area);
 

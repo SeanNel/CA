@@ -8,15 +8,15 @@ import ca.shapedetector.shapes.RootShape;
 import exceptions.CAException;
 
 /**
- * Identifies blobs as CAShapes.
+ * Identifies blobs as Shapes.
  */
-public class BlobIdentifierRule extends BlobRule {
-	protected static final RootShape shapeDetector = new RootShape();
+public class BlobIdentifierRule<V> extends BlobRule<V> {
+	protected final RootShape<V> shapeDetector = new RootShape<V>();
 	protected final ShapeList shapeList;
 	protected final Stopwatch stopwatch;
 	protected final long[] timers;
 
-	public BlobIdentifierRule(BlobMap blobMap, ShapeList shapeList) {
+	public BlobIdentifierRule(final BlobMap<V> blobMap, final ShapeList shapeList) {
 		super(blobMap);
 		this.shapeList = shapeList;
 		stopwatch = new Stopwatch();
@@ -24,7 +24,7 @@ public class BlobIdentifierRule extends BlobRule {
 	}
 
 	@Override
-	public void update(Blob blob) throws CAException {
+	public void update(final Blob<V> blob) throws CAException {
 		if (blob.getArea() < 16) {
 			return;
 		}
@@ -48,9 +48,9 @@ public class BlobIdentifierRule extends BlobRule {
 		// Input.waitForSpace();
 		timers[2] += stopwatch.time();
 	}
-	
+
 	@Override
-	public void end() {
+	public void complete() {
 		printTimers();
 	}
 

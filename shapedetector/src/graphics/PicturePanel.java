@@ -20,7 +20,7 @@ public class PicturePanel extends JPanel {
 	}
 
 	@Override
-	public void paintComponent(Graphics graphics) {
+	public void paintComponent(final Graphics graphics) {
 		super.paintComponent(graphics);
 
 		Graphics2D graphics2D = (Graphics2D) graphics.create();
@@ -32,7 +32,7 @@ public class PicturePanel extends JPanel {
 		return new Rectangle(image.getWidth(), image.getHeight());
 	}
 
-	public void setImage(BufferedImage image) {
+	public void setImage(final BufferedImage image) {
 		this.image = image;
 		graphics = image.createGraphics();
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,

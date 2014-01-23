@@ -17,7 +17,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 public class Differential implements UnivariateDifferentiableFunction {
 	final protected UnivariateDifferentiableFunction f;
 
-	public Differential(UnivariateDifferentiableFunction f) {
+	public Differential(final UnivariateDifferentiableFunction f) {
 		if (f == null) {
 			throw new RuntimeException();
 		}
@@ -31,7 +31,7 @@ public class Differential implements UnivariateDifferentiableFunction {
 	 * @param f
 	 * @param stepSize
 	 */
-	public Differential(UnivariateFunction f, double stepSize) {
+	public Differential(final UnivariateFunction f, final double stepSize) {
 		if (f == null || stepSize <= 0) {
 			throw new RuntimeException();
 		}
@@ -50,7 +50,7 @@ public class Differential implements UnivariateDifferentiableFunction {
 	}
 
 	@Override
-	public double value(double xRealValue) {
+	public double value(final double xRealValue) {
 		int params = 1;
 		int order = 1;
 		DerivativeStructure x = new DerivativeStructure(params, order, 0,
@@ -61,7 +61,7 @@ public class Differential implements UnivariateDifferentiableFunction {
 	}
 
 	@Override
-	public DerivativeStructure value(DerivativeStructure t)
+	public DerivativeStructure value(final DerivativeStructure t)
 			throws DimensionMismatchException {
 		int params = 1;
 		int order = t.getOrder() + 1;

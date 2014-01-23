@@ -5,7 +5,13 @@ import java.util.List;
 
 public class Misc {
 
-	public static double[] toArray(List<Double> list) {
+	/**
+	 * Makes an array of the specified list.
+	 * 
+	 * @param list
+	 * @return
+	 */
+	public static double[] toArray(final List<Double> list) {
 		int n = list.size();
 		double[] array = new double[n];
 		Iterator<Double> iterator = list.iterator();
@@ -15,7 +21,14 @@ public class Misc {
 		return array;
 	}
 
-	public static double getAngle(double x, double y) {
+	/**
+	 * Gets the angle of the vector (x,y).
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public static double getAngle(final double x, final double y) {
 		if (x == 0) {
 			if (y >= 0) {
 				return Math.PI / 2.0;
@@ -41,23 +54,31 @@ public class Misc {
 		}
 	}
 
-	public static double representativeAngle(double d1) {
-		// d1 = MathUtils.normalizeAngle(d1, Math.PI);
-		while (d1 < 0) {
-			d1 += 2d * Math.PI;
+	/**
+	 * Gets a representative angle from the angle specified. The angle returned
+	 * is [0,90 deg)
+	 * 
+	 * @param a
+	 * @return
+	 */
+	public static double representativeAngle(final double theta) {
+		double a = theta;
+		// a = MathUtils.normalizeAngle(a, Math.PI);
+		while (a < 0) {
+			a += 2d * Math.PI;
 		}
-		while (d1 >= 2d * Math.PI) {
-			d1 -= 2d * Math.PI;
+		while (a >= 2d * Math.PI) {
+			a -= 2d * Math.PI;
 		}
 
-		if (d1 <= 0.5d * Math.PI) {
-			return d1;
-		} else if (d1 <= Math.PI) {
-			return Math.PI - d1;
-		} else if (d1 <= 1.5d * Math.PI) {
-			return d1 - Math.PI;
+		if (a <= 0.5d * Math.PI) {
+			return a;
+		} else if (a <= Math.PI) {
+			return Math.PI - a;
+		} else if (a <= 1.5d * Math.PI) {
+			return a - Math.PI;
 		} else {
-			return 2d * Math.PI - d1;
+			return 2d * Math.PI - a;
 		}
 
 	}

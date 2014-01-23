@@ -17,11 +17,11 @@ public class Rectangle extends Quadrilateral {
 		super();
 	}
 
-	public Rectangle(SDPath path) {
+	public Rectangle(final SDPath path) {
 		super(path);
 	}
 
-	public Rectangle(AbstractShape shape) {
+	public Rectangle(final AbstractShape shape) {
 		super(shape);
 	}
 
@@ -30,7 +30,8 @@ public class Rectangle extends Quadrilateral {
 	 * 
 	 * @param shape
 	 */
-	public AbstractShape identify(AbstractShape shape) {
+	public AbstractShape identify(final AbstractShape abstractShape) {
+		AbstractShape shape = abstractShape;
 		List<Point2D> vertices = shape.getPath().getVertices();
 		/* A better method might be to compare the lengths of opposing sides */
 		List<Double> gradients = new ArrayList<Double>(4);

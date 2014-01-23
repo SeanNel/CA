@@ -33,7 +33,7 @@ public abstract class Polygon extends AbstractShape {
 		super(null, distribution, tolerance);
 	}
 
-	public Polygon(SDPath path, Distribution distribution, double tolerance) {
+	public Polygon(final SDPath path, final Distribution distribution, final double tolerance) {
 		super(path, distribution, tolerance);
 	}
 
@@ -51,7 +51,7 @@ public abstract class Polygon extends AbstractShape {
 	 *            Number of vertices.
 	 * @return Polygon with s sides.
 	 * */
-	public SDPath getPolygon(AbstractShape shape, int s) {
+	public SDPath getPolygon(final AbstractShape shape, final int s) {
 		/* Catches vertices that occur at the start point. */
 		double x0 = -1.0;
 		double x1 = shape.getPath().getPerimeter();

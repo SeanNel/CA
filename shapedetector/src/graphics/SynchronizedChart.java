@@ -13,14 +13,14 @@ import org.jfree.chart.plot.Plot;
 public class SynchronizedChart extends JFreeChart {
 	private static final long serialVersionUID = 1L;
 
-	public SynchronizedChart(String title, Font titleFont, Plot plot,
-			boolean createLegend) {
+	public SynchronizedChart(final String title, final Font titleFont,
+			final Plot plot, final boolean createLegend) {
 		super(title, titleFont, plot, createLegend);
 	}
 
 	@Override
-	public void draw(Graphics2D g2, Rectangle2D chartArea, Point2D anchor,
-			ChartRenderingInfo info) {
+	public void draw(final Graphics2D g2, final Rectangle2D chartArea,
+			final Point2D anchor, final ChartRenderingInfo info) {
 		synchronized (this.getXYPlot().getDataset()) {
 			super.draw(g2, chartArea, anchor, info);
 		}

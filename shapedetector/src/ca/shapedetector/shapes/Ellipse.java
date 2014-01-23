@@ -31,16 +31,16 @@ public class Ellipse extends AbstractShape {
 		super(null, DISTRIBUTION, TOLERANCE);
 	}
 
-	public Ellipse(SDPath path) {
+	public Ellipse(final SDPath path) {
 		super(path, DISTRIBUTION, TOLERANCE);
 	}
 
-	public Ellipse(AbstractShape shape) {
+	public Ellipse(final AbstractShape shape) {
 		super(shape);
 	}
 
 	/* Creates an ellipse that approximates the shape. */
-	protected Ellipse getMask(AbstractShape shape) {
+	protected Ellipse getMask(final AbstractShape shape) {
 		SDPath path = getEllipse(shape);
 		return new Ellipse(path);
 	}
@@ -51,11 +51,12 @@ public class Ellipse extends AbstractShape {
 		return shape;
 	}
 
-	public SDPath getEllipse(AbstractShape shape) {
+	public SDPath getEllipse(final AbstractShape shape) {
 		/* Catches vertices that occur at the start point. */
 		double x0 = -1.0;
 		double x1 = shape.getPath().getPerimeter();
-		UnivariateDifferentiableFunction f = shape.getDistribution(distributionType);
+		UnivariateDifferentiableFunction f = shape
+				.getDistribution(distributionType);
 
 		/* Gets maximum and minimum distance from centroid. */
 		CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);

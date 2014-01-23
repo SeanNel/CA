@@ -16,32 +16,34 @@ import ca.neighbourhood.Neighbourhood;
  * 
  * @author Sean
  */
-public class NoiseRemoverRule extends CellRule {
-	protected final float epsilon;
+public class NoiseRemoverRule extends CellRule<Color> {
+	protected final double epsilon;
 
-	public NoiseRemoverRule(Lattice<Cell> lattice, Neighbourhood neighbourhoodModel,
-			float epsilon) throws CAException {
+	public NoiseRemoverRule(final Lattice<Color> lattice,
+			final Neighbourhood<Color> neighbourhoodModel, final double epsilon)
+			throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.epsilon = epsilon;
 	}
 
-	public void update(Cell cell) {
+	@Override
+	public void update(final Cell<Color> cell) throws CAException {
 		/*
 		 * For some reason this rule performs faster when this is set from here
 		 * and not in a separate rule.
 		 */
 		cell.setNeighbourhood(neighbourhoodModel.gatherNeighbours(cell));
 
-		List<Cell> neighbourhood = cell.getNeighbourhood();
+		List<Cell<Color>> neighbourhood = cell.getNeighbourhood();
 		List<Color> colours = new ArrayList<Color>(neighbourhood.size());
-		Color cellColour = lattice.getColour(cell);
-		float maxDifference = 0f;
+		Color cellColour = lattice.getState(cell);
+		double maxDifference = 0f;
 
-		for (Cell neighbour : neighbourhood) {
+		for (Cell<Color> neighbour : neighbourhood) {
 			if (neighbour != cell) {
-				Color neighbourColour = lattice.getColour(neighbour);
+				Color neighbourColour = lattice.getState(neighbour);
 				colours.add(neighbourColour);
-				float difference = ColourCompare.getDifference(cellColour,
+				double difference = ColourCompare.getDifference(cellColour,
 						neighbourColour);
 				if (difference > epsilon) {
 					return;
@@ -61,7 +63,7 @@ public class NoiseRemoverRule extends CellRule {
 			// Color newColour = ColourCompare.medianColour(cellColour,
 			// colours);
 
-			lattice.setColour(cell, newColour);
+			lattice.setState(cell, newColour);
 		}
 	}
 }

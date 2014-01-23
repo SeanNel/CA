@@ -9,15 +9,15 @@ public class Triangle extends Polygon {
 		super(DISTRIBUTION, TOLERANCE);
 	}
 
-	public Triangle(SDPath path) {
+	public Triangle(final SDPath path) {
 		super(path, DISTRIBUTION, TOLERANCE);
 	}
 
-	public Triangle(AbstractShape shape) {
+	public Triangle(final AbstractShape shape) {
 		super(shape);
 	}
 
-	protected Triangle getMask(AbstractShape shape) {
+	protected Triangle getMask(final AbstractShape shape) {
 		SDPath path = getPolygon(shape, 3);
 		return new Triangle(path);
 	}

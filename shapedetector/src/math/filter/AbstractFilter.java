@@ -15,20 +15,26 @@ public abstract class AbstractFilter implements Filter {
 	protected final double delta;
 	protected final boolean periodic;
 
+	/**
+	 * A buffer for accessing function values. TODO: add proper error checking
+	 * sometime.
+	 * 
+	 * @author Sean
+	 */
 	protected class RingBuffer {
 		private int addIndex = 0;
 		private int getIndex = 0;
 		private double[] buffer;
 
-		public RingBuffer(double[] buffer) {
+		public RingBuffer(final double[] buffer) {
 			this.buffer = buffer;
 		}
 
-		public RingBuffer(int n) {
+		public RingBuffer(final int n) {
 			buffer = new double[n];
 		}
 
-		public void add(double x) {
+		public void add(final double x) {
 			// if (addIndex >= getIndex) {
 			// throw new RuntimeException("Buffer underrun");
 			// }
@@ -62,12 +68,13 @@ public abstract class AbstractFilter implements Filter {
 	 * @param bandwidth
 	 *            Fraction of the domain to apply filter each element over.
 	 */
-	public AbstractFilter(UnivariateFunction f, double x0, double x1,
-			double bandwidth, int numSamples, boolean periodic) {
+	public AbstractFilter(final UnivariateFunction f, final double x0,
+			final double x1, final double bandwidth, final int numSamples,
+			final boolean periodic) {
 		if (x0 >= x1 + bandwidth) {
 			throw new RuntimeException("Bandwidth is too large for the domain.");
 		}
-		
+
 		this.x0 = x0;
 		this.x1 = x1;
 		this.bandwidth = bandwidth;
@@ -86,7 +93,7 @@ public abstract class AbstractFilter implements Filter {
 	}
 
 	@Override
-	public double[] sample(int n) {
+	public double[] sample(final int n) {
 		if (!periodic) {
 			throw new RuntimeException();
 		}

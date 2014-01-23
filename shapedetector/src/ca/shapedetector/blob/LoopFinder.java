@@ -11,17 +11,22 @@ import ca.Cell;
  * <p>
  * Assumes that the cells have Moore neighbourhoods with r=1.
  */
-public class LoopFinder {
-	protected final List<Cell> unorderedCells;
-	protected final List<Cell> orderedCells;
+public class LoopFinder<V> {
+	protected final List<Cell<V>> unorderedCells;
+	protected final List<Cell<V>> orderedCells;
 
-	public LoopFinder(List<Cell> unorderedCells) {
+	/**
+	 * Constructor.
+	 * 
+	 * @param unorderedCells
+	 */
+	public LoopFinder(final List<Cell<V>> unorderedCells) {
 		this.unorderedCells = unorderedCells;
 		/*
 		 * TODO: May get better performance with loop as a HashMap or BST,
 		 * because we check whether a cell is contained in it very often.
 		 */
-		orderedCells = new ArrayList<Cell>(unorderedCells.size());
+		orderedCells = new ArrayList<Cell<V>>(unorderedCells.size());
 	}
 
 	/**
@@ -33,12 +38,12 @@ public class LoopFinder {
 	 * @param first
 	 *            The first cell in the loop.
 	 */
-	public List<Cell> getLoop(Cell first) {
+	public List<Cell<V>> getLoop(final Cell<V> first) {
 		if (unorderedCells == null || unorderedCells.size() < 4) {
 			return null;
 		}
 
-		Cell next = first;
+		Cell<V> next = first;
 
 		do {
 			orderedCells.add(next);
@@ -63,12 +68,12 @@ public class LoopFinder {
 	 *            The current outline cell.
 	 * @return The next outline cell.
 	 */
-	protected Cell nextOutlineCell() {
+	protected Cell<V> nextOutlineCell() {
 		int stepsBack = 0;
-		Cell next = null;
+		Cell<V> next = null;
 		while (next == null && stepsBack < orderedCells.size()) {
 			int n = orderedCells.size() - stepsBack - 1;
-			Cell currentCell = orderedCells.get(n);
+			Cell<V> currentCell = orderedCells.get(n);
 			next = nextOutlineCell(currentCell);
 			stepsBack++;
 		}
@@ -81,10 +86,10 @@ public class LoopFinder {
 	 * @param currentCell
 	 * @return
 	 */
-	protected Cell nextOutlineCell(Cell currentCell) {
-		List<Cell> neighbourhood = currentCell.getNeighbourhood();
+	protected Cell<V> nextOutlineCell(final Cell<V> currentCell) {
+		List<Cell<V>> neighbourhood = currentCell.getNeighbourhood();
 
-		for (Cell neighbour : neighbourhood) {
+		for (Cell<V> neighbour : neighbourhood) {
 			if ((!orderedCells.contains(neighbour) || neighbour == orderedCells
 					.get(0)) && unorderedCells.contains(neighbour)) {
 				return neighbour;

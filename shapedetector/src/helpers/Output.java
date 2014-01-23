@@ -8,7 +8,7 @@ public class Output {
 	 * @param array
 	 * @return
 	 */
-	public static String toString(int[] array) {
+	public static String toString(final int[] array) {
 		if (array == null || array.length == 0) {
 			return "";
 		}
@@ -26,7 +26,7 @@ public class Output {
 	 * @param array
 	 * @return
 	 */
-	public static String toString(double[] array) {
+	public static String toString(final double[] array) {
 		if (array == null || array.length == 0) {
 			return "";
 		}

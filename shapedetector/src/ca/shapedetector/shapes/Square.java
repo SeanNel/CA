@@ -14,15 +14,15 @@ public class Square extends Quadrilateral {
 		super();
 	}
 
-	public Square(SDPath path) {
+	public Square(final SDPath path) {
 		super(path);
 	}
 
-	public Square(AbstractShape shape) {
+	public Square(final AbstractShape shape) {
 		super(shape);
 	}
 
-	public AbstractShape identify(Quadrilateral shape) {
+	public AbstractShape identify(final Quadrilateral shape) {
 		List<Point2D> vertices = shape.getPath().getVertices();
 
 		double length = shape.getPath().getOutlineMap().getPerimeter() / 4d;
@@ -38,7 +38,7 @@ public class Square extends Quadrilateral {
 		return new Square(shape);
 	}
 
-	// protected Rectangle getMask(AbstractShape shape) {
+	// protected Rectangle getMask(final AbstractShape shape) {
 	// SDPath path = getPolygon(shape, 4);
 	// return new Rectangle(path);
 	// }

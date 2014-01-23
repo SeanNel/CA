@@ -1,6 +1,7 @@
 package ca.shapedetector;
 
 import exceptions.CAException;
+import exceptions.NullParameterException;
 import helpers.Stopwatch;
 
 import java.util.LinkedList;
@@ -18,7 +19,10 @@ public class ShapeList {
 	/** List of detected shapes. */
 	protected final List<AbstractShape> shapes;
 
-	public ShapeList(ShapeDetector sd) {
+	public ShapeList(final ShapeDetector sd) throws NullParameterException {
+		if (sd == null) {
+			throw new NullParameterException("sd");
+		}
 		this.sd = sd;
 		shapes = new LinkedList<AbstractShape>();
 		shapeRules = new LinkedList<ShapeRule>();
@@ -27,17 +31,25 @@ public class ShapeList {
 		shapeRules.add(new ShapeDrawRule(this, sd.getPicturePanel()));
 	}
 
+	/**
+	 * Clears the list of shapes.
+	 */
 	public void clear() {
 		shapes.clear();
 	}
 
-	public void update() throws CAException {
+	/**
+	 * Applies the shape rules to each shape in the list.
+	 * 
+	 * @throws CAException
+	 */
+	public void apply() throws CAException {
 		System.out.println("Number of shapes: " + shapes.size());
 		// System.out.println("Detected shapes: ");
 		Stopwatch ruleStopwatch = new Stopwatch();
 
 		for (ShapeRule rule : shapeRules) {
-			rule.start();
+			rule.prepare();
 			if (ShapeDetector.debug) {
 				/* Linear method */
 				for (AbstractShape shape : shapes) {
@@ -50,13 +62,18 @@ public class ShapeList {
 				threadServer.run();
 			}
 
-			rule.end();
+			rule.complete();
 			System.out.println(rule + ", elapsed time: " + ruleStopwatch.time()
 					+ " ms");
 		}
 	}
 
-	public synchronized void addShape(AbstractShape shape) {
+	/**
+	 * Adds the shape to the list.
+	 * 
+	 * @param shape
+	 */
+	public synchronized void addShape(final AbstractShape shape) {
 		if (shape == null) {
 			throw new RuntimeException();
 		}

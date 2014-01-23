@@ -11,17 +11,24 @@ import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariatePeriodicInterpolator;
 
 /**
+ * Gets the distance from the centroid to a point x along the path as a function
+ * of the distance from the starting point, following the path, to x.
+ * <p>
  * This method suffers from limitations, but because the graph is smooth and
  * continuous, it works well for finding the vertices of rectangles that are not
  * too thin. It is not able to detect vertices that that are at an obtuse angle
  * to the centroid, so some parallelpipeds won't be detected.
+ * <p>
+ * Note that taking the differential of the output gives a function of the
+ * gradient along the outline. Using differentiation methods one may get a
+ * smoother graph than that obtained by measuring the angles directly.
  * 
  * @author Sean
  * 
  */
 public class RadialDistance extends Distribution {
 
-	protected double getValue(Point2D o, Point2D a, Point2D b) {
+	protected double getValue(final Point2D o, final Point2D a, final Point2D b) {
 		return o.distance(b);
 	}
 
@@ -31,7 +38,7 @@ public class RadialDistance extends Distribution {
 	 * @param f
 	 * @return
 	 */
-	public UnivariateFunction filter(DiscreteFunction f) {
+	public UnivariateFunction filter(final DiscreteFunction f) {
 		if (f == null) {
 			throw new RuntimeException();
 		}
@@ -78,8 +85,16 @@ public class RadialDistance extends Distribution {
 		return interpolate(abscissae, ordinates);
 	}
 
-	protected UnivariateFunction interpolate(double[] abscissae,
-			double[] ordinates) {
+	/**
+	 * Gets an interpolated function from the data. The interpolator may also
+	 * help remove some noise.
+	 * 
+	 * @param abscissae
+	 * @param ordinates
+	 * @return
+	 */
+	protected UnivariateFunction interpolate(final double[] abscissae,
+			final double[] ordinates) {
 		int n = abscissae.length;
 		if (n < 3) {
 			return new DiscreteFunction(abscissae, ordinates);
@@ -92,8 +107,8 @@ public class RadialDistance extends Distribution {
 		// double bandwidth = 0.01; //0.05;
 		// int iters = 0;
 		// double accuracy = 2.0;
-		
-		 UnivariateInterpolator interpolator;
+
+		UnivariateInterpolator interpolator;
 		// if ((n * bandwidth) < 2) {
 		// /* Fail-safe option */
 		// interpolator = new LinearInterpolator();
