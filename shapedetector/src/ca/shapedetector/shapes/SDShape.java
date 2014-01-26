@@ -1,5 +1,7 @@
 package ca.shapedetector.shapes;
 
+import exceptions.NullParameterException;
+
 public interface SDShape {
 
 	/**
@@ -7,6 +9,7 @@ public interface SDShape {
 	 * 
 	 * @return An instance of the detected shape if detected or returns its
 	 *         parameter otherwise.
+	 * @throws NullParameterException 
 	 */
-	abstract AbstractShape identify(final AbstractShape shape);
+	abstract AbstractShape identify(final AbstractShape shape) throws NullParameterException;
 }

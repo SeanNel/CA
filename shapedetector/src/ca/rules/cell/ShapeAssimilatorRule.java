@@ -102,7 +102,7 @@ public class ShapeAssimilatorRule extends CellRule<Color> {
 		}
 
 		/** This gives the least difference to a neighbouring shape. */
-		double minDifference = 2f;
+		double minDifference = 2d;
 		/**
 		 * A representative shape from the neighbouring shape most similar to
 		 * this shape.
@@ -116,7 +116,7 @@ public class ShapeAssimilatorRule extends CellRule<Color> {
 		for (Cell<Color> neighbour : shapeRepresentatives) {
 			// System.out.print(I++ + ".");
 			Blob<Color> neighbouringShape = blobMap.getBlob(neighbour);
-			double difference = 1f;
+			double difference = 1d;
 			Color colour2 = null;
 			synchronized (neighbouringShape) {
 				if (neighbouringShape.getAreaCells() != null) {

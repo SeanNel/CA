@@ -18,7 +18,7 @@ import ca.shapedetector.distribution.Distribution;
 import ca.shapedetector.path.SDPath;
 
 public class Ellipse extends AbstractShape {
-	protected final static double TOLERANCE = 0.13; // Polygon.TOLERANCE;
+	protected final static double TOLERANCE = 0.15; // Polygon.TOLERANCE;
 	/*
 	 * This class assumes that this is the distribution method when it creates
 	 * the ellipse mask.
@@ -58,6 +58,10 @@ public class Ellipse extends AbstractShape {
 		UnivariateDifferentiableFunction f = shape
 				.getDistribution(distributionType);
 
+		// if (ShapeDetector.debug) {
+		// graphics.LineChartFrame.displayData(x0, x1, f);
+		// }
+
 		/* Gets maximum and minimum distance from centroid. */
 		CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);
 		List<Double> indices = new ArrayList<Double>(2);
@@ -65,8 +69,10 @@ public class Ellipse extends AbstractShape {
 		indices.add(criticalPoints.minimum());
 
 		/* Plots an ellipse. */
-		SDPath path = new SDPath();
 		List<Point2D> vertices = shape.getPath().getVertices(indices);
+		if (vertices.size() < 2) {
+			return new SDPath();
+		}
 		Point2D centroid = shape.getPath().getCentroid();
 		Point2D a = vertices.get(0);
 		Point2D b = vertices.get(1);
@@ -86,7 +92,6 @@ public class Ellipse extends AbstractShape {
 		ellipsePath.transform(AffineTransform.getTranslateInstance(
 				centroid.getX(), centroid.getY()));
 
-		path = new SDPath(ellipsePath);
-		return path;
+		return new SDPath(ellipsePath);
 	}
 }

@@ -27,7 +27,9 @@ public class Path2DIterator implements Iterator<Point2D> {
 	public Path2DIterator(final Path2D path) {
 		pathIterator = path.getPathIterator(null, flatness);
 		hasNext = !pathIterator.isDone();
-		currentPosition = getSegmentCoordinates();
+		if (hasNext) {
+			currentPosition = getSegmentCoordinates();
+		}
 	}
 
 	@Override

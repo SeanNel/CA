@@ -1,6 +1,5 @@
 package ca.shapedetector.blob;
 
-import graphics.SDPanelTheme;
 
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
@@ -8,9 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import ca.Cell;
-import ca.shapedetector.path.SDPath;
-import ca.shapedetector.shapes.AbstractShape;
-import ca.shapedetector.shapes.UnknownShape;
 
 /**
  * A blob made up of CACells.
@@ -31,10 +27,7 @@ public class Blob<V> {
 	 * Not required to be a set, since cells are guaranteed to be unique.
 	 */
 	protected List<Cell<V>> outlineCells;
-
-	/**
-	 * The boundary rectangle of this blob.
-	 */
+	/** The boundary rectangle of this blob. */
 	protected Rectangle bounds;
 
 	/**
@@ -47,7 +40,7 @@ public class Blob<V> {
 	 * Creates a new shape associated with the specified cell. Assumes that the
 	 * cell is mapped to this shape.
 	 * 
-	 * @see CAShaped::shapeTable
+	 * @see ShapeList
 	 * @param cell
 	 *            A cell that is to belong to the shape.
 	 */
@@ -93,6 +86,16 @@ public class Blob<V> {
 		synchronized (outlineCells) {
 			outlineCells.add(cell);
 		}
+	}
+
+	/**
+	 * Sets the collection of cells that form the outline of the shape. This is
+	 * used when the outline cells are placed in order.
+	 * 
+	 * @param cells
+	 */
+	public void setOutlineCells(final List<Cell<V>> cells) {
+		outlineCells = cells;
 	}
 
 	/**
@@ -151,89 +154,10 @@ public class Blob<V> {
 	}
 
 	/**
-	 * Places outline cells in clockwise sequence, with pseudo-random starting
-	 * position along the shape's top boundary (depending on which cell was
-	 * added to the list first).
-	 * <p>
-	 * Notice that this forms a closed loop of the shape's outside, so that it
-	 * automatically disregards any other enveloped shapes. This does not
-	 * however, do anything to add those shapes' areaCells to the shape
-	 * enveloping them.
-	 */
-	public void arrangeOutlineCells() {
-		/* For debugging */
-		// if (ShapeDetector.debug) {
-		// display(outlineCells);
-		// }
-
-		Cell<V> first = firstOutlineCell();
-		if (first == null) {
-			return;
-		} else {
-			synchronized (outlineCells) {
-				LoopFinder<V> loopFinder = new LoopFinder<V>(outlineCells);
-				outlineCells = loopFinder.getLoop(first);
-			}
-			/* For debugging */
-			// if (ShapeDetector.debug) {
-			// display(outlineCells);
-			// }
-		}
-	}
-
-	/**
-	 * For debugging. Displays a blob made of the specified cells.
-	 * 
-	 * @param cells
-	 */
-	public static void display(final List<Cell<?>> cells) {
-		graphics.ShapeFrame.setTheme(SDPanelTheme.DEFAULT);
-		SDPath path = new SDPath();
-		path.addCells(cells);
-		AbstractShape shape = new UnknownShape(path);
-		graphics.ShapeFrame.reset(shape);
-		graphics.ShapeFrame.display(shape);
-	}
-
-	/**
-	 * Finds a cell along the top boundary.
-	 * <p>
-	 * It is not difficult to ensure that the top-left cell is selected, but any
-	 * one at the top boundary will work, so we'll just pick one, because it's
-	 * faster that way.
-	 * 
-	 * @return The '1st' cell to start the loop of outline cells.
-	 */
-	protected Cell<V> firstOutlineCell() {
-		List<Cell<V>> cells = outlineCells;
-		for (Cell<V> cell : cells) {
-			int[] coordinates = cell.getCoordinates();
-			/* Looks at row along top boundary: */
-			if (coordinates[1] == bounds.getMinY()) {
-				return cell;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Gets a boolean signifying whether this blob should attempt to identify
-	 * itself.
-	 * 
-	 * @return
-	 */
-	public boolean isInsignificant() {
-		synchronized (outlineCells) {
-			return outlineCells == null || outlineCells.size() < 18
-					|| bounds.getWidth() < 4 || bounds.getHeight() < 4;
-		}
-	}
-
-	/**
 	 * Calculate the center of gravity of this blob. This does not work to find
 	 * the centroid of shapes that surround other shapes.
 	 * 
-	 * @return
+	 * @deprecated.
 	 */
 	public Point2D calculateCentroid() {
 		List<Cell<V>> cells = getAreaCells();

@@ -3,6 +3,8 @@ package ca.shapedetector.path;
 import java.awt.geom.Point2D;
 import java.util.List;
 
+import org.apache.commons.math3.util.MathUtils;
+
 /**
  * Maps the vertices of a path to the distance from the starting point, along
  * the path, to each vertex.
@@ -88,17 +90,22 @@ public class OutlineMap {
 	 * @return
 	 */
 	public Point2D getVertex(final double distance) {
-		double d = distance;
-		/* TODO: use formula, not loop to constrain d to the period */
-		while (d < 0) {
-			d += perimeter;
-		}
-		while (d > perimeter) {
-			d -= perimeter;
-		}
+		/**
+		 * The minimum distance between vertices.
+		 * <p>
+		 * <code>a + step != a</code>, but if the next vertex is some distance
+		 * <code>b</code> away, <code>a +
+		 * delta</code> is still closer to <code>a</code> than <code>b</code>.
+		 * <p>
+		 * Unfortunately, setting the step creates a problem when detecting
+		 * ellipses.
+		 */
+		double step = 1.0d;
+		double d = MathUtils.reduce(distance, perimeter, 0d); // vertexIndices[0]
+
 		/* TODO: This is a linear search. Binary search would be better */
 		for (int i = 0; i < vertexIndices.length; i++) {
-			if (vertexIndices[i] >= d) {
+			if (vertexIndices[i] > d - step) {
 				return vertices.get(i);
 			}
 		}

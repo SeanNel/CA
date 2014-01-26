@@ -1,5 +1,6 @@
 package ca.shapedetector.shapes;
 
+import exceptions.NullParameterException;
 import graphics.SDPanel;
 
 import java.awt.geom.Area;
@@ -98,8 +99,6 @@ public abstract class AbstractShape implements SDShape {
 	 */
 	public UnivariateDifferentiableFunction getDistribution(
 			final Distribution distributionType) {
-		// return distributionFunction;
-
 		double x0 = 0;
 		double x1 = path.getPerimeter();
 		if (x1 < 3.0) {
@@ -127,16 +126,13 @@ public abstract class AbstractShape implements SDShape {
 		return "w=" + bounds.getWidth() + ", h=" + bounds.getHeight();
 	}
 
-	public AbstractShape identify(final AbstractShape abstractShape) {
+	public AbstractShape identify(final AbstractShape abstractShape)
+			throws NullParameterException {
+		if (abstractShape == null) {
+			throw new NullParameterException("abstractShape");
+		}
+
 		AbstractShape shape = abstractShape;
-		
-		if (shape == null) {
-			throw new RuntimeException();
-		}
-		/* For debugging */
-		if (ShapeDetector.debug) {
-			SDPanel.displayActiveShape(shape);
-		}
 
 		AbstractShape mask = getMask(shape);
 		if (mask == null) {
@@ -145,6 +141,7 @@ public abstract class AbstractShape implements SDShape {
 
 		/* For debugging */
 		if (ShapeDetector.debug) {
+			SDPanel.displayActiveShape(shape);
 			SDPanel.displayMaskShape(shape, mask);
 
 			double x0 = -1.0;

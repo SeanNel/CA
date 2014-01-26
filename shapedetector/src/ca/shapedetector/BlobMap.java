@@ -10,6 +10,7 @@ import java.util.Set;
 
 import ca.Cell;
 import ca.concurrency.ThreadServer;
+import ca.lattice.Lattice;
 import ca.rules.Rule;
 import ca.rules.blob.*;
 import ca.shapedetector.blob.*;
@@ -37,10 +38,13 @@ public class BlobMap<V> {
 	 * @param sd
 	 * @param shapeList
 	 */
+	@SuppressWarnings("unchecked")
 	public BlobMap(ShapeDetector sd, ShapeList shapeList) {
 		this.sd = sd;
 
 		blobRules = new LinkedList<Rule<Blob<V>>>();
+		blobRules.add(new ArrangeOutlineRule<V>(this, shapeList,
+				(Lattice<V>) sd.getLattice()));
 		blobRules.add(new BlobIdentifierRule<V>(this, shapeList));
 		// blobRules.add(new BlobDisplayRule(this, graphics.ShapeFrame.panel));
 		// blobRules.add(new BlobDrawRule((SDPictureFrame) sd.getPictureFrame(),
@@ -194,6 +198,17 @@ public class BlobMap<V> {
 	public void addBlob(final Blob<V> blob) {
 		synchronized (blobs) {
 			blobs.add(blob);
+		}
+	}
+
+	/**
+	 * Removes the blob from the list.
+	 * 
+	 * @param blob
+	 */
+	public void removeBlob(final Blob<V> blob) {
+		synchronized (blobs) {
+			blobs.remove(blob);
 		}
 	}
 }

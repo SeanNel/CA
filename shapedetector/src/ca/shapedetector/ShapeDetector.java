@@ -39,7 +39,7 @@ import ca.rules.cell.*;
  * @author Sean
  */
 public class ShapeDetector {
-	protected final static double DEFAULT_EPSILON = 0.05f;
+	protected final static double DEFAULT_EPSILON = 0.05d;
 	protected final static int DEFAULT_R = 1;
 
 	protected ShapeList shapeList;
@@ -79,7 +79,7 @@ public class ShapeDetector {
 	 */
 	public static void main(final String[] args) {
 		String path;
-		double epsilon = 0.05f;
+		double epsilon = 0.05d;
 		int r = 1;
 		boolean debug = false;
 
@@ -261,7 +261,7 @@ public class ShapeDetector {
 	 * @return
 	 */
 	public Lattice<Color> getLattice() {
-		return ca.getLattice();
+		return lattice; //ca.getLattice();
 	}
 
 	/**

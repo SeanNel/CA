@@ -1,7 +1,6 @@
 package ca.rules.cell;
 
 import exceptions.CAException;
-import graphics.ColourCompare;
 
 import java.awt.Color;
 import java.util.List;
@@ -12,7 +11,7 @@ import ca.neighbourhood.VanNeumannCardinal;
 import ca.shapedetector.BlobMap;
 
 /**
- * Groups cells of similar colour together into shapes.
+ * Groups cells of similar colour together into blobs.
  */
 public class BlobMergeRule extends CellRule<Color> {
 	protected final BlobMap<Color> blobMap;
@@ -38,33 +37,32 @@ public class BlobMergeRule extends CellRule<Color> {
 
 		List<Cell<Color>> neighbourhood = neighbourhoodModel
 				.gatherNeighbours(cell);
-		/*
-		 * No need to save this specialized neighbourhood, it won't be used
-		 * again.
-		 */
 		cell.setNeighbourhood(neighbourhood);
 
 		for (Cell<Color> neighbour : neighbourhood) {
+			/*
+			 * Checks whether blobs have merged already to save time if they
+			 * were.
+			 */
 			if (neighbour != cell
 					&& blobMap.getBlob(neighbour) != blobMap.getBlob(cell)) {
 				/*
-				 * This comparison method enables the rule to act without an
-				 * edge finder step.
+				 * The edge finder step can be run from here.
 				 */
-				double difference = ColourCompare.getDifference(
-						lattice.getState(cell), lattice.getState(neighbour));
-				if (difference < epsilon) {
-					blobMap.mergeCells(cell, neighbour);
-				}
+				// double difference = ColourCompare.getDifference(
+				// lattice.getState(cell), lattice.getState(neighbour));
+				// if (difference < epsilon) {
+				// blobMap.mergeCells(cell, neighbour);
+				// }
 
 				/*
 				 * In conjunction with the edge finder, this works a little
 				 * faster.
 				 */
-				// if (ca.getColour(cell)
-				// .equals(CAEdgeFinderRule.QUIESCENT_COLOUR)) {
-				// ca.mergeCells(cell, neighbour);
-				// }
+				if (neighbour.getState()
+						.equals(EdgeFinderRule.QUIESCENT_COLOUR)) {
+					blobMap.mergeCells(cell, neighbour);
+				}
 			}
 		}
 	}

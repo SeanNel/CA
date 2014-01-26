@@ -4,7 +4,6 @@ import java.util.List;
 
 import ca.Cell;
 import ca.lattice.Lattice;
-import ca.neighbourhood.MooreOutline;
 import ca.neighbourhood.Neighbourhood;
 import ca.shapedetector.BlobMap;
 import ca.shapedetector.blob.Blob;
@@ -21,7 +20,6 @@ import exceptions.CAException;
  * Assumes that cells have Van Neumann neighbourhoods, with r=1.
  */
 public class OutlineFinderRule<V> extends CellRule<V> {
-	protected final MooreOutline<V> outlineNeighbourhood;
 	protected final BlobMap<V> blobMap;
 
 	public OutlineFinderRule(final Lattice<V> lattice,
@@ -29,7 +27,6 @@ public class OutlineFinderRule<V> extends CellRule<V> {
 			throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
-		outlineNeighbourhood = new MooreOutline<V>(lattice, blobMap);
 	}
 
 	@Override
@@ -39,18 +36,6 @@ public class OutlineFinderRule<V> extends CellRule<V> {
 		List<Cell<V>> neighbourhood = cell.getNeighbourhood();
 		for (Cell<V> neighbour : neighbourhood) {
 			if (neighbour != cell && blob != blobMap.getBlob(neighbour)) {
-
-				/*
-				 * May need to make a copy of the cell, so that this CA's cells
-				 * continue to use a standard neighbourhood. But this causes
-				 * complications when checking whether those cells are contained
-				 * in a shape.
-				 */
-				// CACell outlineCell = new CACell(cell.getCoordinates(),
-				// CACell.INACTIVE, meetOutlineNeighbours(cell));
-				/* Expands the outlineCell's neighbourhood. */
-				cell.setNeighbourhood(outlineNeighbourhood
-						.gatherNeighbours(cell));
 				blob.addOutlineCell(cell);
 				return;
 			}

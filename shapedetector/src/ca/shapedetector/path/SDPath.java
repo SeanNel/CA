@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import ca.Cell;
-
 /**
  * An abstraction layer for working with closed, polygonal paths that do not
  * intersect themselves.
@@ -46,27 +44,10 @@ public class SDPath implements Iterable<Point2D> {
 	}
 
 	/**
-	 * Constructs a path from a list of cells describing the outline.
-	 * 
-	 * @param cells
-	 * @return
+	 * Constructor.
 	 */
-	public void addCells(final List<Cell<?>> cells) {
-		vertices = new ArrayList<Point2D>(cells.size());
-
-		Iterator<Cell<?>> cellIterator = cells.iterator();
-		int[] coordinates = cellIterator.next().getCoordinates();
-		Point2D vertex = new Point2D.Double(coordinates[0], coordinates[1]);
-		vertices.add(vertex);
-
-		while (cellIterator.hasNext()) {
-			coordinates = cellIterator.next().getCoordinates();
-			vertex = new Point2D.Double(coordinates[0], coordinates[1]);
-			vertices.add(vertex);
-		}
-
-		outlineMap = null;
-		area = 0.0;
+	public SDPath(final List<Point2D> vertices) {
+		addVertices(vertices);
 	}
 
 	/**

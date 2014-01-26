@@ -2,8 +2,8 @@ package math.functions;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 
-/**
- * TODO
+/*
+ * TODO: missing implementation
  * */
 public class CrossCorrelation implements UnivariateFunction {
 	protected UnivariateFunction f1;
@@ -14,8 +14,9 @@ public class CrossCorrelation implements UnivariateFunction {
 
 	double normalizationFactor;
 
-	public CrossCorrelation(final UnivariateFunction f1, final UnivariateFunction f2,
-			final double delta, final double x0,final  double x1) {
+	public CrossCorrelation(final UnivariateFunction f1,
+			final UnivariateFunction f2, final double delta, final double x0,
+			final double x1) {
 		// int theta = f1.phaseDifference(f2);
 		// f2.rotate(theta);
 		// double similarity = f1.similarity(f2);
@@ -27,7 +28,7 @@ public class CrossCorrelation implements UnivariateFunction {
 		// return correlation;
 	}
 
-	/* TODO */
+	/* TODO: missing implementation */
 	@Override
 	public double value(final double x) {
 		return 0.0;

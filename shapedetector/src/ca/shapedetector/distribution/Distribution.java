@@ -20,7 +20,7 @@ import ca.shapedetector.path.VertexIterator;
  * @author Sean
  */
 public abstract class Distribution {
-	public final static double delta = 1.5;
+	public final static double delta = 1.5d;
 
 	public UnivariateFunction compute(final SDPath path) {
 		List<Point2D> vertices = path.getVertices();
@@ -64,7 +64,7 @@ public abstract class Distribution {
 	}
 
 	protected double getValue(final Point2D o, final Point2D a, final Point2D b) {
-		return 0.0;
+		return 0d;
 	}
 
 	/**

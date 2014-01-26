@@ -1,6 +1,7 @@
 package math.functions;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.util.MathUtils;
 
 /**
  * Creates an interface to a function that is periodic over a given domain. That
@@ -39,16 +40,10 @@ public class PeriodicFunction implements UnivariateFunction, Periodic {
 
 	@Override
 	public double value(final double x) {
-		/* TODO: Replace loops with formula */
 		double h = x;
 		h += rotation;
 		double period = x1 - x0;
-		while (h < x0) {
-			h += period;
-		}
-		while (h > x1) {
-			h -= period;
-		}
+		h = MathUtils.reduce(h, period, 0);
 		return f.value(x);
 	}
 

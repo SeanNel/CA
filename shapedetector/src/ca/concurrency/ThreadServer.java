@@ -55,8 +55,8 @@ public class ThreadServer<V> {
 	 *            Number of threads to create.
 	 * @throws NullParameterException
 	 */
-	public ThreadServer(Rule<V> rule, final Iterator<V> iterator, final int numThreads)
-			throws NullParameterException {
+	public ThreadServer(Rule<V> rule, final Iterator<V> iterator,
+			final int numThreads) throws NullParameterException {
 		if (rule == null) {
 			throw new NullParameterException("rule");
 		}
@@ -96,8 +96,8 @@ public class ThreadServer<V> {
 	}
 
 	/**
-	 * Updates the queued cells. TODO: return the actual value, and not just
-	 * false all the time...
+	 * Updates the queued cells. TODO: return a boolean when it is due to
+	 * repeat, and not just false all the time...
 	 * 
 	 * @return true when there are active cells remaining.
 	 */

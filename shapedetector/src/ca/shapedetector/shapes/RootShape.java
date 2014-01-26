@@ -8,23 +8,32 @@ import java.util.List;
 import ca.Cell;
 import ca.shapedetector.blob.Blob;
 import ca.shapedetector.path.SDPath;
+import exceptions.NullParameterException;
 
 public class RootShape<V> extends AbstractShape {
-	protected final List<AbstractShape> relatedShapes;
+	protected final List<AbstractShape> shapeClasses;
 
 	public RootShape() {
 		super(null, null, 0d);
-		relatedShapes = new ArrayList<AbstractShape>();
-		// relatedShapes.add(new Ellipse());
-		// relatedShapes.add(new Triangle());
-		relatedShapes.add(new Quadrilateral());
+		shapeClasses = new ArrayList<AbstractShape>();
+		shapeClasses.add(new Ellipse());
+		shapeClasses.add(new Triangle());
+		shapeClasses.add(new Quadrilateral());
 	}
 
-	public AbstractShape identify(final Blob<V> blob) {
+	/**
+	 * Returns an instance of the shape detected from the blob. Returns an
+	 * UnknownShape if none was found.
+	 * 
+	 * @param blob
+	 * @return
+	 * @throws NullParameterException 
+	 */
+	public AbstractShape identify(final Blob<V> blob) throws NullParameterException {
 		SDPath path = path(blob.getOutlineCells());
 		AbstractShape shape = new UnknownShape(path);
 
-		for (SDShape relatedShape : relatedShapes) {
+		for (SDShape relatedShape : shapeClasses) {
 			shape = relatedShape.identify(shape);
 			if (!(shape instanceof UnknownShape)) {
 				break;
@@ -48,14 +57,16 @@ public class RootShape<V> extends AbstractShape {
 		ArrayList<Point2D> vertices = new ArrayList<Point2D>(cells.size());
 
 		Iterator<Cell<V>> cellIterator = cells.iterator();
-		int[] coordinates = cellIterator.next().getCoordinates();
-		Point2D vertex = new Point2D.Double(coordinates[0], coordinates[1]);
-		vertices.add(vertex);
-
-		while (cellIterator.hasNext()) {
-			coordinates = cellIterator.next().getCoordinates();
-			vertex = new Point2D.Double(coordinates[0], coordinates[1]);
+		if (cellIterator.hasNext()) {
+			int[] coordinates = cellIterator.next().getCoordinates();
+			Point2D vertex = new Point2D.Double(coordinates[0], coordinates[1]);
 			vertices.add(vertex);
+
+			while (cellIterator.hasNext()) {
+				coordinates = cellIterator.next().getCoordinates();
+				vertex = new Point2D.Double(coordinates[0], coordinates[1]);
+				vertices.add(vertex);
+			}
 		}
 
 		SDPath path = new SDPath();
