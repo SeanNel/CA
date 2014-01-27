@@ -26,7 +26,7 @@ public class Quadrilateral extends Polygon {
 
 	@Override
 	protected AbstractShape identifySubclass() {
-		AbstractShape shape = rectangle.identify(this);
+		 AbstractShape shape = rectangle.identify(this);
 		return shape;
 	}
 

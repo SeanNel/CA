@@ -284,15 +284,17 @@ public abstract class AbstractShape implements SDShape {
 		SDPath totalAreaPath = new SDPath(shapePolygon);
 		double totalArea = totalAreaPath.getArea();
 
-		// Debug.displayMaskShape(shape, new UnknownShape(totalAreaPath));
+		 SDPanel.displayMaskShape(shape, new UnknownShape(totalAreaPath));
 
-		/* Path either contains curved segments or crosses itself */
+		/* Path either contains curved segments or crosses itself. */
 		if (totalArea < shapeArea) {
 			maskArea -= shapeArea - totalArea;
 			totalArea = shapeArea;
 		}
 
-		return (shapeArea + maskArea - totalArea) / totalArea;
+		double result = (shapeArea + maskArea - totalArea) / totalArea;
+		/* Should make the comparison more forgiving for smaller shapes. */
+		return result;
 	}
 
 }

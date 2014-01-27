@@ -108,7 +108,7 @@ public class SDPath implements Iterable<Point2D> {
 		 * The last vertex returned from SDPathIterator is also the first. The
 		 * distance between the end and start points would then be 0, which
 		 * causes failure of the periodic interpolator (the points must be
-		 * strictly increasing. So we remove it.
+		 * strictly increasing). So we remove it.
 		 */
 		if (vertices.size() > 0) {
 			vertices.remove(vertices.size() - 1);

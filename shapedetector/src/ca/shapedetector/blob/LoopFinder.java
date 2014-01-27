@@ -29,7 +29,8 @@ public class LoopFinder<V> {
 	 * @throws NullParameterException
 	 */
 	public LoopFinder(final List<Cell<V>> unorderedCells,
-			final Lattice<V> lattice, final BlobMap<V> blobMap) throws NullParameterException {
+			final Lattice<V> lattice, final BlobMap<V> blobMap)
+			throws NullParameterException {
 		outlineNeighbourhood = new MooreOutline<V>(lattice, blobMap);
 		this.unorderedCells = unorderedCells;
 		/*
@@ -47,7 +48,7 @@ public class LoopFinder<V> {
 	 * 
 	 * @param first
 	 *            The first cell in the loop.
-	 * @throws CAException 
+	 * @throws CAException
 	 */
 	public List<Cell<V>> getLoop(final Cell<V> first) throws CAException {
 		if (unorderedCells == null || unorderedCells.size() < 4) {
@@ -72,13 +73,17 @@ public class LoopFinder<V> {
 	 * square. When there is ambiguity, selects a cell in clockwise order,
 	 * starting from above. Assumes that the current cell is not included in its
 	 * own neighbourhood.
+	 * <p>
+	 * If the path runs into a dead-end (i.e. a single column of edge cells
+	 * projecting out sideways from the path), it doubles back on itself to a
+	 * point where it can continue again.
 	 * 
 	 * @param previousCell
 	 *            The previous outline cell.
 	 * @param currentCell
 	 *            The current outline cell.
 	 * @return The next outline cell.
-	 * @throws CAException 
+	 * @throws CAException
 	 */
 	protected Cell<V> nextOutlineCell() throws CAException {
 		int stepsBack = 0;
@@ -97,27 +102,21 @@ public class LoopFinder<V> {
 	 * 
 	 * @param currentCell
 	 * @return
-	 * @throws CAException 
+	 * @throws CAException
 	 */
-	protected Cell<V> nextOutlineCell(final Cell<V> currentCell) throws CAException {
-		/*
-		 * May need to make a copy of the cell, so that this CA's cells continue
-		 * to use a standard neighbourhood. But this causes complications when
-		 * checking whether those cells are contained in a shape.
-		 */
-		// CACell outlineCell = new CACell(cell.getCoordinates(),
-		// CACell.INACTIVE, meetOutlineNeighbours(cell));
-
-		// List<Cell<V>> neighbourhood = currentCell.getNeighbourhood();
-		// cell.setNeighbourhood
+	protected Cell<V> nextOutlineCell(final Cell<V> currentCell)
+			throws CAException {
 		List<Cell<V>> neighbourhood = outlineNeighbourhood
 				.gatherNeighbours(currentCell);
 
 		for (Cell<V> neighbour : neighbourhood) {
-			if (!unorderedCells.contains(neighbour)) {
-				continue;
-			} else if ((!orderedCells.contains(neighbour) || neighbour == orderedCells
-					.get(0)) && unorderedCells.contains(neighbour)) {
+			/*
+			 * The neighbours are guaranteed to be from the same shape, but are
+			 * not necessarily all outline cells.
+			 */
+			if (unorderedCells.contains(neighbour)
+					&& (!orderedCells.contains(neighbour) || neighbour == orderedCells
+							.get(0))) {
 				return neighbour;
 			}
 		}

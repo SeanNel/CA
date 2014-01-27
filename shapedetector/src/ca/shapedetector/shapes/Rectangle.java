@@ -48,10 +48,8 @@ public class Rectangle extends Quadrilateral {
 
 		double d1 = gradients.get(0) - gradients.get(2);
 		double d2 = gradients.get(1) - gradients.get(3);
-		d1 = Math.abs(d1);
-		d2 = Math.abs(d2);
 
-		if (d1 < TOLERANCE && d2 < TOLERANCE) {
+		if (Math.abs(d1) < TOLERANCE && Math.abs(d2) < TOLERANCE) {
 			/* Opposite sides are parallel, so this is a parallelogram. */
 			double gradient1 = (gradients.get(0) + gradients.get(2)) / 2d;
 			double gradient2 = (gradients.get(1) + gradients.get(3)) / 2d;

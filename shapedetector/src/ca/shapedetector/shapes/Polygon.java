@@ -53,7 +53,7 @@ public abstract class Polygon extends AbstractShape {
 	 * */
 	public SDPath getPolygon(final AbstractShape shape, final int s) {
 		/* Catches vertices that occur at the start point. */
-		double x0 = -1.0;
+		double x0 = 0d; //-1.0d;
 		double x1 = shape.getPath().getPerimeter();
 		UnivariateDifferentiableFunction f = shape
 				.getDistribution(distributionType);

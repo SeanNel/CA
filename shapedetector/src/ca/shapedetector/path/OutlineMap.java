@@ -3,6 +3,7 @@ package ca.shapedetector.path;
 import java.awt.geom.Point2D;
 import java.util.List;
 
+import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathUtils;
 
 /**
@@ -32,7 +33,7 @@ public class OutlineMap {
 		int n = vertices.size();
 		vertexIndices = new double[n];
 
-		double perimeter = 0.0;
+		double perimeter = 0d;
 		if (vertices.size() > 0) {
 			Point2D lastVertex = vertices.get(n - 1);
 			int i = 0;
@@ -86,40 +87,33 @@ public class OutlineMap {
 	/**
 	 * Gets a vertex closest to the specified distance from the starting point.
 	 * 
-	 * @param d
+	 * @param distance
 	 * @return
 	 */
 	public Point2D getVertex(final double distance) {
-		/**
-		 * The minimum distance between vertices.
-		 * <p>
-		 * <code>a + step != a</code>, but if the next vertex is some distance
-		 * <code>b</code> away, <code>a +
-		 * delta</code> is still closer to <code>a</code> than <code>b</code>.
-		 * <p>
-		 * Unfortunately, setting the step creates a problem when detecting
-		 * ellipses.
-		 */
-		double step = 1.0d;
-		double d = MathUtils.reduce(distance, perimeter, 0d); // vertexIndices[0]
+		/* 0 or vertexIndices[0] ? */
+		double d = MathUtils.reduce(distance, perimeter, vertexIndices[0]);
 
-		/* TODO: This is a linear search. Binary search would be better */
-		for (int i = 0; i < vertexIndices.length; i++) {
-			if (vertexIndices[i] > d - step) {
+		/* TODO: This is a linear search. Binary search would be better. */
+		for (int i = 0; i < vertexIndices.length - 1; i++) {
+			if (FastMath.abs(d - vertexIndices[i]) <= FastMath.abs(d
+					- vertexIndices[i + 1])) {
 				return vertices.get(i);
 			}
 		}
 
-		return null;
+		return vertices.get(vertexIndices.length);
 
-		/* Binary search still has bugs */
+		/* Binary search is incomplete */
 		// int index = searchIndex(vertexIndices, d, 0, vertexIndices.length -
 		// 1);
 		// return vertices.get(index);
 	}
 
 	/**
-	 * Binary search for y such that indices[y] == (int) x
+	 * Binary search for y such that indices[y] == (int) x.
+	 * <p>
+	 * TODO: Unfinished implementation
 	 * 
 	 * @param indices
 	 * @param x
