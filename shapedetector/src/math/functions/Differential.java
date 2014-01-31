@@ -1,11 +1,15 @@
 package math.functions;
 
+import math.DiscreteFunction;
+
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 import org.apache.commons.math3.analysis.differentiation.FiniteDifferencesDifferentiator;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.commons.math3.analysis.differentiation.UnivariateFunctionDifferentiator;
 import org.apache.commons.math3.exception.DimensionMismatchException;
+
+import exceptions.NullParameterException;
 
 /**
  * Wrapper for function differentials. Allows passing the differentiation of a
@@ -24,9 +28,18 @@ public class Differential implements UnivariateDifferentiableFunction {
 		this.f = f;
 	}
 
+	public Differential(final DiscreteFunction f) throws NullParameterException {
+		if (f == null) {
+			throw new NullParameterException("f");
+		}
+		this.f = new DifferentiableDiscreteFunction(f);
+	}
+
 	/**
+	 * TODO: may contain bugs!
+	 * <p>
 	 * Gets the differentiable of a UnivariateFunction function that does not
-	 * imlement UnivariateDifferentiableFunction.
+	 * implement UnivariateDifferentiableFunction.
 	 * 
 	 * @param f
 	 * @param stepSize

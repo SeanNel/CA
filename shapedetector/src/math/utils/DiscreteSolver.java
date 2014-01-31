@@ -46,10 +46,15 @@ public class DiscreteSolver implements Solver {
 		int n = f.length;
 		double m = x1 - x0;
 		List<Double> solutions = new ArrayList<Double>();
-		if (periodic && (f[n - 1] < 0.0 && f[0] >= 0.0)
-				|| (f[n - 1] > 0.0 && f[0] <= 0.0)) {
+
+		/* Catches solutions that occur at the start of the domain. */
+		if (periodic
+				&& ((f[n - 1] < 0.0 && f[0] >= 0.0) || (f[n - 1] > 0.0 && f[0] <= 0.0))) {
 			solutions.add(0.0);
 		}
+
+		// System.out.println(f[0] + " -> " + f[n - 1]);
+
 		int x = 1;
 		for (int h = x + 1; h < n; h++) {
 			if ((f[x] < 0.0 && f[h] >= 0.0) || (f[x] > 0.0 && f[h] <= 0.0)) {

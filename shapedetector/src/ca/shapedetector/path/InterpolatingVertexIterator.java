@@ -22,7 +22,6 @@ public class InterpolatingVertexIterator extends VertexIterator {
 			currentPosition = vertices.get(vertices.size() - 1);
 		} else {
 			currentPosition = vertices.get(0);
-			;
 		}
 	}
 

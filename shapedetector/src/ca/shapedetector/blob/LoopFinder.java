@@ -57,8 +57,10 @@ public class LoopFinder<V> {
 
 		Cell<V> next = first;
 
+//		System.out.println("***");
 		do {
 			orderedCells.add(next);
+//			System.out.println(next.getCoordinates()[0] + ", " + next.getCoordinates()[1]);
 			/* For debugging */
 			// graphics.ShapeFrame.setTheme(SDPanel.HIGHLIGHT_THEME);
 			// Blob.display(orderedCells);

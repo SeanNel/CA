@@ -14,6 +14,7 @@ import math.utils.CriticalPoints;
 
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 
+import ca.shapedetector.ShapeDetector;
 import ca.shapedetector.distribution.Distribution;
 import ca.shapedetector.path.SDPath;
 
@@ -58,9 +59,10 @@ public class Ellipse extends AbstractShape {
 		UnivariateDifferentiableFunction f = shape
 				.getDistribution(distributionType);
 
-		// if (ShapeDetector.debug) {
-		// graphics.LineChartFrame.displayData(x0, x1, f);
-		// }
+		if (ShapeDetector.debug) {
+//			SDPanel.displayShape(shape, SDPanelTheme.DEFAULT);
+			graphics.LineChartFrame.displayData(x0, x1, f);
+		}
 
 		/* Gets maximum and minimum distance from centroid. */
 		CriticalPoints criticalPoints = new CriticalPoints(f, x0, x1);

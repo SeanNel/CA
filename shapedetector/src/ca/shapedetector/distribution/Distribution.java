@@ -20,12 +20,13 @@ import ca.shapedetector.path.VertexIterator;
  * @author Sean
  */
 public abstract class Distribution {
+	/** The step length. */
 	public final static double delta = 1.5d;
 
 	public UnivariateFunction compute(final SDPath path) {
 		List<Point2D> vertices = path.getVertices();
 		InterpolatingVertexIterator iterator = new InterpolatingVertexIterator(
-				vertices, VertexIterator.FORWARD, 1.5);
+				vertices, VertexIterator.FORWARD, delta);
 
 		int n = vertices.size();
 		List<Double> xList = new ArrayList<Double>(n);
@@ -35,14 +36,14 @@ public abstract class Distribution {
 		 * Maps each uninterpolated vertex to its distance from the starting
 		 * point (along the path).
 		 */
-		double perimeter = 0.0;
+		double perimeter = 0d;
 
 		Point2D o = path.getCentroid();
 		Point2D a = vertices.get(n - 1);
 		while (iterator.hasNext()) {
 			Point2D b = iterator.next();
 			double distance = a.distance(b);
-			if (distance > 0) {
+			if (distance > 0d) {
 				perimeter += a.distance(b);
 
 				xList.add(perimeter);
@@ -59,7 +60,6 @@ public abstract class Distribution {
 			ordinates = new double[1];
 		}
 		DiscreteFunction f = new DiscreteFunction(abscissae, ordinates);
-		// return f;
 		return filter(f);
 	}
 

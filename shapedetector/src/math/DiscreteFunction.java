@@ -74,10 +74,7 @@ public class DiscreteFunction implements UnivariateFunction { // UnivariateDiffe
 	 * @param y
 	 */
 	public DiscreteFunction(double[] y) {
-		this(new double[y.length], y);
-		for (int i = 0; i < abscissae.length; i++) {
-			abscissae[i] = i;
-		}
+		this(getAbscissae(0, y.length, y.length), y);
 	}
 
 	/**

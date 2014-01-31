@@ -92,7 +92,7 @@ public class OutlineMap {
 	 */
 	public Point2D getVertex(final double distance) {
 		/* 0 or vertexIndices[0] ? */
-		double d = MathUtils.reduce(distance, perimeter, vertexIndices[0]);
+		double d = MathUtils.reduce(distance, perimeter, 0);
 
 		/* TODO: This is a linear search. Binary search would be better. */
 		for (int i = 0; i < vertexIndices.length - 1; i++) {
@@ -102,7 +102,8 @@ public class OutlineMap {
 			}
 		}
 
-		return vertices.get(vertexIndices.length);
+		// throw new RuntimeException();
+		return vertices.get(vertexIndices.length - 1);
 
 		/* Binary search is incomplete */
 		// int index = searchIndex(vertexIndices, d, 0, vertexIndices.length -

@@ -22,9 +22,7 @@ import exceptions.CAException;
 public class OutlineFinderRule<V> extends CellRule<V> {
 	protected final BlobMap<V> blobMap;
 
-	public OutlineFinderRule(final Lattice<V> lattice,
-			final Neighbourhood<V> neighbourhoodModel, final BlobMap<V> blobMap)
-			throws CAException {
+	public OutlineFinderRule(final Lattice<V> lattice, final Neighbourhood<V> neighbourhoodModel, final BlobMap<V> blobMap) throws CAException {
 		super(lattice, neighbourhoodModel);
 		this.blobMap = blobMap;
 	}

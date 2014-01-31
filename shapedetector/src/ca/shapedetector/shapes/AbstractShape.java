@@ -2,13 +2,18 @@ package ca.shapedetector.shapes;
 
 import exceptions.NullParameterException;
 import graphics.SDPanel;
+import graphics.SDPanelTheme;
 
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
+import javax.swing.JFrame;
+
 import math.functions.CyclicSimilarity;
+import math.functions.Differential;
 import math.functions.PeriodicDifferentiableFunction;
+import math.functions.StretchFunction;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
@@ -141,9 +146,6 @@ public abstract class AbstractShape implements SDShape {
 
 		/* For debugging */
 		if (ShapeDetector.debug) {
-			SDPanel.displayActiveShape(shape);
-			SDPanel.displayMaskShape(shape, mask);
-
 			double x0 = -1.0;
 			double x1 = shape.getPath().getPerimeter();
 			UnivariateDifferentiableFunction f1 = shape
@@ -155,11 +157,13 @@ public abstract class AbstractShape implements SDShape {
 			if (ShapeDetector.debug) {
 				graphics.LineChartFrame.frame.setTitle("Shape distribution");
 				// graphics.LineChartFrame.displayData(x0, x1, f1, f2);
-				UnivariateDifferentiableFunction g1 = new math.functions.Differential(
-						f1);
-				UnivariateDifferentiableFunction g2 = new math.functions.Differential(
-						f2);
-				graphics.LineChartFrame.displayData(x0, x1, g1, g2);
+				UnivariateFunction g1 = new StretchFunction(f1, x0, x1, x0, x1);
+				UnivariateFunction g2 = new StretchFunction(f2, x0, mask
+						.getPath().getPerimeter(), x0, x1);
+
+				UnivariateFunction dg1 = new Differential(g1, 1);
+
+				graphics.LineChartFrame.displayData(x0, x1, g1, g2, dg1);
 			}
 		}
 
@@ -273,18 +277,55 @@ public abstract class AbstractShape implements SDShape {
 		return similarity;
 	}
 
+	static JFrame frame1 = new JFrame();
+	static JFrame frame2 = new JFrame();
+	static JFrame frame3 = new JFrame();
+
 	protected double compareByAreaDifference(final AbstractShape shape) {
 		Area maskAreaPolygon = getPath().getAreaPolygon();
 		Area shapePolygon = shape.getPath().getAreaPolygon();
-
+		//
 		double maskArea = getPath().getArea();
 		double shapeArea = shape.getPath().getArea();
-
+		//
+//		if (!shapePolygon.isPolygonal() || !maskAreaPolygon.isPolygonal()
+//				|| !shape.getPath().getAreaPolygon().isSingular()
+//				|| !maskAreaPolygon.isSingular()) {
+//
+//			PathIterator iterator = shapePolygon.getPathIterator(null);
+//			System.out.println("***");
+//			while (!iterator.isDone()) {
+//				double[] coords = new double[6];
+//				int status = iterator.currentSegment(coords);
+//				System.out.println("{" + coords[0] + "," + coords[1] + "},");
+//				if (status == 4) {
+//					System.out.println("END");
+//				}
+//				iterator.next();
+//			}
+//
+//			System.out.println("ERROR");
+//		}
 		shapePolygon.add(maskAreaPolygon);
 		SDPath totalAreaPath = new SDPath(shapePolygon);
 		double totalArea = totalAreaPath.getArea();
 
-		 SDPanel.displayMaskShape(shape, new UnknownShape(totalAreaPath));
+		if (ShapeDetector.debug) {
+			AbstractShape bgShape = new UnknownShape(totalAreaPath);
+			 SDPanel.displayShape(bgShape, SDPanelTheme.BG);
+			SDPanel.displayShape(shape, SDPanelTheme.DEFAULT);
+			SDPanel.displayShape(shape, this, SDPanelTheme.MASK);
+
+			// SDPanel.displayShape(bgShape, bgShape, SDPanelTheme.HIGHLIGHT);
+
+			// display(bgShape, frame1);
+			// display(shape, frame2);
+			// display(this, frame3);
+
+			frame1.setTitle("Combined");
+			frame2.setTitle("Shape");
+			frame3.setTitle("Mask");
+		}
 
 		/* Path either contains curved segments or crosses itself. */
 		if (totalArea < shapeArea) {
@@ -292,9 +333,21 @@ public abstract class AbstractShape implements SDShape {
 			totalArea = shapeArea;
 		}
 
+//		shapeClasses.add(new Triangle())
 		double result = (shapeArea + maskArea - totalArea) / totalArea;
 		/* Should make the comparison more forgiving for smaller shapes. */
 		return result;
+	}
+
+	protected void display(AbstractShape shape, JFrame frame) {
+		Rectangle2D bounds = shape.getPath().getBounds();
+		SDPanel panel = new SDPanel();
+		panel.reset((int) bounds.getWidth(), (int) bounds.getHeight());
+		panel.display(shape);
+
+		frame.setContentPane(panel);
+		frame.pack();
+		frame.setVisible(true);
 	}
 
 }

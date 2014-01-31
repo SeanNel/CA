@@ -33,7 +33,8 @@ public abstract class Polygon extends AbstractShape {
 		super(null, distribution, tolerance);
 	}
 
-	public Polygon(final SDPath path, final Distribution distribution, final double tolerance) {
+	public Polygon(final SDPath path, final Distribution distribution,
+			final double tolerance) {
 		super(path, distribution, tolerance);
 	}
 
@@ -53,7 +54,7 @@ public abstract class Polygon extends AbstractShape {
 	 * */
 	public SDPath getPolygon(final AbstractShape shape, final int s) {
 		/* Catches vertices that occur at the start point. */
-		double x0 = 0d; //-1.0d;
+		double x0 = -1.0d;
 		double x1 = shape.getPath().getPerimeter();
 		UnivariateDifferentiableFunction f = shape
 				.getDistribution(distributionType);
@@ -72,10 +73,18 @@ public abstract class Polygon extends AbstractShape {
 		List<Double> indices = criticalPoints.significantPoints(comparisonType,
 				s, minSideLength);
 
-		SDPath path = new SDPath();
+		// System.out.println("Critical points *** ");
+		// for (Double d : criticalPoints.criticalPoints()) {
+		// System.out.println(">>> " + d);
+		// }
+
+		// System.out.println("Significant points *** ");
+		// for (Double d : indices) {
+		// System.out.println(">>> " + d);
+		// }
+
 		List<Point2D> vertices = shape.getPath().getVertices(indices);
-		path.addVertices(vertices);
-		return path;
+		return new SDPath(vertices);
 	}
 
 }

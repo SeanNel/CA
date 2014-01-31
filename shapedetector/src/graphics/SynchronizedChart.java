@@ -7,6 +7,7 @@ import java.awt.geom.Rectangle2D;
 
 import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.plot.Plot;
 
 /* A chart that is synchronized on its dataset. */
@@ -16,6 +17,8 @@ public class SynchronizedChart extends JFreeChart {
 	public SynchronizedChart(final String title, final Font titleFont,
 			final Plot plot, final boolean createLegend) {
 		super(title, titleFont, plot, createLegend);
+		StandardChartTheme theme = new StandardChartTheme("Theme");
+		theme.apply(this);
 	}
 
 	@Override

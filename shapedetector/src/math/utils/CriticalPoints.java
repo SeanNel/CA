@@ -56,6 +56,7 @@ public class CriticalPoints {
 		double minimum = Double.MAX_VALUE;
 		double maxPos = 0.0;
 		double minPos = 0.0;
+//		System.out.println("********");
 		for (int i = 0; i < criticalPoints.size(); i++) {
 			double x = criticalPoints.get(i);
 
@@ -64,17 +65,18 @@ public class CriticalPoints {
 			double df2 = df.value(xStructure).getPartialDerivative(1);
 
 			double y = f.value(x);
-			if (df2 >= 0.0) {
-				maxima.add(x);
-				if (y > maximum) {
-					maximum = y;
-					maxPos = x;
-				}
-			} else {
+//			System.out.println("x:" + x + ", df: " + y + ", ddf: " + df2);
+			if (df2 <= 0.0) {
 				minima.add(x);
 				if (y < minimum) {
 					minimum = y;
 					minPos = x;
+				}
+			} else {
+				maxima.add(x);
+				if (y > maximum) {
+					maximum = y;
+					maxPos = x;
 				}
 			}
 		}

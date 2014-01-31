@@ -3,7 +3,7 @@ package ca.shapedetector.shapes;
 import ca.shapedetector.path.SDPath;
 
 public class Quadrilateral extends Polygon {
-	protected final static double TOLERANCE = 0.3d;
+	protected final static double TOLERANCE = 0.2d;
 	protected final static Rectangle rectangle = new Rectangle();
 
 	Quadrilateral() {
@@ -27,6 +27,7 @@ public class Quadrilateral extends Polygon {
 	@Override
 	protected AbstractShape identifySubclass() {
 		 AbstractShape shape = rectangle.identify(this);
+//		AbstractShape shape = this;
 		return shape;
 	}
 

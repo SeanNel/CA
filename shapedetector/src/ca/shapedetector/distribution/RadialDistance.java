@@ -7,6 +7,7 @@ import math.DiscreteFunction;
 import org.apache.commons.math3.analysis.FunctionUtils;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariatePeriodicInterpolator;
 
@@ -32,13 +33,18 @@ public class RadialDistance extends Distribution {
 		return o.distance(b);
 	}
 
+	public UnivariateFunction filter(final DiscreteFunction f) {
+		return interpolate(f.getAbscissae(), f.getOrdinates());
+//		 return new DifferentiableDiscreteFunction(f);
+	}
+
 	/**
 	 * Filters noise and returns an interpolated polynomial.
 	 * 
 	 * @param f
 	 * @return
 	 */
-	public UnivariateFunction filter(final DiscreteFunction f) {
+	public UnivariateFunction filter2(final DiscreteFunction f) {
 		if (f == null) {
 			throw new RuntimeException();
 		}
@@ -104,18 +110,18 @@ public class RadialDistance extends Distribution {
 		// int iters = LoessInterpolator.DEFAULT_ROBUSTNESS_ITERS;
 		// double accuracy = LoessInterpolator.DEFAULT_ACCURACY;
 
-		// double bandwidth = 0.01; //0.05;
-		// int iters = 0;
-		// double accuracy = 2.0;
+		 double bandwidth = 0.05; // 0.05;
+		 int iters = 0;
+		 double accuracy = 2.0;
 
 		UnivariateInterpolator interpolator;
-		// if ((n * bandwidth) < 2) {
-		// /* Fail-safe option */
+		if ((n * bandwidth) < 2) {
+			/* Fail-safe option */
+			interpolator = new LinearInterpolator();
+		} else {
+			interpolator = new LoessInterpolator(bandwidth, iters, accuracy);
+		}
 		// interpolator = new LinearInterpolator();
-		// } else {
-		// interpolator = new LoessInterpolator(bandwidth, iters, accuracy);
-		// }
-		interpolator = new LinearInterpolator();
 
 		/*
 		 * We need to have periodic data for the interpolator to work over the

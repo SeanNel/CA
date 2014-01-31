@@ -44,7 +44,7 @@ public class PeriodicFunction implements UnivariateFunction, Periodic {
 		h += rotation;
 		double period = x1 - x0;
 		h = MathUtils.reduce(h, period, 0);
-		return f.value(x);
+		return f.value(h);
 	}
 
 }

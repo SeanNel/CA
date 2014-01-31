@@ -157,7 +157,7 @@ public class SDPanel extends PicturePanel {
 		case MASK:
 			outlineColour = Color.green;
 			labelColour = new Color(0, 0, 0, 0);
-			fillColour = new Color(230, 255, 250, 120);
+			fillColour = new Color(230, 255, 250, 100);
 			centroidColour = new Color(210, 235, 200, 230);
 			startPointColour = new Color(210, 235, 200, 220);
 			break;
@@ -166,8 +166,14 @@ public class SDPanel extends PicturePanel {
 			labelColour = new Color(0, 0, 0, 0);
 			break;
 		case HIGHLIGHT:
-			outlineColour = Color.red;
-			fillColour = new Color(255, 245, 230, 100);
+			outlineColour = Color.pink;
+			fillColour = new Color(255, 45, 30, 150);
+			break;
+		case BG:
+			Color g = new Color(0, 255, 255, 100);
+			outlineColour = g;
+			fillColour = g;
+			break;
 		default:
 			fillColour = new Color(230, 245, 230, 100);
 			outlineColour = Color.red;
@@ -179,25 +185,24 @@ public class SDPanel extends PicturePanel {
 	}
 
 	/**
-	 * For debugging. Displays the active shape.
+	 * For debugging. Clears the frame and displays the shape.
 	 * 
 	 * @param shape
 	 */
-	public static void displayActiveShape(final AbstractShape shape) {
-		// graphics.ShapeFrame.setTheme(SDPanel.SIMPLE);
+	public static void displayShape(final AbstractShape shape,
+			final SDPanelTheme theme) {
 		ShapeFrame.reset(shape);
-		ShapeFrame.setTheme(SDPanelTheme.DEFAULT);
+		ShapeFrame.setTheme(theme);
 		ShapeFrame.display(shape);
 	}
 
 	/**
-	 * For debugging. Displays the identity shape.
+	 * For debugging. Displays the shape superimposed on an existing one.
 	 * 
 	 * @param shape
 	 */
-	public static void displayMaskShape(final AbstractShape shape,
-			final AbstractShape mask) {
-		ShapeFrame.setTheme(SDPanelTheme.MASK);
+	public static void displayShape(final AbstractShape shape,
+			final AbstractShape mask, final SDPanelTheme theme) {
 		double[] cursor = ShapeFrame.getDrawCursor();
 
 		Rectangle2D a = shape.getPath().getBounds();
@@ -207,8 +212,8 @@ public class SDPanel extends PicturePanel {
 		double y = b.getCenterY() - a.getCenterY() + cursor[1];
 
 		ShapeFrame.moveDrawCursor(x, y);
+		ShapeFrame.setTheme(theme);
 		ShapeFrame.display(mask);
-		// MaskFrame.display(identity);
 	}
 
 }

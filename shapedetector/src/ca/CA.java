@@ -68,7 +68,8 @@ public class CA<V> {
 				// stopwatch.start();
 				// if (numThreads==0) {
 				// /* Linear method */
-				// for (Cell cell : lattice) {
+				// active = false;
+				// for (Cell<V> cell : lattice) {
 				// rule.update(cell);
 				// }
 				// } else {
@@ -77,6 +78,7 @@ public class CA<V> {
 						rule, lattice, numThreads);
 				active = threadServer.run();
 				// }
+
 				lattice.complete();
 				// passes++;
 				// if (active || passes > 0) {

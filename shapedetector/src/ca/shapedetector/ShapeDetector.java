@@ -171,7 +171,7 @@ public class ShapeDetector {
 
 			Neighbourhood<Color> neighbourhoodModel = new Moore<Color>(lattice,
 					r);
-			// rules.add(new DummyRule(lattice, neighbourhoodModel));
+//			 rules.add(new DummyRule(lattice, neighbourhoodModel));
 			// rules.add(new GatherNeighboursRule(lattice, neighbourhoodModel));
 			rules.add(new NoiseRemoverRule(lattice, neighbourhoodModel, epsilon));
 			/* Optional step */

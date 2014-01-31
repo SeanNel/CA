@@ -7,11 +7,9 @@ import java.awt.Toolkit;
 import javax.swing.JFrame;
 
 import math.DiscreteFunction;
-import math.functions.Differential;
 
 import org.apache.commons.math3.analysis.FunctionUtils;
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartTheme;
 import org.jfree.chart.JFreeChart;
@@ -41,8 +39,8 @@ public class LineChartFrame extends JFrame {
 		ValueAxis yAxis = new NumberAxis("Y");
 
 		XYPlot plot = new XYPlot(dataset, xAxis, yAxis, null);
-		SynchronizedChart chart = new SynchronizedChart("Chart",
-				JFreeChart.DEFAULT_TITLE_FONT, plot, true);
+		chart = new SynchronizedChart("Chart", JFreeChart.DEFAULT_TITLE_FONT,
+				plot, true);
 
 		ChartTheme currentTheme = new StandardChartTheme("JFree");
 		currentTheme.apply(chart);
@@ -85,43 +83,45 @@ public class LineChartFrame extends JFrame {
 
 	public static void displayData(final double x0, final double x1,
 			final UnivariateFunction... f) {
+		int n = (int) Math.ceil(x1 - x0);
+		displayData(x0, x1, n, f);
+	}
+
+	public static void displayData(final double x0, final double x1,
+			final int n, final UnivariateFunction... f) {
 		synchronized (dataset) {
 			dataset.removeAllSeries();
 			int i = 0;
 			for (UnivariateFunction s : f) {
-				dataset.addSeries(frame.getSeries(s, "f" + i++ + "(x)", x0, x1));
+				dataset.addSeries(frame.getSeries(s, "f" + i++ + "(x)", x0, x1,
+						n));
 			}
 		}
 		frame.setVisible(true);
 	}
 
-	public static void displayDifferentialData(final double x0,
-			final double x1, final UnivariateDifferentiableFunction f) {
-		int n = (int) Math.ceil(x1 - x0);
-		// double n = (x1 - x0) / 100.0;// 1;
+	// public static void displayDifferentialData(final double x0,
+	// final double x1, final UnivariateDifferentiableFunction f) {
+	// int n = (int) Math.ceil(x1 - x0);
+	//
+	// UnivariateDifferentiableFunction df = new Differential(f);
+	// UnivariateDifferentiableFunction df2 = new Differential(df, n);
+	//
+	// synchronized (dataset) {
+	// dataset.removeAllSeries();
+	// dataset.addSeries(frame.getSeries(f, "f(x)", x0, x1, n));
+	// dataset.addSeries(frame.getSeries(df, "d/dx f(x)", x0, x1, n));
+	// dataset.addSeries(frame.getSeries(df2, "d^2/dx^2 f(x)", x0, x1, n));
+	// }
+	// frame.setVisible(true);
+	//
+	// /* for debugging */
+	// frame.repaint();
+	// }
 
-		UnivariateDifferentiableFunction df = new Differential(f);
-		UnivariateDifferentiableFunction df2 = new Differential(df, n);
-
-		synchronized (dataset) {
-			dataset.removeAllSeries();
-			dataset.addSeries(frame.getSeries(f, "f(x)", x0, x1));
-			dataset.addSeries(frame.getSeries(df, "d/dx f(x)", x0, x1));
-			dataset.addSeries(frame.getSeries(df2, "d^2/dx^2 f(x)", x0, x1));
-		}
-		frame.setVisible(true);
-
-		/* for debugging */
-		frame.repaint();
-	}
-
+	/* f is not sampled at the upper bound */
 	public XYIntervalSeries getSeries(final UnivariateFunction f,
-			final String label, final double x0, final double x1) {
-		int n = (int) Math.ceil(x1 - x0);
-		if (n < 100) {
-			n = 100;
-		}
-
+			final String label, final double x0, final double x1, final int n) {
 		if (n < 1) {
 			return new XYIntervalSeries(label);
 		}

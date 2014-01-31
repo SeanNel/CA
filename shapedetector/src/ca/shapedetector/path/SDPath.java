@@ -58,7 +58,6 @@ public class SDPath implements Iterable<Point2D> {
 	 */
 	public void addVertices(final List<Point2D> vertices) {
 		this.vertices = new ArrayList<Point2D>(vertices);
-
 		outlineMap = null;
 		area = 0.0;
 	}
@@ -110,9 +109,14 @@ public class SDPath implements Iterable<Point2D> {
 		 * causes failure of the periodic interpolator (the points must be
 		 * strictly increasing). So we remove it.
 		 */
-		if (vertices.size() > 0) {
-			vertices.remove(vertices.size() - 1);
-		}
+		/*
+		 * So all of the above seems irrelevant now, removing it causes problems
+		 * with calculating the area of mask polygons. Removing it does not
+		 * cause interpolation problems at this time.
+		 */
+		// if (vertices.size() > 0) {
+		// vertices.remove(vertices.size() - 1);
+		// }
 		bounds = path.getBounds2D();
 	}
 
@@ -123,15 +127,22 @@ public class SDPath implements Iterable<Point2D> {
 	 */
 	public Path2D.Double getPath2D() {
 		if (path2D == null) {
-			path2D = new Path2D.Double();
+			path2D = new Path2D.Double(Path2D.Double.WIND_EVEN_ODD);
 			Iterator<Point2D> iterator = iterator();
 			if (iterator.hasNext()) {
 				Point2D vertex = iterator.next();
 				path2D.moveTo(vertex.getX(), vertex.getY());
+				// Point2D first = vertex;
+				// Point2D last = vertex;
+
+				// System.out.println("\n\nPath2D ***");
 
 				while (iterator.hasNext()) {
 					vertex = iterator.next();
+					// if (vertex != last && vertex != first) {
 					path2D.lineTo(vertex.getX(), vertex.getY());
+					// System.out.println(vertex.getX() + "," + vertex.getY());
+					// }
 				}
 				path2D.closePath();
 			}
@@ -280,11 +291,8 @@ public class SDPath implements Iterable<Point2D> {
 					a = b;
 				}
 				/* Includes the last point along the path as well. */
-				// iterator2 = iterator();
-				//
-				// Point2D a = iterator1.next();
-				// Point2D b = iterator2.next();
-				// area += a.getX() * b.getY() - a.getY() * b.getX();
+				// Point2D b = iterator().next();
+				// area += (a.getX() + b.getX()) * (a.getY() - b.getY());
 
 				area = Math.abs(area / 2.0);
 			}

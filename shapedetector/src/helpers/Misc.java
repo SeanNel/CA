@@ -3,6 +3,8 @@ package helpers;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.math3.util.MathUtils;
+
 public class Misc {
 
 	/**
@@ -62,14 +64,7 @@ public class Misc {
 	 * @return
 	 */
 	public static double representativeAngle(final double theta) {
-		double a = theta;
-		// a = MathUtils.normalizeAngle(a, Math.PI);
-		while (a < 0) {
-			a += 2d * Math.PI;
-		}
-		while (a >= 2d * Math.PI) {
-			a -= 2d * Math.PI;
-		}
+		double a = MathUtils.reduce(theta, Math.PI, 0);
 
 		if (a <= 0.5d * Math.PI) {
 			return a;
@@ -80,6 +75,5 @@ public class Misc {
 		} else {
 			return 2d * Math.PI - a;
 		}
-
 	}
 }
