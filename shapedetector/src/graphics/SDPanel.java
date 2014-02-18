@@ -3,13 +3,16 @@ package graphics;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
-import ca.shapedetector.path.SDPath;
-import ca.shapedetector.shapes.AbstractShape;
-import ca.shapedetector.shapes.UnknownShape;
+import path.SDPath;
+
+import shapes.AbstractShape;
+import shapes.UnknownShape;
+
 
 public class SDPanel extends PicturePanel {
 	private static final long serialVersionUID = 1L;
@@ -214,6 +217,10 @@ public class SDPanel extends PicturePanel {
 		ShapeFrame.moveDrawCursor(x, y);
 		ShapeFrame.setTheme(theme);
 		ShapeFrame.display(mask);
+	}
+
+	public Graphics2D getGraphics2D() {
+		return graphics;
 	}
 
 }

@@ -1,47 +1,33 @@
 package ca;
 
-import java.util.List;
-
 /**
- * The operational unit of a cellular automaton.
+ * The operational unit of a cellular automaton. Simply stores its own
+ * coordinates, so that its neighbours can be found.
  * 
  * @author Sean
  */
-public interface Cell<V> {
+public class Cell {
+	/** The cell's position coordinates. */
+	protected final int[] coordinates;
+
+	/**
+	 * Constructor.
+	 */
+	public Cell(final int... coordinates) {
+		this.coordinates = coordinates;
+	}
+
 	/**
 	 * Gets this cell's coordinates.
 	 * 
 	 * @return This cell's coordinates.
 	 */
-	public int[] getCoordinates();
+	public int[] getCoordinates() {
+		return coordinates;
+	}
 
-	/**
-	 * Gets the specified cell's neighbourhood, specifically those cells within
-	 * a certain distance from this cell.
-	 * 
-	 * @return A list of CACell's from this cell's neighbourhood.
-	 */
-	public List<Cell<V>> getNeighbourhood();
-
-	/**
-	 * Sets the specified cell's neighbourhood.
-	 * 
-	 * @param neighbourhood
-	 *            The neighbourhood to set to.
-	 */
-	public void setNeighbourhood(final List<Cell<V>> neighbourhood);
-
-	/**
-	 * Gets this cell's state.
-	 * 
-	 * @return
-	 */
-	 public V getState();
-
-	/**
-	 * Sets this cell's state.
-	 * 
-	 * @state
-	 */
-	 public void setState(final V state);
+	public String toString() {
+		/* Assumes cell is in 2D lattice */
+		return "(Cell) [x=" + coordinates[0] + ", y=" + coordinates[1] + "]";
+	}
 }

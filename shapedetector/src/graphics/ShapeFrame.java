@@ -2,7 +2,8 @@ package graphics;
 
 import java.awt.geom.Rectangle2D;
 
-import ca.shapedetector.shapes.AbstractShape;
+import shapes.AbstractShape;
+
 
 public class ShapeFrame extends PictureFrame {
 	private static final long serialVersionUID = 1L;

@@ -6,7 +6,9 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
-import std.Picture;
+import org.apache.commons.math3.util.FastMath;
+
+import utils.Picture;
 
 /**
  * Static class used for comparing and finding the average of colours.
@@ -41,7 +43,7 @@ public class ColourCompare {
 			float x = vector1[i] - vector2[i];
 			sum += x * x;
 		}
-		return Math.sqrt(sum);
+		return FastMath.sqrt(sum);
 	}
 
 	/**
@@ -72,7 +74,7 @@ public class ColourCompare {
 		float[] p2Components = c2.getColorComponents(null);
 
 		double distance = distance(p1Components, p2Components);
-		double max_distance = Math.sqrt(p1Components.length);
+		double max_distance = FastMath.sqrt(p1Components.length);
 
 		return distance / max_distance;
 	}
@@ -125,10 +127,10 @@ public class ColourCompare {
 		}
 
 		double n = (double) colours.size();
-		r = (int) Math.round((double) r / n);
-		g = (int) Math.round((double) g / n);
-		b = (int) Math.round((double) b / n);
-		a = (int) Math.round((double) a / n);
+		r = (int) FastMath.round((double) r / n);
+		g = (int) FastMath.round((double) g / n);
+		b = (int) FastMath.round((double) b / n);
+		a = (int) FastMath.round((double) a / n);
 		return new Color(r, g, b, a);
 	}
 
@@ -160,7 +162,7 @@ public class ColourCompare {
 		Double[] keys = colourTable.keySet().toArray(
 				new Double[colourTable.size()]);
 		Arrays.sort(keys);
-		int median = (int) Math.floor(keys.length / 2.0);
+		int median = (int) FastMath.floor(keys.length / 2.0);
 
 		return colourTable.get(keys[median]);
 	}
@@ -197,7 +199,7 @@ public class ColourCompare {
 		Double[] keys = colourTable.keySet().toArray(
 				new Double[colourTable.size()]);
 		Arrays.sort(keys);
-		int median = (int) Math.floor(keys.length / 2.0);
+		int median = (int) FastMath.floor(keys.length / 2.0);
 
 		return colourTable.get(keys[median]);
 	}

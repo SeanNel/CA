@@ -37,8 +37,6 @@ public class PictureFrame extends JFrame implements ActionListener {
 	}
 
 	public void setImage(final BufferedImage image) {
-		// picturePanel.setPreferredSize(new Dimension(image.getWidth(), image
-		// .getHeight()));
 		picturePanel.setImage(image);
 		pack();
 	}
@@ -103,4 +101,5 @@ public class PictureFrame extends JFrame implements ActionListener {
 			save(chooser.getDirectory() + File.separator + chooser.getFile());
 		}
 	}
+
 }

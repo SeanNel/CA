@@ -50,4 +50,8 @@ public class PicturePanel extends JPanel {
 		repaint();
 	}
 
+	// @Override
+	// public void setSize(Dimension d) {
+	// super.setSize(d);
+	// }
 }
